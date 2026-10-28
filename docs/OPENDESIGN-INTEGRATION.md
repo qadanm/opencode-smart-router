@@ -80,6 +80,19 @@ Three findings that change how the router treats OpenDesign:
 3. **MiniMax M3.1 Flash reports no context or output budget.** The router uses
    a conservative 232k window and flags the multiplier as unverified.
 
+A fourth finding, observed live on 2026-10-28: the gateway resolves a **billing
+scope** before answering, even a read-only `/v1/models` request. During this
+work it returned `503 workspace_billing_scope_unavailable` with an upstream
+`context deadline exceeded` against `amr-api.open-design.ai/api/internal/billing/scope/…`,
+then succeeded on retry. Two consequences:
+
+- Every OpenDesign request, including model discovery, depends on a billing
+  service that can time out. Transient 503s are expected and must be retried
+  with backoff, which the router's quota backoff and failure classification
+  already handle.
+- This is a plausible upstream contributor to dropped streams: the billing
+  scope resolution sits in front of the response stream.
+
 Models without a curated quality score are seeded unapproved. Approve them
 explicitly in `models.approved` if you want them routed.
 

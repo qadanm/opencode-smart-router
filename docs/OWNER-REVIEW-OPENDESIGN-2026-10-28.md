@@ -231,6 +231,11 @@ off OpenDesign when a window runs out.
   enough to accept that.
 - **The Anthropic-messages protocol is lossy for DeepSeek V4.1 Flash.** Use
   chat-completions. The router warns when it sees the combination.
+- **The gateway resolves a billing scope in front of every request**, including
+  read-only model discovery. It returned a transient `503
+  workspace_billing_scope_unavailable` during this work and succeeded on
+  retry. This is a plausible contributor to dropped streams, and it means
+  OpenDesign availability depends on more than the model service.
 
 ---
 

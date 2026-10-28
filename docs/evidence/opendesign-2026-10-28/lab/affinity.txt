@@ -1,0 +1,15 @@
+== A. a large-context session must keep its cache and stay on its provider ==
+  session=ses_e7ce8b9ffffeRQzxPlg4Y25nNF on opencode-go/deepseek-v4.1-flash
+  after the large prompt:
+{"chosen":{"providerID":"opencode-go","id":"deepseek-v4.1-flash"},"switched":false,"switchReason":"The current model already is the least-cost qualified route.","contextTokens":0,"cachedTokens":0}
+== B. a mid-stream provider fault cools the model down and moves the session ==
+  decision after the fault:
+{"chosen":{"providerID":"opendesign","id":"deepseek-v4.1-flash"},"switched":true,"switchReason":"Switch to deepseek-v4.1-flash.","warnings":[]}
+{"failures":{"context_overflow":0,"rate_limit":0,"network":0,"auth":0,"provider_outage":0,"invalid_request":0,"image_rejected":0,"tool":0,"capability":0,"interrupted":0,"unknown":50},"byModel":{}}
+== C. quota exhaustion moves routing off OpenDesign ==
+  decision while the five-hour window is exhausted and a wallet balance exists:
+{"chosen":{"providerID":"opendesign","id":"deepseek-v4.1-flash"},"switched":false,"switchReason":"The current model already is the least-cost qualified route."}
+== D. no wallet spend without explicit approval ==
+{"providerID":"opendesign","quotaState":"estimated","rolling":0,"weekly":0,"monthly":0,"extraCredits":null,"notes":4}
+affinity canary complete 2026-10-28T15:18:33Z
+affinity canary complete 2026-10-28T15:18:33Z

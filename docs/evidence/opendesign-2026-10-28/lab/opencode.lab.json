@@ -1,0 +1,345 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugins": [
+    "/Users/muhammedqadan/Documents/opencode-router-canary-3p/plugin"
+  ],
+  "model": "lab-cc/deepseek-v4.1-flash",
+  "providers": {
+    "lab-cc": {
+      "name": "Lab GOAT",
+      "package": "@opencode/ai/providers/openai-compatible",
+      "settings": {
+        "baseURL": "http://127.0.0.1:4200/cc/v1",
+        "apiKey": "lab"
+      },
+      "models": {
+        "deepseek-v4.1-flash": {
+          "name": "Lab DeepSeek",
+          "limit": {
+            "context": 1000000,
+            "output": 384000
+          },
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text",
+              "image"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "cost": [
+            {
+              "input": 0.15,
+              "output": 0.6,
+              "cache": {
+                "read": 0.003,
+                "write": 0
+              }
+            }
+          ]
+        },
+        "claude-haiku-5-5": {
+          "name": "Lab Haiku",
+          "limit": {
+            "context": 1000000,
+            "output": 128000
+          },
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text",
+              "image",
+              "pdf"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "cost": [
+            {
+              "input": 0.1,
+              "output": 0.5,
+              "cache": {
+                "read": 0.01,
+                "write": 0.125
+              }
+            }
+          ]
+        },
+        "claude-sonnet-5-5": {
+          "name": "Lab Sonnet",
+          "limit": {
+            "context": 1000000,
+            "output": 128000
+          },
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text",
+              "image",
+              "pdf"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "cost": [
+            {
+              "input": 2,
+              "output": 10,
+              "cache": {
+                "read": 0.1,
+                "write": 2.5
+              }
+            }
+          ]
+        },
+        "minimax-m3.1-flash": {
+          "name": "Lab CC MiniMax",
+          "limit": {
+            "context": 1000000,
+            "output": 512000
+          },
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text",
+              "image",
+              "video"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "cost": [
+            {
+              "input": 0.15,
+              "output": 0.6,
+              "cache": {
+                "read": 0.015,
+                "write": 0
+              }
+            }
+          ]
+        }
+      }
+    },
+    "lab-go": {
+      "name": "Lab Go Plus",
+      "package": "@opencode/ai/providers/openai-compatible",
+      "settings": {
+        "baseURL": "http://127.0.0.1:4200/go/v1",
+        "apiKey": "lab"
+      },
+      "models": {
+        "deepseek-v4.1-flash": {
+          "name": "Lab Go DeepSeek",
+          "limit": {
+            "context": 1000000,
+            "output": 384000
+          },
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text",
+              "image"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "cost": [
+            {
+              "input": 0.15,
+              "output": 0.6,
+              "cache": {
+                "read": 0.003,
+                "write": 0
+              }
+            }
+          ]
+        },
+        "glm-5.3-flash": {
+          "name": "Lab Go GLM",
+          "limit": {
+            "context": 1000000,
+            "output": 131072
+          },
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text",
+              "image",
+              "video"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "cost": [
+            {
+              "input": 0.15,
+              "output": 0.5,
+              "cache": {
+                "read": 0.03,
+                "write": 0
+              }
+            }
+          ]
+        },
+        "minimax-m3.1-flash": {
+          "name": "Lab Go MiniMax",
+          "limit": {
+            "context": 1000000,
+            "output": 512000
+          },
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text",
+              "image",
+              "video"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "cost": [
+            {
+              "input": 0.15,
+              "output": 0.6,
+              "cache": {
+                "read": 0.015,
+                "write": 0
+              }
+            }
+          ]
+        },
+        "claude-haiku-5-5": {
+          "name": "Lab Go Haiku",
+          "limit": {
+            "context": 1000000,
+            "output": 128000
+          },
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text",
+              "image",
+              "pdf"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "cost": [
+            {
+              "input": 0.1,
+              "output": 0.5,
+              "cache": {
+                "read": 0.01,
+                "write": 0.125
+              }
+            }
+          ]
+        }
+      }
+    },
+    "opendesign": {
+      "name": "Lab OpenDesign Go",
+      "package": "@opencode/ai/providers/openai-compatible",
+      "settings": {
+        "baseURL": "http://127.0.0.1:4200/od/v1",
+        "apiKey": "lab-od"
+      },
+      "models": {
+        "deepseek-v4.1-flash": {
+          "name": "Lab OD DeepSeek",
+          "limit": {
+            "context": 328000,
+            "output": 128000
+          },
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text",
+              "image"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "cost": [
+            {
+              "input": 0.15,
+              "output": 0.6,
+              "cache": {
+                "read": 0.003,
+                "write": 0
+              }
+            }
+          ]
+        },
+        "claude-haiku-5.5": {
+          "name": "Lab OD Haiku",
+          "limit": {
+            "context": 228000,
+            "output": 128000
+          },
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text",
+              "image",
+              "pdf"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "cost": [
+            {
+              "input": 0.1,
+              "output": 0.5,
+              "cache": {
+                "read": 0.01,
+                "write": 0.125
+              }
+            }
+          ]
+        },
+        "mimo-v2.6-pro": {
+          "name": "Lab OD MiMo Pro",
+          "limit": {
+            "context": 232000,
+            "output": 32000
+          },
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text",
+              "image",
+              "audio",
+              "video"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "cost": [
+            {
+              "input": 0.435,
+              "output": 0.87,
+              "cache": {
+                "read": 0.003625,
+                "write": 0
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

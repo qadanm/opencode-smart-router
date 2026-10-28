@@ -1,0 +1,29 @@
+== 1. three-provider registration ==
+{"providers":["commandcode","opencode-go","opendesign"],"approved":["commandcode","opencode-go","opendesign"],"opendesignState":"estimated"}
+== 2. OpenDesign entitlement discovery ==
+  opendesign/deepseek-v4.1-flash tier=2 int=39.5 design=65 vision=true
+  opendesign/claude-haiku-5.5 tier=2 int=43.4 design=70 vision=true
+  opendesign/glm-5.3-flash tier=2 int=41.8 design=65 vision=true
+  opendesign/minimax-m3.1-flash tier=2 int=42.7 design=60 vision=true
+  opendesign/mimo-v2.6-pro tier=2 int=46.3 design=62 vision=true
+  opendesign/mimo-v2.6-flash tier=1 int=37.9 design=50 vision=true
+  opendesign/gpt-6-luna tier=1 int=38.1 design=55 vision=true
+== 3. a session routed to OpenDesign ==
+  session=ses_e7cea86b2ffe3m326E4l37p7xd
+{"title":"AUTO · OD · deepseek-v4.1-flash — canary opendesign","model":{"id":"deepseek-v4.1-flash","providerID":"opendesign","variant":"default"}}
+== 4. a session routed to GOAT ==
+== 5. a session routed to Go Plus ==
+== 6. manual override still wins over automatic routing ==
+{"runtime":null,"manualOverride":null,"current":null}
+== 7. OpenDesign diagnostics command makes no inference request ==
+  commands: router-approve,router-auto,router-diagnostics,router-dry-run,router-exclude,router-explain,router-mode,router-opendesign,router-pause,router-pin,router-premium-budget,router-report,router-reserve,router-reset-metrics,router-resume,router-status,router-title
+  router-opendesign is registered
+  inference requests before=42 after=42 (informational commands must be zero)
+== 8. core lifecycle ==
+{"coreID":"n3zybw17","bridgeCount":4,"setups":4,"disposes":0,"eventStreams":1,"errors":1}
+== 9. provider-scoped quota has no per-model snapshots ==
+{"providerID":"opendesign","source":"estimate","quotaState":"estimated","modelSnapshotCount":0}
+== 10. decision records ==
+{"decisions":8,"quotaProviders":["commandcode","opencode-go","opendesign"]}
+canary complete 2026-10-28T15:16:25Z
+canary complete 2026-10-28T15:16:25Z

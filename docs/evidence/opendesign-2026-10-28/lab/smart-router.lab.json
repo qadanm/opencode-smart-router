@@ -1,0 +1,52 @@
+{
+  "enabled": true,
+  "dryRun": false,
+  "mode": "balanced",
+  "providers": {
+    "opencode-go": {
+      "enabled": true,
+      "probeUsage": true,
+      "allowExtraUsage": false
+    },
+    "commandcode": {
+      "enabled": true,
+      "probeUsage": true,
+      "allowExtraUsage": false
+    },
+    "opendesign": {
+      "enabled": true,
+      "probeUsage": true,
+      "allowExtraUsage": false,
+      "subscriptionOnly": true,
+      "providerScopedQuota": true,
+      "monthlyCreditsUsd": 120,
+      "fiveHourCapUsd": 10,
+      "weeklyCapUsd": 30,
+      "baseURL": "http://127.0.0.1:4200/od/v1",
+      "controlKeyPath": "/Users/muhammedqadan/Documents/opencode-router-canary-3p/home/.config/opencode/opendesign-control.key",
+      "controlBaseURL": "http://127.0.0.1:4200/od/api"
+    }
+  },
+  "premium": {
+    "mode": "off",
+    "monthlyBudgetUsd": 0,
+    "oneShotApproval": false
+  },
+  "routing": {
+    "failClosed": true
+  },
+  "quota": {
+    "probeOpenCodeGo": false,
+    "probeCommandCode": false,
+    "probeOpenDesign": true,
+    "probeIntervalMinutes": 5
+  },
+  "ui": {
+    "titleIndicator": true,
+    "notifications": false
+  },
+  "logging": {
+    "storePromptText": false,
+    "diagnostics": true
+  }
+}
