@@ -337,6 +337,8 @@ export interface Ledger {
   metrics: Metrics
   /** Model key to the epoch millisecond when its failure cooldown ends. */
   cooldowns?: Record<string, number>
+  /** Provider id to the epoch millisecond when its outage backoff ends. */
+  providerCooldowns?: Record<string, number>
   updatedAt: number
 }
 

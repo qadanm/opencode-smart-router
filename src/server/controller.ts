@@ -826,6 +826,7 @@ export class RouterController {
       dryRun: settings.dryRun,
       modelHistory: this.ledger.snapshotMetrics().byModel,
       cooldowns: this.ledger.cooldowns(),
+      providerCooldowns: this.ledger.providerCooldowns(),
     })
 
     let switchError: string | undefined
@@ -994,6 +995,7 @@ export class RouterController {
           this.ledger.recordFailure(event.sessionID, event.model, assessment.class, event.error?.message ?? "", {
             countAgainstModel: assessment.countAgainstModel,
             cooldownMs: assessment.cooldownMs,
+            providerScoped: assessment.providerScoped,
           })
         }
         this.ledger.recordRetry(event.sessionID)
@@ -1075,6 +1077,7 @@ export class RouterController {
     this.ledger.recordFailure(sessionID, model, assessment.class, message, {
       countAgainstModel: assessment.countAgainstModel,
       cooldownMs: assessment.cooldownMs,
+      providerScoped: assessment.providerScoped,
     })
   }
 
@@ -1251,6 +1254,9 @@ export class RouterController {
           latencyMs: latency,
           premium: this.registry.get(model.providerID, model.id)?.premium ?? false,
         })
+        // A completed step is proof the provider's pre-request path worked,
+        // so any run of provider-scoped failures starts over.
+        this.ledger.recordProviderSuccess(model.providerID)
       }
       this.persistLedgerSoon()
       return

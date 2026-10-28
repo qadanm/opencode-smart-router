@@ -18,6 +18,12 @@ export interface FailureAssessment {
    * the model's reliability record. A user-initiated interrupt is not.
    */
   readonly countAgainstModel: boolean
+  /**
+   * True when the fault is in the provider's own pre-request path (billing
+   * scope, plan entitlement) rather than in the serving model. Such a fault
+   * belongs to the provider as a whole and must not be charged to a model.
+   */
+  readonly providerScoped: boolean
 }
 
 const includes = (value: string, terms: ReadonlyArray<string>) => terms.some((term) => value.includes(term))
@@ -42,6 +48,7 @@ export const classifyFailure = (input: FailureInput, session?: SessionState): Fa
       cooldownMs: 0,
       reason: "The step was interrupted; this is not evidence of a provider fault.",
       countAgainstModel: false,
+      providerScoped: false,
     }
   }
 
@@ -65,6 +72,7 @@ export const classifyFailure = (input: FailureInput, session?: SessionState): Fa
       cooldownMs: 0,
       reason: "Context overflow is a session-size problem, not an intelligence failure. Compact or start a handoff session.",
       countAgainstModel: false,
+      providerScoped: false,
     }
   }
 
@@ -77,6 +85,7 @@ export const classifyFailure = (input: FailureInput, session?: SessionState): Fa
       cooldownMs: 2 * 60_000,
       reason: "Provider rate limit; wait or use another provider. A stronger model would consume the same limit.",
       countAgainstModel: true,
+      providerScoped: false,
     }
   }
 
@@ -89,6 +98,7 @@ export const classifyFailure = (input: FailureInput, session?: SessionState): Fa
       cooldownMs: 15 * 60_000,
       reason: "Authentication or authorization failed; escalating models cannot fix a credential problem.",
       countAgainstModel: true,
+      providerScoped: false,
     }
   }
 
@@ -104,6 +114,7 @@ export const classifyFailure = (input: FailureInput, session?: SessionState): Fa
       cooldownMs: 10 * 60_000,
       reason: "The endpoint rejected the image input; route visual work only to a verified vision model.",
       countAgainstModel: true,
+      providerScoped: false,
     }
   }
 
@@ -146,6 +157,10 @@ export const classifyFailure = (input: FailureInput, session?: SessionState): Fa
       "billing_scope_unavailable",
       "resolve billing scope",
       "billing scope unavailable",
+      // OpenDesign evaluates the account's plan membership before it serves
+      // any request. Failing that is also a provider-side fault.
+      "membership entitlement",
+      "evaluate membership",
     ]) || type.includes("billing_scope_unavailable")
 
   if (
@@ -172,9 +187,10 @@ export const classifyFailure = (input: FailureInput, session?: SessionState): Fa
       escalate: false,
       cooldownMs: 5 * 60_000,
       reason: providerScopedBillingFault
-        ? "The provider's billing path could not resolve the account scope. This is provider-scoped, not a fault of the serving model, so it is not counted against the model's reliability."
+        ? "The provider's own pre-request path failed before a model was selected. This is provider-scoped, not a fault of the serving model, so it is not counted against the model's reliability."
         : "Provider capacity or outage; retry shortly or fail over. A stronger model would hit the same capacity limit, so no escalation is warranted.",
       countAgainstModel: !providerScopedBillingFault,
+      providerScoped: providerScopedBillingFault,
     }
   }
 
@@ -187,6 +203,7 @@ export const classifyFailure = (input: FailureInput, session?: SessionState): Fa
       cooldownMs: 60_000,
       reason: "Network failure; retry with backoff. This is not evidence that a stronger model is needed.",
       countAgainstModel: true,
+      providerScoped: false,
     }
   }
 
@@ -199,6 +216,7 @@ export const classifyFailure = (input: FailureInput, session?: SessionState): Fa
       cooldownMs: 0,
       reason: "A tool or command failed; fix the tool, dependency, or permission issue rather than escalating the model.",
       countAgainstModel: false,
+      providerScoped: false,
     }
   }
 
@@ -211,6 +229,7 @@ export const classifyFailure = (input: FailureInput, session?: SessionState): Fa
       cooldownMs: 5 * 60_000,
       reason: "The request shape was invalid; fix the request or provider compatibility instead of escalating.",
       countAgainstModel: true,
+      providerScoped: false,
     }
   }
 
@@ -227,6 +246,7 @@ export const classifyFailure = (input: FailureInput, session?: SessionState): Fa
       cooldownMs: 0,
       reason: "Possible capability failure; escalate one tier only after evidence, not after a single ambiguous error.",
       countAgainstModel: true,
+      providerScoped: false,
     }
   }
 
@@ -238,6 +258,7 @@ export const classifyFailure = (input: FailureInput, session?: SessionState): Fa
     cooldownMs: 30_000,
     reason: "Unclassified failure; do not escalate automatically without evidence.",
     countAgainstModel: false,
+    providerScoped: false,
   }
 }
 

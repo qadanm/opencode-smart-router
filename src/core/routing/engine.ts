@@ -35,6 +35,8 @@ export interface EngineInput {
   readonly modelHistory?: Readonly<Record<string, { requests: number; failures: number }>>
   /** Model key to the epoch millisecond when its failure cooldown ends. */
   readonly cooldowns?: Readonly<Record<string, number>>
+  /** Provider id to the epoch millisecond when its outage backoff ends. */
+  readonly providerCooldowns?: Readonly<Record<string, number>>
 }
 
 export interface EngineResult {
@@ -321,6 +323,15 @@ export const routeTask = (input: EngineInput): EngineResult => {
       // instead of being re-selected on the next prompt.
       const cooldownUntil = input.cooldowns?.[key]
       if (typeof cooldownUntil === "number" && cooldownUntil > now) {
+        continue
+      }
+      // A provider whose own pre-request path has failed several attempts in
+      // a row is not serving anyone. Step back from every model it offers
+      // and let another provider take the work. If no provider is left the
+      // router fails closed and keeps the current model, so this can never
+      // block a prompt outright.
+      const providerCooldownUntil = input.providerCooldowns?.[model.providerID]
+      if (typeof providerCooldownUntil === "number" && providerCooldownUntil > now) {
         continue
       }
       // The estimate is computed first so the subscription-only guard can

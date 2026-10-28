@@ -14,6 +14,20 @@ import type {
 import { clamp, keyOfRef, modelKey, monthKey, nowId, pct, safeError } from "../util.js"
 
 export const LEDGER_VERSION = 1 as const
+
+/**
+ * How many provider-scoped failures in a row, with no successful request in
+ * between, before the whole provider is treated as not serving.
+ *
+ * A transient blip is ridden out by the host's own retry and by the owner
+ * saying "continue" — a couple of failures in a row is normal during a
+ * gateway hiccup. Only a sustained failure, where every attempt fails and
+ * nothing succeeds in between, is an outage worth stepping back from.
+ */
+export const PROVIDER_DOWN_STREAK = 5
+
+/** How long the provider is held back once it is judged to be down. */
+export const PROVIDER_BACKOFF_MS = 3 * 60_000
 const MAX_USAGE_EVENTS = 2_000
 const MAX_DECISIONS = 120
 const MAX_SESSIONS = 250
@@ -66,6 +80,7 @@ export const emptyLedger = (now = Date.now()): Ledger => ({
   decisions: [],
   metrics: emptyMetrics(now),
   cooldowns: {},
+  providerCooldowns: {},
   updatedAt: now,
 })
 
@@ -169,6 +184,13 @@ export const hydrateLedger = (value: unknown): { ledger: Ledger; warnings: strin
       if (parsed > 0) cooldowns[key] = parsed
     }
   }
+  const providerCooldowns: Record<string, number> = {}
+  if (isRecord(value.providerCooldowns)) {
+    for (const [key, until] of Object.entries(value.providerCooldowns)) {
+      const parsed = finite(until)
+      if (parsed > 0) providerCooldowns[key] = parsed
+    }
+  }
 
   const sessions: Record<string, SessionState> = {}
   if (isRecord(value.sessions)) {    for (const entry of Object.values(value.sessions)) {
@@ -206,6 +228,7 @@ export const hydrateLedger = (value: unknown): { ledger: Ledger; warnings: strin
     bootstrappedAt: typeof value.bootstrappedAt === "number" ? value.bootstrappedAt : undefined,
     bootstrapSource: typeof value.bootstrapSource === "string" ? value.bootstrapSource : undefined,
     cooldowns,
+    providerCooldowns,
     usage: usage.slice(-MAX_USAGE_EVENTS),
     premiumSpend: Array.isArray(value.premiumSpend)
       ? value.premiumSpend
@@ -288,6 +311,13 @@ export interface ModelUsageTotals {
 export class LedgerStore {
   private ledger: Ledger
   private dirty = false
+  /**
+   * Consecutive provider-scoped failures with no successful request in
+   * between, per provider. A short streak is a transient blip that a retry
+   * rides over; a long one means the provider is genuinely not serving.
+   * Ephemeral on purpose: it is only meaningful across back-to-back attempts.
+   */
+  private readonly providerFaultStreak = new Map<string, number>()
 
   constructor(initial?: Ledger) {
     this.ledger = initial ?? emptyLedger()
@@ -490,9 +520,35 @@ export class LedgerStore {
     model: ModelRef | undefined,
     failureClass: FailureClass,
     message: string,
-    options: { readonly countAgainstModel?: boolean; readonly cooldownMs?: number } = {},
+    options: {
+      readonly countAgainstModel?: boolean
+      readonly cooldownMs?: number
+      readonly providerScoped?: boolean
+    } = {},
   ) {
     this.ledger.metrics.failures[failureClass] = (this.ledger.metrics.failures[failureClass] ?? 0) + 1
+
+    // A provider-scoped fault belongs to the provider's own pre-request path.
+    // It is not the serving model's fault, so the model keeps a clean record
+    // and no model cooldown is armed. Only when the provider fails several
+    // attempts in a row does the whole provider step back.
+    if (options.providerScoped && model) {
+      const streak = (this.providerFaultStreak.get(model.providerID) ?? 0) + 1
+      this.providerFaultStreak.set(model.providerID, streak)
+      if (streak >= PROVIDER_DOWN_STREAK) {
+        const until = Date.now() + PROVIDER_BACKOFF_MS
+        this.ledger.providerCooldowns = {
+          ...(this.ledger.providerCooldowns ?? {}),
+          [model.providerID]: Math.max(this.ledger.providerCooldowns?.[model.providerID] ?? 0, until),
+        }
+      }
+      const session = this.ensureSession(sessionID)
+      session.failures = [...session.failures, { class: failureClass, at: Date.now(), message: safeError(message) }].slice(-12)
+      session.updatedAt = Date.now()
+      this.touch()
+      return
+    }
+
     // Only a provider fault counts against a model's reliability. A user
     // interrupt must never make the router distrust a healthy model.
     if (model && options.countAgainstModel !== false) {
@@ -526,6 +582,24 @@ export class LedgerStore {
   /** Active failure cooldowns, keyed by model key. */
   cooldowns(): Readonly<Record<string, number>> {
     return this.ledger.cooldowns ?? {}
+  }
+
+  /** Active provider outage backoffs, keyed by provider id. */
+  providerCooldowns(): Readonly<Record<string, number>> {
+    return this.ledger.providerCooldowns ?? {}
+  }
+
+  isProviderCoolingDown(providerID: string, now = Date.now()): boolean {
+    const until = this.ledger.providerCooldowns?.[providerID]
+    return typeof until === "number" && until > now
+  }
+
+  /**
+   * A successful request proves the provider is serving again, so the
+   * consecutive-failure streak starts over.
+   */
+  recordProviderSuccess(providerID: string) {
+    if (this.providerFaultStreak.size > 0) this.providerFaultStreak.delete(providerID)
   }
 
   isCoolingDown(modelKeyValue: string, now = Date.now()): boolean {
