@@ -1,0 +1,52 @@
+Idle compaction to stay on the cheap provider - live deployment
+================================================================
+Deployed at : 2026-10-28T21:57:41Z
+Approved by : owner, in session ("yes build it")
+Artifact    : f48801c58b45729180f3f1eb5f9ff9f3945b5b09c1c6fd055ebccba483f26709
+Code commit : d8d69aa
+Previous    : d0fa05ee59cd338b20bf493a4b49b4ad08ff4e5fc581826090575b1ff7cb6182
+Rollback    : ~/Documents/opencode-smart-router-backups/20261028-145603-idle-compact/rollback.sh
+
+Why
+---
+The owner's session reached 325,494 of OpenDesign's 328,000-token budget
+(99.2%), the cheap route became ineligible, and the router moved the work to
+opencode-go - burning an allowance the owner had nearly exhausted - for no
+reason other than the length of the conversation. OpenDesign is the richest
+pool (~2% of the monthly allowance used, at a 0.5x credit multiplier) and the
+router already prefers it on every prompt. Size was the only thing pushing
+the session off it.
+
+What the router does now
+------------------------
+When a session goes idle with its context past the safe-window line of the
+cheapest variant of its model (the same eligibility margin the router
+already applies: context + 20k must stay under 95% of the window), it
+triggers that session's own compaction. The session then fits the cheap
+provider again, and the existing least-cost routing returns it there on the
+next prompt - no new switching logic.
+
+Guard rails
+-----------
+  - Only on a successful idle (never mid-turn; a busy session is untouched)
+  - At most one router-triggered compaction per session per ten minutes
+  - Never while the router is paused or the provider is backed off
+  - Compaction is OpenCode's own built-in mechanism, not a new one
+
+Cost
+----
+A compaction on OpenDesign reads the context at cache-read prices under the
+0.5x credit multiplier - roughly a thousandth of the cost of the switch it
+prevents.
+
+State at deploy: the owner's session was mid-turn at 369,582 tokens on
+opencode-go. It will be compacted when the turn finishes, and the next
+prompt should route back to OpenDesign.
+
+Verified after restart
+----------------------
+  - Running artifact sha256 matches the deployed artifact
+  - Router: enabled, balanced, automatic, dry-run off, premium off
+  - Shared core: one coreID, one event stream, 7 bridges, 0 errors
+
+Tests: 209 passing (204 before, 5 new), typecheck clean.
