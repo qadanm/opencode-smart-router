@@ -63,6 +63,13 @@ interface ControllerOptions {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value)
 
+/**
+ * How long one reported fault is treated as the same fault. The host reports
+ * a failed attempt through several channels in quick succession, so this only
+ * needs to span one attempt, not one session.
+ */
+const FAULT_DEDUPE_WINDOW_MS = 30_000
+
 const unwrap = <T>(value: unknown): T[] => {
   if (Array.isArray(value)) return value as T[]
   if (isRecord(value) && Array.isArray(value.data)) return value.data as T[]
@@ -148,6 +155,19 @@ export class RouterController {
   private quota!: QuotaService
   private bridgeID = ""
   private readonly expectedSwitch = new Map<string, { key: string; at: number }>()
+  /**
+   * Guards against counting one logical provider failure several times.
+   *
+   * The host reports a single failed attempt through several channels: the
+   * retry hook, `session.step.failed`, `session.execution.failed` and
+   * `session.idle`. Without this guard each channel added its own strike,
+   * so one fault could count three times and inflate the failure tally and
+   * the cooldown that is derived from it.
+   *
+   * The key is the session plus the identity of the attempt itself, so a
+   * genuinely new failure later in the session still counts separately.
+   */
+  private readonly recordedFaults = new Map<string, number>()
   private readonly inflight = new Set<string>()
   private readonly promptSeen = new Set<string>()
   private readonly created = new Map<string, number>()
@@ -959,7 +979,16 @@ export class RouterController {
           { type: event.error?.type, message: event.error?.message ?? "", status: event.error?.status },
           session,
         )
-        this.ledger.recordFailure(event.sessionID, event.model, assessment.class, event.error?.message ?? "")
+        // The retry hook and the step/execution/idle events can all report
+        // the same fault. Record it once, and carry the cooldown through so
+        // the model is actually held back when it keeps failing.
+        const attemptKey = typeof event.attemptID === "string" ? event.attemptID : undefined
+        if (!this.alreadyRecorded(event.sessionID, assessment.class, event.error?.message ?? "", attemptKey)) {
+          this.ledger.recordFailure(event.sessionID, event.model, assessment.class, event.error?.message ?? "", {
+            countAgainstModel: assessment.countAgainstModel,
+            cooldownMs: assessment.cooldownMs,
+          })
+        }
         this.ledger.recordRetry(event.sessionID)
         this.persistLedgerSoon()
         if (assessment.class === "auth" || assessment.class === "context_overflow" || assessment.class === "image_rejected") {
@@ -1004,7 +1033,7 @@ export class RouterController {
    * behind a manual model change. The host's session record is the
    * authority, so it is consulted when the router has no model on record.
    */
-  private async recordProviderFault(sessionID: string, outcome: string, error: any) {
+  private async recordProviderFault(sessionID: string, outcome: string, error: any, attemptKey?: string) {
     const session = this.ledger.getSession(sessionID)
     let model = session?.lastModel
     if (!model) {
@@ -1033,10 +1062,44 @@ export class RouterController {
       },
       session,
     )
+    // The same fault can arrive through the retry hook and through the
+    // step, execution and idle events. Record it once.
+    if (this.alreadyRecorded(sessionID, assessment.class, message, attemptKey)) return
     this.ledger.recordFailure(sessionID, model, assessment.class, message, {
       countAgainstModel: assessment.countAgainstModel,
       cooldownMs: assessment.cooldownMs,
     })
+  }
+
+  /**
+   * True when this exact failure was already recorded for the session.
+   *
+   * `attemptKey` identifies the failed attempt. When the host provides one
+   * (the assistant message id), it is authoritative: the same attempt is
+   * reported once, however many channels describe it. When it does not,
+   * the error text plus a short window stands in, which still collapses the
+   * channels of one attempt without merging a later, separate fault.
+   */
+  private alreadyRecorded(sessionID: string, failureClass: string, message: string, attemptKey?: string): boolean {
+    const now = Date.now()
+    const key = attemptKey
+      ? `${sessionID} ${failureClass} attempt:${attemptKey}`
+      : `${sessionID} ${failureClass} text:${message.slice(0, 200)}`
+    const previous = this.recordedFaults.get(key)
+    if (attemptKey) {
+      // An attempt identity is exact, so it never expires into a new fault.
+      if (previous !== undefined) return true
+    } else if (typeof previous === "number" && now - previous < FAULT_DEDUPE_WINDOW_MS) {
+      return true
+    }
+    this.recordedFaults.set(key, now)
+    // Keep the map bounded; entries older than the window are dead weight.
+    if (this.recordedFaults.size > 500) {
+      for (const [candidate, at] of this.recordedFaults) {
+        if (now - at >= FAULT_DEDUPE_WINDOW_MS) this.recordedFaults.delete(candidate)
+      }
+    }
+    return false
   }
 
   async handleEvent(event: any) {
@@ -1154,10 +1217,11 @@ export class RouterController {
         // carry an outcome. Recording these is what lets the router see a
         // model that keeps dropping streams.
         const outcome = typeof data.outcome === "string" ? data.outcome : undefined
+        const attemptKey = typeof data.assistantMessageID === "string" ? data.assistantMessageID : undefined
         if (type === "session.execution.failed" || outcome === "failed") {
-          await this.recordProviderFault(sessionID, "failed", data.error)
+          await this.recordProviderFault(sessionID, "failed", data.error, attemptKey)
         } else if (type === "session.execution.interrupted" || outcome === "interrupted") {
-          await this.recordProviderFault(sessionID, "interrupted", data.error)
+          await this.recordProviderFault(sessionID, "interrupted", data.error, attemptKey)
         }
         this.persistLedgerSoon()
       }
@@ -1187,7 +1251,10 @@ export class RouterController {
     if (type === "session.step.failed") {
       const sessionID = data.sessionID
       if (typeof sessionID !== "string") return
-      await this.recordProviderFault(sessionID, "failed", data.error)
+      // The assistant message id identifies the attempt, so the same
+      // attempt reported through several channels is counted once.
+      const attemptKey = typeof data.assistantMessageID === "string" ? data.assistantMessageID : undefined
+      await this.recordProviderFault(sessionID, "failed", data.error, attemptKey)
       this.persistLedgerSoon()
       return
     }

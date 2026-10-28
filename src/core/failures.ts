@@ -135,6 +135,19 @@ export const classifyFailure = (input: FailureInput, session?: SessionState): Fa
     ]) ||
     (/\[\s*5\d\d\s*\]/.test(message) && includes(message, ["stream", "response", "engine"]))
 
+  // A billing-scope resolution failure happens in the provider's own billing
+  // path before any model is selected. It would hit every model on that
+  // provider identically, so charging it to whichever model happened to be
+  // serving misattributes a provider-wide fault to one model and penalises
+  // a model that did nothing wrong.
+  const providerScopedBillingFault =
+    includes(message, [
+      "workspace_billing_scope_unavailable",
+      "billing_scope_unavailable",
+      "resolve billing scope",
+      "billing scope unavailable",
+    ]) || type.includes("billing_scope_unavailable")
+
   if (
     status === 502 ||
     status === 503 ||
@@ -158,9 +171,10 @@ export const classifyFailure = (input: FailureInput, session?: SessionState): Fa
       capabilityFailure: false,
       escalate: false,
       cooldownMs: 5 * 60_000,
-      reason:
-        "Provider capacity or outage; retry shortly or fail over. A stronger model would hit the same capacity limit, so no escalation is warranted.",
-      countAgainstModel: true,
+      reason: providerScopedBillingFault
+        ? "The provider's billing path could not resolve the account scope. This is provider-scoped, not a fault of the serving model, so it is not counted against the model's reliability."
+        : "Provider capacity or outage; retry shortly or fail over. A stronger model would hit the same capacity limit, so no escalation is warranted.",
+      countAgainstModel: !providerScopedBillingFault,
     }
   }
 
