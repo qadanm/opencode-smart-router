@@ -3,12 +3,15 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
+const mockState = vi.hoisted(() => ({ fail: true }))
+
 vi.mock("../src/core/routing/engine.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../src/core/routing/engine.js")>()
   return {
     ...actual,
-    routeTask: () => {
-      throw new Error("engine exploded")
+    routeTask: (...args: any[]) => {
+      if (mockState.fail) throw new Error("engine exploded")
+      return (actual.routeTask as any)(...args)
     },
   }
 })
@@ -18,7 +21,10 @@ import { sharedCore } from "../src/server/shared-core.js"
 import { makeCtx } from "./helpers/ctx.js"
 
 describe("routing exception policy", () => {
-  beforeEach(() => sharedCore.resetForTests())
+  beforeEach(() => {
+    mockState.fail = true
+    sharedCore.resetForTests()
+  })
 
   it("blocks admission when the routing engine throws", async () => {
     const fake = makeCtx(mkdtempSync(join(tmpdir(), "router-blocked-")))
@@ -45,6 +51,26 @@ describe("routing exception policy", () => {
     ).rejects.toBeInstanceOf(RouterBlockedError)
     const status = await fake.rpc().status({ sessionID: "ses_paused" })
     expect(status.lastDecision?.runtime).toBe("paused")
+    await controller.dispose()
+  })
+
+  it("clears BLOCKED after a successful routed prompt", async () => {
+    const fake = makeCtx(mkdtempSync(join(tmpdir(), "router-clear-blocked-")))
+    const controller = new RouterController({ ctx: fake.ctx, pluginOptions: fake.ctx.options })
+    await controller.initialize()
+    await expect(
+      fake.hooks.get("prompt")!({ sessionID: "ses_recover", prompt: { text: "Implement a feature in src/app.ts" } }),
+    ).rejects.toBeInstanceOf(RouterBlockedError)
+    let session = await fake.ctx.session.get({ sessionID: "ses_recover" })
+    expect(session.title).toContain("BLOCKED")
+
+    mockState.fail = false
+    await expect(
+      fake.hooks.get("prompt")!({ sessionID: "ses_recover", prompt: { text: "Implement a feature in src/app.ts" } }),
+    ).resolves.toBeUndefined()
+    await new Promise((resolve) => setTimeout(resolve, 25))
+    session = await fake.ctx.session.get({ sessionID: "ses_recover" })
+    expect(session.title).not.toContain("BLOCKED")
     await controller.dispose()
   })
 

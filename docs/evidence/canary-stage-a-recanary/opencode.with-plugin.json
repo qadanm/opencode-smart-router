@@ -1,0 +1,130 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugins": [
+    "/Users/muhammedqadan/Documents/opencode-router-canary/plugin"
+  ],
+  "model": "lab-cc/claude-haiku-5-5",
+  "providers": {
+    "lab-cc": {
+      "name": "Canary Mock",
+      "package": "@opencode/ai/providers/openai-compatible",
+      "settings": {
+        "baseURL": "http://127.0.0.1:4200/cc/v1",
+        "apiKey": "canary"
+      },
+      "models": {
+        "claude-haiku-5-5": {
+          "name": "Canary Haiku",
+          "limit": {
+            "context": 1000000,
+            "output": 128000
+          },
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text",
+              "image"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "cost": [
+            {
+              "input": 0.1,
+              "output": 0.5,
+              "cache": {
+                "read": 0.01,
+                "write": 0.125
+              }
+            }
+          ]
+        },
+        "deepseek-v4.1-flash": {
+          "name": "Canary DeepSeek",
+          "limit": {
+            "context": 1000000,
+            "output": 384000
+          },
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text",
+              "image"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "cost": [
+            {
+              "input": 0.15,
+              "output": 0.6,
+              "cache": {
+                "read": 0.003,
+                "write": 0
+              }
+            }
+          ]
+        },
+        "glm-5.3-flash": {
+          "name": "Canary GLM Premium",
+          "limit": {
+            "context": 1000000,
+            "output": 131072
+          },
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text",
+              "image",
+              "video"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "cost": [
+            {
+              "input": 0.15,
+              "output": 0.5,
+              "cache": {
+                "read": 0.03,
+                "write": 0
+              }
+            }
+          ]
+        },
+        "mimo-v2.6-flash": {
+          "name": "Canary MiMo Unapproved",
+          "limit": {
+            "context": 1048576,
+            "output": 131072
+          },
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text",
+              "image",
+              "audio",
+              "video"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "cost": [
+            {
+              "input": 0.14,
+              "output": 0.28,
+              "cache": {
+                "read": 0.0028,
+                "write": 0
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

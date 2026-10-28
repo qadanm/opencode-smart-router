@@ -1,0 +1,45 @@
+--- command no-resume ---
+command_http=204
+mock_before=0 mock_after=0
+context_types=[]
+--- fail-closed + recovery + title clear ---
+reload_disable=204
+blocked_http=500
+blocked_mock_before=0 blocked_mock_after=0
+blocked_title=BLOCKED · lab-cc · Canary Haiku — fix blocked
+reload_restore=204
+recovered_http=200
+{"title":"AUTO · lab-cc · Canary Haiku — fix blocked","outcome":"succeeded","model":{"id":"claude-haiku-5-5","providerID":"lab-cc","variant":"default"}}
+--- manual + resume title ---
+switch_http=204
+manual_title=MANUAL · lab-cc · Canary DeepSeek — fix resume
+resume_http=200
+auto_title=AUTO · lab-cc · Canary DeepSeek — fix resume
+--- command output visibility ---
+command_http=204
+context_after_command=[]
+follow_prompt=200
+context_after_prompt=[{"type":"synthetic","text":"null"},{"type":"user","text":"null"},{"type":"assistant","text":"[{\"type\":\"text\",\"text\":\"ok\"}]"},{"type":"idle","text":"null"}]
+--- process restart ---
+new_pid=51951
+commands=0
+{"coreID":"y522py32","pid":51951,"bridgeCount":1,"setups":1,"eventStreams":1,"errors":0}
+recovered_title_after_restart=AUTO · lab-cc · Canary Haiku — fix status visible
+thrash=0 errors=0
+commands_retry=16
+--- rollback ---
+context_before=0
+rollback_reload=204
+commands_after_remove=0
+ordinary_prompt=404
+context_after=0
+footprint:
+    phys_footprint: 213 MB
+    phys_footprint_peak: 294 MB
+
+--- rollback with valid session ---
+rollback_sid=ses_e7f72afb7ffeVhUMHPcCIwXLv0
+context_before=4
+ordinary_prompt=200
+context_after=7
+{"title":"AUTO · lab-cc · Canary Haiku — fix status visible","outcome":"succeeded"}

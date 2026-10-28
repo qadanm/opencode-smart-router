@@ -386,6 +386,28 @@ describe("plugin controller integration", () => {
     await a.dispose()
   })
 
+  it("does not resume the model for command output", async () => {
+    const fake = makeCtx(mkdtempSync(join(tmpdir(), "router-command-")))
+    const controller = new RouterController({ ctx: fake.ctx, pluginOptions: fake.ctx.options })
+    await controller.initialize()
+    await fake.commands.get("router-status")!({ sessionID: "ses_status" })
+    expect(fake.syntheticCalls.at(-1)?.resume).toBe(false)
+    await controller.dispose()
+  })
+
+  it("refreshes the title from the actual current model on resumeAuto", async () => {
+    const fake = makeCtx(mkdtempSync(join(tmpdir(), "router-resume-")))
+    const session = await fake.ctx.session.get({ sessionID: "ses_resume" })
+    session.model = { providerID: "opencode-go", id: "deepseek-v4.1-flash" }
+    const controller = new RouterController({ ctx: fake.ctx, pluginOptions: fake.ctx.options })
+    await controller.initialize()
+    await fake.rpc().resumeAuto({ sessionID: "ses_resume" })
+    await new Promise((resolve) => setTimeout(resolve, 25))
+    const updated = await fake.ctx.session.get({ sessionID: "ses_resume" })
+    expect(updated.title).toContain("DeepSeek")
+    await controller.dispose()
+  })
+
   it("waits for an in-flight core teardown before reviving", async () => {
     const first = makeCtx(mkdtempSync(join(tmpdir(), "router-revive-a-")))
     const second = makeCtx(mkdtempSync(join(tmpdir(), "router-revive-b-")))

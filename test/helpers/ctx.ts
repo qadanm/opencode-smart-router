@@ -43,6 +43,7 @@ export const makeCtx = (directory: string) => {
   const commands = new Map<string, (input: any) => Promise<void>>()
   const switched: Array<{ sessionID: string; model: any }> = []
   const notices: string[] = []
+  const syntheticCalls: any[] = []
   const sessions = new Map<string, any>()
   const titles = new Map<string, string>()
   let rpcImpl: any
@@ -91,8 +92,9 @@ export const makeCtx = (directory: string) => {
         switched.push({ sessionID, model })
       },
       list: async () => ({ data: [] }),
-      synthetic: async ({ text }: any) => {
-        notices.push(text)
+      synthetic: async (input: any) => {
+        syntheticCalls.push(input)
+        notices.push(input.text)
       },
       update: async ({ sessionID, title }: any) => {
         const session = await ctx.session.get({ sessionID })
@@ -122,5 +124,5 @@ export const makeCtx = (directory: string) => {
       },
     },
   }
-  return { ctx, hooks, commands, switched, notices, sessions, titles, rpc: () => rpcImpl }
+  return { ctx, hooks, commands, switched, notices, syntheticCalls, sessions, titles, rpc: () => rpcImpl }
 }

@@ -682,6 +682,11 @@ export class RouterController {
     const settings = this.settings
     await this.loadSessionInfo(sessionID)
     const session = this.sessionState(sessionID)
+    // A new prompt supersedes a previous blocked admission. If this prompt
+    // blocks again, markBlocked sets the title again.
+    if (session.indicatorTitle?.startsWith("BLOCKED ·")) {
+      this.ledger.patchSession(sessionID, { indicatorTitle: undefined })
+    }
     const runtime = !settings.enabled || this.runtime.paused === true ? "paused" : session.manualOverride ? "manual" : "automatic"
     void this.ensureContextTokens(sessionID)
 
@@ -1138,10 +1143,11 @@ export class RouterController {
       },
       resumeAuto: async (input: any) => {
         const sessionID = input.sessionID
+        await this.loadSessionInfo(sessionID)
         this.ledger.clearManual(sessionID)
         this.ledger.patchSession(sessionID, { pinnedModel: undefined, paused: false, premiumOneShot: false })
         this.persistLedgerSoon()
-        void this.queueTitle(sessionID)
+        await this.queueTitle(sessionID)
         this.modelNotice(sessionID, "AUTO", this.ledger.getSession(sessionID)?.lastModel, "automatic routing resumed")
         const summary = this.statusFor(sessionID)
         void this.emit("status", { sessionID, summary })
@@ -1295,7 +1301,7 @@ export class RouterController {
   private async registerCommands() {
     const notice = async (sessionID: string, text: string) => {
       try {
-        await this.ctx.session.synthetic({ sessionID, text, description: "Smart Router" })
+        await this.ctx.session.synthetic({ sessionID, text, description: "Smart Router", resume: false })
       } catch (error) {
         this.settingsWarnings.push(`Could not display router command output: ${safeError(error)}`)
       }
