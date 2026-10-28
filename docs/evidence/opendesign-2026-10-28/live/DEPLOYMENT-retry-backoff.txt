@@ -1,0 +1,40 @@
+Retry backoff for provider-scoped failures - live deployment
+=============================================================
+Deployed at : 2026-10-28T20:34:07Z
+Artifact    : d0fa05ee59cd338b20bf493a4b49b4ad08ff4e5fc581826090575b1ff7cb6182
+Code commit : 6c48d5b
+Previous    : c3e2652aeb7e701403572e1bf32bd3b72d951f2b6def4bbb1d7d763c706473e9
+Rollback    : ~/Documents/opencode-smart-router-backups/20261028-133329-retry-backoff/rollback.sh
+
+Why
+---
+Measured over the live incident: the gateway fails ~5.5% of requests, and
+16.7% of turns still died terminally. The failures come in runs - the gateway
+is slow for a stretch, and every immediate retry landed inside the same
+stretch and died with it, leaving the turn stopped until the owner typed
+continue.
+
+A provider-scoped failure is refused before a model runs, so an attempt costs
+no allowance. The router now backs off between attempts (5s, 10s, 20s, 40s,
+five attempts) so a retry lands after the bad stretch passes. Model-scoped
+stream faults keep the short path (immediate retry, cap 3), since those are
+usually one-offs.
+
+Probe evidence (all with the owner's authorization)
+---------------------------------------------------
+  20 small non-streaming probes : 19/20 ok (1 connection drop mid-response)
+  8 x ~100K-token probes        : 8/8 ok, 2.7-7.9s
+  12 concurrent probes          : 12/12 ok
+  15 streaming probes           : 14/15 ok (1 x 503 workspace_billing_scope_
+                                  unavailable - the live error reproduced)
+  -> ~5% failure rate in controlled probes, matching the live rate. Size and
+     concurrency do not drive it; the gateway's own latency does.
+
+Verified after restart
+----------------------
+  - Running artifact sha256 matches the deployed artifact
+  - Router: enabled, balanced, automatic, dry-run off, premium off
+  - The adaptive-polish session is back on automatic (manualOverride false)
+  - Shared core: one coreID, one event stream, 7 bridges, 0 errors
+
+Tests: 204 passing (201 before, 3 new), typecheck clean.
