@@ -1,0 +1,6 @@
+final artifact 20-project gate 2026-10-28T02:00:02Z
+mock_chats=20
+diag={"coreID":"73ejejy0","pid":1762,"bridgeCount":21,"setups":21,"disposes":0,"eventStreams":1,"errors":0}
+commands_p1_p10_p20=16 16 16
+thrash=0
+server_errors=0

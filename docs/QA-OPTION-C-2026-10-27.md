@@ -1,81 +1,97 @@
 # QA — Option C implementation
 
 **Date:** 2026-10-27/28
-**Branch:** `option-c` (baseline `af28882`)
+**Branch:** `option-c` (baseline `af28882`, HEAD `9577da3`)
 **Status:** implementation and isolated verification complete; **live installation not performed**
-**Artifact:** `dist/index.js`, SHA-256 `6e793e1fbc9a28fe484a3ac4a30afb479a5281d2320aab1ef7c863ca162139aa`, 213 KB
+
+## Artifacts
+
+| Build | SHA-256 | Size | What it covers |
+|---|---|---:|---|
+| 30-minute soak build | `6e793e1fbc9a28fe484a3ac4a30afb479a5281d2320aab1ef7c863ca162139aa` | 213 KB | Full 30-minute soak, outage/recovery, large context, reloads |
+| Final review build | `f2e76af0fc6c889e5693308309128067d99f551b272538492836049a5e4dbe74` | 220 KB | 95 tests, 20-project gate, 3 cold starts, fail-closed |
+
+The final build adds five review fixes after the soak: teardown barrier, setup-failure fallback hook, retry-after clamp, accurate failed-decision runtime, and immediate fire-and-forget persistence on dispose. Those changes are unit-tested; a fresh 30-minute soak of the final build remains a canary gate.
 
 ## 1. Scope
 
 Implemented the approved Option C (repair and simplify) plan:
 
 1. Removed the module-level controller from `src/index.ts`. The shared core's bridge registry is the only lifecycle owner.
-2. Made bridge disposal non-blocking for storage. The core flushes on debounce or at the end of the 10-second grace period.
-3. Moved the live model catalog fetch into the core: one single-flight fetch per process, 5-minute cache. Bridges rebuild their own registries from the shared list.
-4. Added a bounded negative-ownership cache so unowned session events do not trigger a storage read on every event.
+2. Made bridge disposal non-blocking for storage; the core flushes on the grace timer.
+3. Moved the live model catalog fetch into the core: one single-flight fetch per process, 5-minute cache.
+4. Added a bounded negative-ownership cache for unowned session events.
 5. Made fail-closed exception-safe: every unexpected routing failure records a failed decision, marks the session `BLOCKED`, and throws `RouterBlockedError` unless `routing.failClosed` is explicitly false.
-6. Hardened model definitions: missing `cache` prices normalize to zero; non-finite/negative prices are rejected with warnings; definitions without a usable cost tier are ignored.
-7. Made `estimateTaskCost` defensive for live catalog entries that omit cache pricing.
-8. Carried provider `retry-after` into quota snapshots and made the quota service honor it.
-9. Removed the per-bridge quota-service fallback. A bridge refuses to initialize without the core quota service.
+6. Hardened model definitions: missing `cache` prices normalize to zero; non-finite/negative prices are rejected; definitions without a usable cost tier are ignored.
+7. Made `estimateTaskCost` defensive for catalog entries that omit cache pricing.
+8. Carried provider `retry-after` through quota snapshots, clamped it to 15 minutes, and honored it in the scheduler.
+9. Removed the per-bridge quota-service fallback; a bridge refuses to initialize without the core quota service.
+
+### Review fixes (after the soak)
+
+- **Teardown barrier:** `init()` waits for an in-flight `dispose()`; the event stream is aborted during teardown. This closes the last-bridge/new-setup zombie race.
+- **Setup failure is fail-closed:** if bridge initialization throws, a minimal prompt hook blocks prompts for that location instead of silently running with no router. The error is recorded in diagnostics.
+- **Retry-after bound:** provider delays are clamped to 15 minutes, matching the backoff ceiling.
+- **Accurate runtime:** a failed decision records paused/manual/automatic correctly.
+- **Persistence:** dispose starts the ledger write immediately (fire-and-forget) instead of deferring it 750 ms.
 
 ## 2. Automated checks
 
 ```text
 npm run typecheck  → clean
-npm test           → 9 files, 92 tests passed
+npm test           → 9 files, 95 tests passed
 ```
 
 New tests cover:
 
-- two independent entry setups create two bridges without disposing the first;
-- dispose does not wait for a stalled storage write;
+- two entry setups create two bridges without disposing the first;
+- dispose does not wait for a stalled storage write and starts the write;
+- an in-flight core teardown blocks revival until it finishes;
 - one catalog fetch across two bridges;
-- an unowned event does not re-read the same session;
-- a bridge setup failure is isolated and recorded;
+- unowned events do not re-read the same session;
+- a setup failure is isolated, recorded, and leaves a fail-closed prompt hook;
 - routing-engine exceptions block when fail-closed is on and are recorded when off;
-- cost tiers without cache are normalized; unusable cost tiers are rejected;
+- failed decisions report paused runtime;
+- cost tiers without cache are normalized; unusable tiers are rejected;
 - `estimateTaskCost` does not throw on a cache-less tier;
-- quota probes honor `retry-after`; concurrent refreshes share one request; disabled providers are not probed;
+- quota probes honor and clamp `retry-after`; concurrent refreshes share one request; disabled providers are not probed;
 - a bridge refuses to create a second quota service.
 
 ## 3. Isolated lab
 
-- OpenCode 2.1.4, separate `HOME`/data/cache, ports 4212 and 4213.
+- OpenCode 2.1.4, separate `HOME`/data/cache, ports 4212/4213.
 - Mock OpenAI-compatible provider at `127.0.0.1:4200` with fake `lab` keys.
 - 20 project locations; routing target `lab-cc`.
 - No real provider credentials, no real credits.
 
-### Initial 20-project gate
+### Final-build 20-project gate
 
 - 20/20 prompts succeeded.
 - One core id, 21 bridges, one event stream.
-- 16 router commands in sampled p1 and p20.
+- 16 router commands in sampled p1, p10, p20.
 - Zero thrash warnings, zero server errors.
 
-### Fail-closed gate (final artifact)
+### Final-build fail-closed gate
 
 ```text
 prompt_http=500
-title=BLOCKED · Go · GPT-6 Luna — blocked final
+title=BLOCKED · Go · GPT-6 Luna — blocked final artifact
 decision={"indicator":"BLOCKED","error":"Provider is disabled in router settings","switched":false}
 server_errors=0
 response_bytes=0
 ```
 
-No provider request was made. Evidence: `docs/evidence/option-c/fail-closed.txt`.
-
-### Cold starts (final artifact, 3 rounds)
+### Final-build cold starts (3 rounds)
 
 ```text
-round=1 oldPid=96191 newPid=96347 core=mjx830ef bridges=1 commandsP1=16 title=AUTO · lab-cc · Lab DeepSeek V4.1 Flash — final10 p1
-round=2 oldPid=96347 newPid=96423 core=g3511p56 bridges=1 commandsP1=16 title=AUTO · lab-cc · Lab DeepSeek V4.1 Flash — final10 p1
-round=3 oldPid=96423 newPid=96486 core=wqfvzrl9 bridges=1 commandsP1=16 title=AUTO · lab-cc · Lab DeepSeek V4.1 Flash — final10 p1
+round=1 oldPid=1762 newPid=1952 core=hs9uej25 bridges=1 commandsP1=16 title=AUTO · lab-cc · Lab DeepSeek V4.1 Flash — final10 p1
+round=2 oldPid=1952 newPid=2017 core=dg92pd43 bridges=1 commandsP1=16 title=AUTO · lab-cc · Lab DeepSeek V4.1 Flash — final10 p1
+round=3 oldPid=2017 newPid=2082 core=x9rhpwv1 bridges=1 commandsP1=16 title=AUTO · lab-cc · Lab DeepSeek V4.1 Flash — final10 p1
 ```
 
-Each round produced a fresh PID and core, one default-location bridge, 16 commands, the correct restored title, zero thrash and zero errors. A post-restart prompt succeeded on `lab-cc/deepseek-v4.1-flash` with title `AUTO`. Evidence: `docs/evidence/option-c/cold-start.txt`.
+Each round: fresh PID and core, one default-location bridge, 16 commands, correct restored title, zero thrash, zero errors.
 
-### 30-minute soak (final artifact)
+### 30-minute soak (pre-review build `6e793e…`)
 
 | Metric | Result |
 |---|---|
@@ -95,60 +111,59 @@ Each round produced a fresh PID and core, one default-location bridge, 16 comman
 | RSS after run (31 min) | 177 MB |
 | Post-run commands | 16 in p1, p10, p20 |
 | Large-context prompt | succeeded on `lab-cc/deepseek-v4.1-flash` |
-| Outage recovery | second prompt succeeded after mock restart |
+| Outage recovery | succeeded after mock restart |
 
 Evidence: `docs/evidence/option-c/soak-summary.json`, `soak-metrics.jsonl`, `soak-events.txt`, `expected-outage-error.txt`.
 
 ## 4. Comparison with the prior 30-minute soak
 
-The prior soak used the pre-Option-C build and a more aggressive reload harness.
+Prior build = pre-Option-C. The prior harness reloaded more frequently.
 
-| Metric | Prior build | Option C | Reading |
+| Metric | Prior build | Option C soak build | Reading |
 |---|---:|---:|---|
 | Mock requests / 30 min | 1,352 | 1,528 | Comparable, slightly higher workload |
 | Events handled | 293,330 | 17,255 | **~17× lower per minute** |
 | Events ignored | 305,199 | 3,321 | **~92× lower per minute** |
 | Core / stream | 1 / 1 | 1 / 1 | Same |
 | Bridges | 21 | 21 | Same |
-| Setups / disposes | 483 / 462 | 63 / 42 | Different reload frequency; current counts are two clean reloads |
+| Setups / disposes | 483 / 462 | 63 / 42 | Different reload frequency; two clean reloads |
 | RSS min / max / last | 153 / 647 / 240 MB | 321 / 710 / 557 MB | Peak ~10% higher; settled to 177 MB after the run |
 | Plugin errors / thrash | 0 / 0 | 0 / 0 | Same |
 
-**Conclusion:** the refactor clearly improves event-processing load and keeps the lifecycle stable across two plugin reloads. Throughput is comparable. Memory is not proven better: the peak is slightly higher and the last sample is higher, but the process settled to 177 MB after the run and showed no monotonic growth. A longer memory-focused run would be needed to make a stronger claim.
+**Conclusion:** event-processing load is dramatically lower and the lifecycle stays stable across two reloads. Throughput is comparable. Memory is not proven better: the peak is ~10% higher and the last sample is higher, but the process settled to 177 MB and showed no monotonic growth. A longer memory-focused run is still useful.
 
 ## 5. Harness defects found and fixed
 
 These were test-harness problems, not plugin crashes:
 
-1. **Soak outage step killed the server under test.** `lsof -ti tcp:4200` matched both the mock listener and the OpenCode server's outbound connection to the mock. The first run's server stopped gracefully at the 15-minute mark with no error. The harness now uses `-sTCP:LISTEN` and aborts if the server becomes unreachable.
-2. **Cold-start harness hung on a command-substitution pipe.** `PASS=$(start_server ...)` waited because the background server inherited the substitution pipe. The harness now detaches the server with `nohup ... < /dev/null`, sets `PASS` directly, waits for `/api/info`, and bounds every curl.
-3. **Cold-start queried diagnostics too early.** Fixed with a readiness loop and `--max-time`.
+1. **Soak outage killed the server under test.** `lsof -ti tcp:4200` matched both the mock listener and the OpenCode server's outbound connection. The server stopped gracefully at the 15-minute mark with no error. Fixed with `-sTCP:LISTEN` and a server-liveness abort.
+2. **Cold-start command-substitution hang.** `PASS=$(start_server ...)` waited because the background server inherited the pipe. Fixed with `nohup ... < /dev/null`, direct `PASS`, readiness polling, and bounded curl.
+3. **Cold-start queried diagnostics too early.** Fixed with a readiness loop.
 
-The invalidated 15-minute run is not counted in the results above.
+The invalidated first 15-minute attempt is not counted.
 
 ## 6. Remaining risks / deferred items
 
 | Item | Severity | Note |
 |---|---|---|
+| Fresh 30-minute soak of final build | Release gate | The 30-minute run predates the five review fixes; final build passed the short gate |
 | Live canary not run | Release gate | Requires explicit approval; no live config touched |
-| Stale ownership entries after bridge disposal | Minor | Self-heals on the next event; bounded at 2,000 |
-| Last-bridge final-flush vs new-bridge race | Minor | Narrow window; not observed in the lab |
-| Catalog cache does not rebuild bridge registries on a later provider connection | Minor | Restart or a future refresh hook needed |
-| Quota polling remains 5 minutes, prompt-triggered | Intentional | Undocumented endpoints; one request per provider per interval |
+| Stale ownership entries after bridge disposal | Minor | Self-heals on next event; bounded at 2,000 |
+| Catalog cache does not rebuild bridge registries on a later provider connection | Minor | Restart or future refresh hook |
+| Quota polling remains 5 minutes, prompt-triggered | Intentional | Undocumented endpoints; single-flight |
 | License undecided | Housekeeping | No `LICENSE` added without the owner's choice |
-| Cold-start first command query can transiently return 0 before the location command cache warms | Minor | Observed once; retry returned 16; not reproduced after the readiness fix |
 
 ## 7. Deployment plan — not executed
 
 1. Snapshot `~/.config/opencode/opencode.json`.
 2. Enable the plugin for **one canary project only**, not globally.
 3. Restart the desktop server with explicit approval.
-4. Verify: plugin active, one core id, one event stream, one bridge for the canary, 16 commands, no thrash warnings.
-5. Run one prompt; verify the title and model selection.
-6. Observe for 24–48 hours: memory, command availability, server stability, prompt interruptions.
+4. Verify: plugin active, one core id, one event stream, one bridge for the canary, 16 commands, no thrash.
+5. Run one prompt; verify title and model selection.
+6. Observe 24–48 hours: memory, command availability, server stability, prompt interruptions.
 7. Only then consider global enablement, with a second approval.
 
-**Rollback:** remove the project-scoped plugin entry, restart the server (approval required), restore the config snapshot if needed. The plugin makes no billing or credential changes.
+**Rollback:** remove the project-scoped plugin entry, restart, restore the config snapshot if needed. No billing or credential changes.
 
 ## 8. Stop condition
 

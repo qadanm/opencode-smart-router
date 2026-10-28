@@ -1,0 +1,7 @@
+fail-closed final artifact 2026-10-28T01:59:26Z
+sid=ses_e7fc42dc1ffePw414DHoTJyv1O
+prompt_http=500
+title=BLOCKED · Go · GPT-6 Luna — blocked final artifact
+decision={"indicator":"BLOCKED","error":"Provider is disabled in router settings","switched":false}
+server_errors=0
+response_bytes=       0
