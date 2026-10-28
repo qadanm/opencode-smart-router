@@ -1,0 +1,3 @@
+commands=16 dir=/Users/muhammedqadan/Documents/Default Project
+commands=16 dir=/Users/muhammedqadan/Documents/dev/car-spotter-game
+commands=16 dir=/Users/muhammedqadan/Code/vinly

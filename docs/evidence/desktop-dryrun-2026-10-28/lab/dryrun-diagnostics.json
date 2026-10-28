@@ -1,0 +1,55 @@
+{
+  "coreID": "616y8fsl",
+  "pid": 40694,
+  "createdAt": 1793166023462,
+  "uptimeMs": 56890,
+  "bridges": [
+    {
+      "id": "bridge-40694-1",
+      "directory": "/private/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T/opencode/smart-router-lab10",
+      "createdAt": 1793166023657
+    },
+    {
+      "id": "bridge-40694-2",
+      "directory": "/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T//opencode/smart-router-lab10/projects/p1",
+      "createdAt": 1793166034561
+    },
+    {
+      "id": "bridge-40694-3",
+      "directory": "/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T//opencode/smart-router-lab10/projects/p2",
+      "createdAt": 1793166053765
+    },
+    {
+      "id": "bridge-40694-4",
+      "directory": "/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T//opencode/smart-router-lab10/projects/p3",
+      "createdAt": 1793166054749
+    },
+    {
+      "id": "bridge-40694-5",
+      "directory": "/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T//opencode/smart-router-lab10/projects/p4",
+      "createdAt": 1793166054975
+    },
+    {
+      "id": "bridge-40694-6",
+      "directory": "/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T//opencode/smart-router-lab10/projects/p5",
+      "createdAt": 1793166055131
+    }
+  ],
+  "bridgeCount": 6,
+  "setups": 6,
+  "disposes": 0,
+  "ledgerEvents": 2000,
+  "decisions": 120,
+  "sessions": 32,
+  "quotaSnapshots": 0,
+  "quotaRefreshes": 0,
+  "ledgerWrites": 4,
+  "quotaWrites": 0,
+  "lastLedgerWriteAt": 1793166055831,
+  "quotaInitialized": true,
+  "bootstrapped": true,
+  "eventsHandled": 60,
+  "eventsIgnored": 68,
+  "eventStreams": 1,
+  "errors": []
+}

@@ -1,0 +1,6 @@
+commands=16 dir=/private/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T/opencode/smart-router-lab10
+commands=16 dir=/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T//opencode/smart-router-lab10/projects/p1
+commands=16 dir=/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T//opencode/smart-router-lab10/projects/p2
+commands=16 dir=/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T//opencode/smart-router-lab10/projects/p3
+commands=16 dir=/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T//opencode/smart-router-lab10/projects/p4
+commands=16 dir=/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T//opencode/smart-router-lab10/projects/p5

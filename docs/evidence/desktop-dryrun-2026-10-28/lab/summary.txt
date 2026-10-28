@@ -1,0 +1,2 @@
+artifact=8c71c46c5f7616f950c6a3fcf5c42be2198407848cf9ffac15d01504496f8920  /var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T//opencode/smart-router-lab10/plugin/index.js
+core=616y8fsl pid=40694 bridges=6 streams=1 errors=0

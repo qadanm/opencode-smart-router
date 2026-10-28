@@ -4,7 +4,7 @@
 >
 > **Stage A result (2026-10-28): PASS on the prior artifact `e65326c9…` (commit `6099a3d`).** The full 30-minute soak and Stage A matrix passed. **Stage B limited verification is also complete** with 2 Go and 2 Command Code requests. No broader deployment is authorized.
 
-**Status:** prepared only; nothing in this document has been run against the live environment.
+**Status:** the isolated canary plan remains prepared only. A **desktop dry-run deployment** is active as of 2026-10-28 (automatic routing off); see [DESKTOP-DRY-RUN-2026-10-28.md](DESKTOP-DRY-RUN-2026-10-28.md).
 **Artifact:** `dist-release/index.js`
 **SHA-256:** `8c71c46c5f7616f950c6a3fcf5c42be2198407848cf9ffac15d01504496f8920`
 **Code commit:** `e8fa5ac`

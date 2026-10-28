@@ -1,0 +1,76 @@
+{
+  "coreID": "eimkk4hz",
+  "pid": 90727,
+  "createdAt": 1793166132662,
+  "uptimeMs": 181458,
+  "bridges": [
+    {
+      "id": "bridge-90727-9",
+      "directory": "/Users/muhammedqadan/Documents/dev/car-spotter-game",
+      "createdAt": 1793166133696
+    },
+    {
+      "id": "bridge-90727-14",
+      "directory": "/Users/muhammedqadan/Documents/Default Project",
+      "createdAt": 1793166142392
+    },
+    {
+      "id": "bridge-90727-16",
+      "directory": "/Users/muhammedqadan/Documents/dev/car-spotter-game",
+      "createdAt": 1793166142409
+    },
+    {
+      "id": "bridge-90727-17",
+      "directory": "/Users/muhammedqadan",
+      "createdAt": 1793166142848
+    },
+    {
+      "id": "bridge-90727-19",
+      "directory": "/Users/muhammedqadan/Code/vinly",
+      "createdAt": 1793166267411
+    },
+    {
+      "id": "bridge-90727-20",
+      "directory": "/tmp/vision/",
+      "createdAt": 1793166267434
+    },
+    {
+      "id": "bridge-90727-21",
+      "directory": "/Users/muhammedqadan/Artwork/qadantravels-studio/carousel-studio",
+      "createdAt": 1793166267489
+    },
+    {
+      "id": "bridge-90727-22",
+      "directory": "/Users/muhammedqadan/Documents/dev/MIT",
+      "createdAt": 1793166267535
+    },
+    {
+      "id": "bridge-90727-23",
+      "directory": "/tmp/",
+      "createdAt": 1793166267603
+    },
+    {
+      "id": "bridge-90727-24",
+      "directory": "/Users/muhammedqadan/.local/share/opencode/worktree/aa104f/web/guides-2026-10-23",
+      "createdAt": 1793166268310
+    }
+  ],
+  "bridgeCount": 10,
+  "setups": 24,
+  "disposes": 14,
+  "ledgerEvents": 91,
+  "decisions": 0,
+  "sessions": 4,
+  "quotaSnapshots": 2,
+  "quotaRefreshes": 2,
+  "ledgerWrites": 31,
+  "quotaWrites": 1,
+  "lastLedgerWriteAt": 1793166282403,
+  "lastQuotaWriteAt": 1793166135911,
+  "quotaInitialized": true,
+  "bootstrapped": true,
+  "eventsHandled": 864,
+  "eventsIgnored": 1919,
+  "eventStreams": 1,
+  "errors": []
+}

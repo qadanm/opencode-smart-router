@@ -1,19 +1,21 @@
 # OpenCode Smart Router
 
-> **Status 2026-10-27: live plugin disabled after server restarts.**
-> The source is preserved, but the plugin is no longer loaded by the desktop app. See
-> [docs/STATUS-2026-10-27.md](docs/STATUS-2026-10-27.md) for the incident, the disabled
-> install path, and the required shared-core fix before re-enabling.
+> **Status 2026-10-28: desktop dry-run deployment active.**
+> The verified artifact is installed in the live desktop in **dry-run mode**. Automatic
+> routing, premium escalation, and purchased-credit use are disabled. See
+> [docs/DESKTOP-DRY-RUN-2026-10-28.md](docs/DESKTOP-DRY-RUN-2026-10-28.md) for the
+> deployment, backup/rollback, verification, and promotion criteria. The 2026-10-27
+> incident remains historical in [docs/STATUS-2026-10-27.md](docs/STATUS-2026-10-27.md).
 
 A local, deterministic model router for the OpenCode macOS desktop app. It chooses the least quota-expensive model that can complete the current task to the required standard, then switches the session before the request is dispatched.
 
-The intended global install path for **OpenCode 2.1.4** is:
+The current install path for **OpenCode 2.1.4** is:
 
 ```text
 ~/.config/opencode/plugins/opencode-smart-router
 ```
 
-The current live installation is disabled. The routing engine and UX code remain in this source tree. It does not require a separate daemon or dashboard.
+The live installation is dry-run only; automatic routing is not enabled. The routing engine and UX code remain in this source tree. It does not require a separate daemon or dashboard.
 
 ## What it does
 
@@ -126,13 +128,14 @@ No model is called to make the routing decision.
 
 ## Installation and verification
 
-See [docs/INSTALL.md](docs/INSTALL.md). The plugin is **not installed in the live desktop**; the live config and service have not been modified. A previous config backup, if present, is:
+See [docs/INSTALL.md](docs/INSTALL.md). The plugin is installed in the live desktop in **dry-run** mode as of 2026-10-28; automatic routing is not enabled. The pre-deployment backup and independent rollback are:
 
 ```text
-~/.config/opencode/opencode.json.bak-smart-router-20261027-150549
+~/Documents/opencode-smart-router-backups/20261027-223912
+~/Documents/opencode-smart-router-backups/20261027-223912/rollback.sh
 ```
 
-To install or remove the plugin, see [docs/INSTALL.md](docs/INSTALL.md).
+To install, verify, or remove the plugin, see [docs/INSTALL.md](docs/INSTALL.md).
 
 ## Known limitations
 

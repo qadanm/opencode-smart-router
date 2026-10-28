@@ -1,0 +1,301 @@
+{
+  "settings": {
+    "enabled": true,
+    "mode": "balanced",
+    "dryRun": true,
+    "compactMode": false,
+    "compact": false,
+    "providers": {
+      "opencode-go": {
+        "enabled": true,
+        "plan": "go-plus",
+        "reserveMonthlyPct": 10,
+        "reserveWeeklyPct": 15,
+        "reserveFiveHourPct": 10,
+        "allowExtraUsage": false,
+        "probeUsage": true
+      },
+      "commandcode": {
+        "enabled": true,
+        "plan": "goat",
+        "reserveMonthlyPct": 10,
+        "reserveWeeklyPct": 15,
+        "reserveFiveHourPct": 10,
+        "allowExtraUsage": false,
+        "probeUsage": true,
+        "monthlyCreditsUsd": 70,
+        "fiveHourCapUsd": 14,
+        "weeklyCapUsd": 35
+      }
+    },
+    "privacy": {
+      "allowTrainingModels": false,
+      "allowFreeModels": false,
+      "requireZdr": false
+    },
+    "premium": {
+      "mode": "off",
+      "monthlyBudgetUsd": 0,
+      "oneShotApproval": false
+    },
+    "routing": {
+      "intelligenceFloor": 39.5,
+      "designFloor": 60,
+      "sophisticatedDesignFloor": 75,
+      "switchHysteresisPct": 20,
+      "largeContextTokens": 300000,
+      "largeContextHysteresisPct": 35,
+      "maxEscalationsPerTask": 2,
+      "preferSameProvider": true,
+      "failClosed": true
+    },
+    "quota": {
+      "probeOpenCodeGo": true,
+      "probeCommandCode": true,
+      "probeIntervalMinutes": 5,
+      "bootstrapSessions": 20,
+      "bootstrapDays": 31
+    },
+    "contextHealth": {
+      "enabled": true,
+      "warnAtTokens": 400000,
+      "recommendAtTokens": 700000
+    },
+    "ui": {
+      "titleIndicator": true,
+      "notifications": true,
+      "compactMode": false,
+      "compact": false
+    },
+    "logging": {
+      "storePromptText": false,
+      "decisionLogSize": 100,
+      "diagnostics": true
+    },
+    "models": {
+      "approved": [],
+      "excluded": [],
+      "tierOverrides": {},
+      "definitions": []
+    }
+  },
+  "sources": [
+    "plugin options",
+    "/Users/muhammedqadan/.config/opencode/smart-router.json"
+  ],
+  "warnings": [],
+  "runtime": {
+    "paused": false,
+    "titleIndicator": true
+  },
+  "ledgerUpdatedAt": 1793166237487,
+  "models": [
+    {
+      "key": "opencode-go/gpt-6-luna",
+      "tier": 1,
+      "intelligence": 38.1,
+      "design": 55,
+      "premium": false,
+      "training": false,
+      "monthlyAllowanceUsd": 60
+    },
+    {
+      "key": "opencode-go/mimo-v2.6-flash",
+      "tier": 1,
+      "intelligence": 37.9,
+      "design": 50,
+      "premium": false,
+      "training": false,
+      "monthlyAllowanceUsd": 120
+    },
+    {
+      "key": "opencode-go/hy3",
+      "tier": 1,
+      "intelligence": 25.3,
+      "design": 45,
+      "premium": false,
+      "training": false,
+      "monthlyAllowanceUsd": 240
+    },
+    {
+      "key": "opencode-go/longcat-2.0",
+      "tier": 1,
+      "intelligence": 19.1,
+      "design": 40,
+      "premium": false,
+      "training": false,
+      "monthlyAllowanceUsd": 240
+    },
+    {
+      "key": "opencode-go/deepseek-v4.1-flash",
+      "tier": 2,
+      "intelligence": 39.5,
+      "design": 65,
+      "premium": false,
+      "training": false,
+      "monthlyAllowanceUsd": 160
+    },
+    {
+      "key": "opencode-go/glm-5.3-flash",
+      "tier": 2,
+      "intelligence": 41.8,
+      "design": 65,
+      "premium": false,
+      "training": false,
+      "monthlyAllowanceUsd": 180
+    },
+    {
+      "key": "opencode-go/minimax-m3.1-flash",
+      "tier": 2,
+      "intelligence": 42.7,
+      "design": 60,
+      "premium": false,
+      "training": false,
+      "monthlyAllowanceUsd": 80
+    },
+    {
+      "key": "opencode-go/claude-haiku-5-5",
+      "tier": 2,
+      "intelligence": 43.4,
+      "design": 70,
+      "premium": false,
+      "training": false,
+      "monthlyAllowanceUsd": 60
+    },
+    {
+      "key": "opencode-go/mimo-v2.6-pro",
+      "tier": 2,
+      "intelligence": 46.3,
+      "design": 62,
+      "premium": false,
+      "training": false,
+      "monthlyAllowanceUsd": 60
+    },
+    {
+      "key": "opencode-go/glm-5.3",
+      "tier": 3,
+      "intelligence": 44.8,
+      "design": 80,
+      "premium": true,
+      "training": false,
+      "monthlyAllowanceUsd": 120
+    },
+    {
+      "key": "opencode-go/kimi-k3",
+      "tier": 3,
+      "intelligence": 43.6,
+      "design": 72,
+      "premium": true,
+      "training": false,
+      "monthlyAllowanceUsd": 60
+    },
+    {
+      "key": "opencode-go/grok-4.7",
+      "tier": 3,
+      "intelligence": 46.4,
+      "design": 75,
+      "premium": true,
+      "training": false,
+      "monthlyAllowanceUsd": 60
+    },
+    {
+      "key": "opencode-go/qwen3.8-max",
+      "tier": 3,
+      "intelligence": 40.2,
+      "design": 70,
+      "premium": true,
+      "training": false,
+      "monthlyAllowanceUsd": 60
+    },
+    {
+      "key": "opencode-go/step-5-preview",
+      "tier": 3,
+      "intelligence": 43.7,
+      "design": 70,
+      "premium": true,
+      "training": false,
+      "monthlyAllowanceUsd": 60
+    },
+    {
+      "key": "commandcode/deepseek-v4.1-flash",
+      "tier": 2,
+      "intelligence": 39.5,
+      "design": 65,
+      "premium": false,
+      "training": false,
+      "monthlyAllowanceUsd": 80
+    },
+    {
+      "key": "commandcode/z-ai/glm-5.3-flash",
+      "tier": 2,
+      "intelligence": 41.8,
+      "design": 65,
+      "premium": false,
+      "training": false,
+      "monthlyAllowanceUsd": 80
+    },
+    {
+      "key": "commandcode/claude-haiku-5-5",
+      "tier": 2,
+      "intelligence": 43.4,
+      "design": 70,
+      "premium": false,
+      "training": false,
+      "monthlyAllowanceUsd": 20
+    },
+    {
+      "key": "commandcode/gpt-6-luna",
+      "tier": 1,
+      "intelligence": 38.1,
+      "design": 55,
+      "premium": false,
+      "training": false,
+      "monthlyAllowanceUsd": 20
+    },
+    {
+      "key": "commandcode/claude-sonnet-5-5",
+      "tier": 3,
+      "intelligence": 56,
+      "design": 90,
+      "premium": true,
+      "training": false,
+      "monthlyAllowanceUsd": 10
+    },
+    {
+      "key": "commandcode/meta/muse-spark-1.3",
+      "tier": 3,
+      "intelligence": 48.1,
+      "design": 82,
+      "premium": true,
+      "training": false,
+      "monthlyAllowanceUsd": 20
+    },
+    {
+      "key": "commandcode/xai/grok-4.7",
+      "tier": 3,
+      "intelligence": 46.4,
+      "design": 75,
+      "premium": true,
+      "training": false,
+      "monthlyAllowanceUsd": 20
+    },
+    {
+      "key": "commandcode/Qwen/Qwen3.8-Max",
+      "tier": 3,
+      "intelligence": 40.2,
+      "design": 70,
+      "premium": true,
+      "training": false,
+      "monthlyAllowanceUsd": 20
+    },
+    {
+      "key": "commandcode/stepfun/Step-5-Preview",
+      "tier": 3,
+      "intelligence": 43.7,
+      "design": 70,
+      "premium": true,
+      "training": false,
+      "monthlyAllowanceUsd": 20
+    }
+  ]
+}

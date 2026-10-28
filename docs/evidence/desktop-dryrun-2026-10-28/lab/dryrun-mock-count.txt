@@ -1,0 +1,2 @@
+mock_inference_requests=5
+5 prompts -> 5 mock requests; one request per prompt

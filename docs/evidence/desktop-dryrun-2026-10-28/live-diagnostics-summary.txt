@@ -1,0 +1,10 @@
+core=eimkk4hz
+pid=90727
+bridges=10
+event_streams=1
+errors=0
+quota_refreshes_after_one_interval=4
+quota_snapshots=2
+duplicate_car_spotter_bridges={
+  "/Users/muhammedqadan/Documents/dev/car-spotter-game": 2
+}

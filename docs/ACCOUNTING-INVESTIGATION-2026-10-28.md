@@ -5,13 +5,15 @@
 **Code commit:** `e8fa5ac`
 **Scope:** no new paid inference. Read-only provider records, existing logs, the live OpenCode session database (metadata only), published pricing, and deterministic tests.
 
+> **Deployment addendum (2026-10-28):** after this investigation, the verified artifact was installed in the live desktop in **dry-run mode** (automatic routing off). See [DESKTOP-DRY-RUN-2026-10-28.md](DESKTOP-DRY-RUN-2026-10-28.md). The accounting conclusions below are unchanged.
+
 ## Verdict
 
 The **38.5× figure is not a 38.5× pricing error**. It compared the two canary request estimates (`$0.0015808`) with an account-wide provider delta (`$0.0608870`) that included concurrent live-desktop usage. The canary requests cannot be isolated from that aggregate.
 
 A **separate monthly-accounting defect was confirmed and fixed**: the adapter used Command Code's billing-period usage-summary endpoint to derive monthly usage and the monthly grant, even though that endpoint and the remaining-credit balance are different accounting pools. The remaining-credit balance is authoritative. The adapter now derives monthly usage from a stable provider-reported grant minus that balance and keeps the summary only as a diagnostic cross-check.
 
-No live desktop configuration was modified, no application restart was performed, and no plugin was installed globally.
+No live desktop configuration was modified **during this investigation**, no application restart was performed, and no plugin was installed globally. A separate, reversible dry-run deployment followed; see the addendum above.
 
 ## 1. Request-level facts
 

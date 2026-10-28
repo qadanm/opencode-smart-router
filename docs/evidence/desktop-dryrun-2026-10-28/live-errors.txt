@@ -1,0 +1,4 @@
+info=1776 warn=187 error=0 other=0
+plugin_warn=0
+thrash=0
+note=Warnings are pre-existing MCP resource/prompt and worktree-discovery messages; no plugin warnings or thrash.

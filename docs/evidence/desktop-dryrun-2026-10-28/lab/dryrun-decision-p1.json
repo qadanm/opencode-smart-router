@@ -1,0 +1,26 @@
+{
+  "dryRun": true,
+  "chosen": {
+    "providerID": "lab-cc",
+    "id": "claude-haiku-5-5"
+  },
+  "current": {
+    "providerID": "lab-cc",
+    "id": "deepseek-v4.1-flash",
+    "variant": "default"
+  },
+  "switched": false,
+  "switchReason": "Dry run: would switch to Lab Claude Haiku 5.5.",
+  "warnings": [
+    "No model met the sophisticated design threshold; using the best qualified standard design route."
+  ],
+  "needsPremiumApproval": false,
+  "approvedModels": 2,
+  "premium": {
+    "mode": "off",
+    "monthlyBudgetUsd": 0,
+    "spentUsd": 0,
+    "remainingUsd": 0,
+    "oneShotGranted": false
+  }
+}

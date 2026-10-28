@@ -1,0 +1,6 @@
+ 120 message="failed to list MCP resource templates"
+  16 message="mcp transport error"
+  16 message="mcp http authentication rejected"
+  16 message="mcp connect failed"
+  16 message="failed to list MCP prompts"
+   3 message="worktree discovery failed"

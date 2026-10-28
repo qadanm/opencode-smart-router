@@ -1,0 +1,14 @@
+{
+  "version": "2.1.4",
+  "pid": 90727,
+  "urls": [
+    "http://127.0.0.1:49374",
+    "https://ed05c4c0dfb205af.7d4ms7cor6im.opentunnel.xyz"
+  ],
+  "paths": {
+    "tmp": "/private/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T/opencode"
+  },
+  "capabilities": {
+    "persistentPty": true
+  }
+}

@@ -7,12 +7,15 @@ Plugin source:  ~/Documents/opencode-smart-router
 Artifact:      ~/Documents/opencode-smart-router/dist-release/index.js
 SHA-256:       8c71c46c5f7616f950c6a3fcf5c42be2198407848cf9ffac15d01504496f8920
                Do not install f2e76af0… (failed Stage A).
-Live status:    not installed in the live desktop
-Config hash:    83872b2d7dafd907ff620bdef0117ba80edb931504d888e5c0547628f9e820d7
-Target path:    ~/.config/opencode/plugins/opencode-smart-router
+Live status:    installed in dry-run on 2026-10-28; automatic routing off
+Live config:    d6cab84f1cd1899057486da35b1da09b63bcf7bf7983c440bb7f4ea888b7268b
+Router config:  d7bebb5941896623f59a42d71bf13980d66394ac086ca284815c622201757d6e
+Install path:   ~/.config/opencode/plugins/opencode-smart-router
+Backup:         ~/Documents/opencode-smart-router-backups/20261027-223912
+Rollback:       ~/Documents/opencode-smart-router-backups/20261027-223912/rollback.sh
 ```
 
-The plugin has only been loaded by isolated lab servers. The live desktop config does not contain the plugin entry, and the live server has not been restarted.
+The live desktop has loaded the plugin in dry-run mode; automatic routing is not enabled. See [DESKTOP-DRY-RUN-2026-10-28.md](DESKTOP-DRY-RUN-2026-10-28.md) for verification and promotion criteria. The pre-deployment backup and rollback were tested against a copy of the deployed state.
 
 ## Install from this source tree
 
