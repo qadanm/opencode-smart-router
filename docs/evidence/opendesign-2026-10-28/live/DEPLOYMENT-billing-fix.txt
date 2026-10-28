@@ -1,0 +1,51 @@
+Billing-scope fix - live deployment
+====================================
+Deployed at : 2026-10-28T17:47:00Z
+Approved by : owner, in session
+Artifact    : aba0a07763d8a377d557e76db12cdee8f068e790d7e53a76ee3963a01f5b53fe
+Code commit : 296a388
+Previous    : 33401a1f5af2ca85f210fd5d8c0b30088bd9ddf5abfa76df05b450e130047246
+Rollback    : ~/Documents/opencode-smart-router-backups/20261028-104334-billing-scope-fix/rollback.sh
+Pre-deploy ledger saved: ../20261028-104334-billing-scope-fix/ledger-v1.pre-deploy.json
+
+What was wrong
+--------------
+The host reports one failed attempt through four channels (the retry hook,
+session.step.failed, session.execution.failed, session.idle). Each recorded
+its own strike, so one fault counted three times. The live ledger showed the
+signature: three identical provider_outage entries in the same second.
+
+A billing-scope failure is provider-scoped - it happens before a model is
+selected and would hit every model on that provider equally - but it was
+charged to whichever model was serving, so healthy models accumulated faults
+they did not cause. The retry hook also dropped cooldownMs, so the hold-out
+it recorded never engaged.
+
+Verified after restart
+----------------------
+  - Running artifact sha256 matches the deployed artifact
+  - Router: enabled, balanced, automatic, dry-run off, premium off
+  - Three providers registered: opencode-go (verified), commandcode
+    (verified), opendesign (estimated)
+  - Approved models: commandcode 9, opencode-go 13, opendesign 7
+  - Shared core: one coreID, one event stream, 7 bridges, 0 errors
+  - Only warning is the expected one: no control key, so quota is estimated
+
+Pre-deploy counters, kept deliberately so the distortion stays on record
+----------------------------------------------------------------------
+  provider_outage faults  : 26
+  retries                  : 64
+  opendesign/deepseek-v4.1-flash : 15 faults
+  opendesign/minimax-m3.1-flash : 11 faults
+  opendesign/glm-5.3-flash      : 0 faults (was not serving when it fired)
+
+Those counts are inflated by the triple-counting. The fix stops new
+distortion; the historical counts were left in place because the ledger's
+usage events also drive the OpenDesign quota estimate, and the pre-deploy
+ledger is archived in the backup directory.
+
+Not exercised
+-------------
+No live OpenDesign inference request was made to trigger a billing-scope
+error. The fix is verified by the unit tests and by the replay of the real
+incident, not by a fresh live error.
