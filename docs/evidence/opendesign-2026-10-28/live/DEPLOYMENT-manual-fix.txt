@@ -1,0 +1,43 @@
+Manual-override misfire fix - live deployment
+==============================================
+Deployed at : 2026-10-28T19:01:45Z
+Approved by : owner, in session ("i didnt touch the picker")
+Artifact    : c3e2652aeb7e701403572e1bf32bd3b72d951f2b6def4bbb1d7d763c706473e9
+Code commit : 5603352
+Previous    : 67f3e9a772c3a81e5477b4a44dc5d6582003aac3fe7f54074e417e0770c5eb3e
+Rollback    : ~/Documents/opencode-smart-router-backups/20261028-120058-manual-fix/rollback.sh
+
+What was wrong
+--------------
+The desktop client sends the model it has saved for a session with every
+prompt. When the router had switched that session to something else, the
+saved model was stale, so the next prompt switched the session back and the
+host reported a model change the router did not make. The router read that
+as the owner picking a model and suspended automatic routing.
+
+The live evidence, from session ses_e9b57e9e (Adaptive polish checkpoint):
+  10:19:43  deepseek -> glm     router-made (decision logged, stayed AUTO)
+  10:56:29  glm -> deepseek     NOT router-made -> set MANUAL
+  11:15:11  deepseek -> glm     NOT router-made -> set MANUAL again
+The owner confirmed the picker was never touched.
+
+The fix
+-------
+A change to a model the session has ALREADY been on is treated as the client
+catching up with its saved selection: the model is recorded and automatic
+routing stays on. Only a model the session has never used suspends routing,
+which keeps a genuine pick working (the existing controller test for that
+still passes). The set is seeded from the session's persisted model, so the
+recognition survives a backend restart.
+
+Also done at deploy time: the stuck session was returned to automatic
+routing via the router's own resumeAuto command (manualOverride now false).
+
+Verified after restart
+----------------------
+  - Running artifact sha256 matches the deployed artifact
+  - Router: enabled, balanced, automatic, dry-run off, premium off
+  - Three providers; approved models: commandcode 9, opencode-go 13, opendesign 7
+  - Shared core: one coreID, one event stream, 7 bridges, 0 errors
+
+Tests: 201 passing (199 before, 2 new), typecheck clean.
