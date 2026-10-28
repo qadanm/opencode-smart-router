@@ -32,6 +32,7 @@ export type FailureClass =
   | "image_rejected"
   | "tool"
   | "capability"
+  | "interrupted"
   | "unknown"
 
 export interface CostTier {
@@ -68,6 +69,12 @@ export interface ModelRecord {
   /** Curated front-end and UX quality score. */
   readonly design: number
   readonly designEvidence: "benchmark" | "curated" | "observed" | "unverified"
+  /**
+   * Credit multiplier applied to this model's usage value. One for every
+   * provider that bills in plain USD. OpenDesign uses it to convert the
+   * dollar value of model usage into Design Plan credits.
+   */
+  readonly creditMultiplier?: number
   readonly premium: boolean
   readonly training: boolean
   readonly free: boolean
@@ -137,6 +144,8 @@ export interface CandidateEvaluation {
   readonly switchPenaltyUsd: number
   readonly quotaPressure: number
   readonly retained: boolean
+  /** Credit multiplier applied to the estimate. One for plain USD providers. */
+  readonly creditMultiplier?: number
 }
 
 export interface QuotaWindow {
@@ -193,6 +202,12 @@ export interface ProviderQuotaSnapshot {
   readonly error?: string
   /** Provider-supplied retry delay on a rate-limited probe. */
   readonly retryAfterMs?: number
+  /**
+   * Explicit confidence state. `provider` and `estimate` map onto `source`;
+   * this field also distinguishes an exhausted allowance from an unavailable
+   * service, which `source` alone cannot express.
+   */
+  readonly quotaState?: "verified" | "estimated" | "stale" | "unknown" | "exhausted" | "unavailable"
 }
 
 export interface PremiumState {
@@ -320,6 +335,8 @@ export interface Ledger {
   sessions: Record<string, SessionState>
   decisions: RoutingDecision[]
   metrics: Metrics
+  /** Model key to the epoch millisecond when its failure cooldown ends. */
+  cooldowns?: Record<string, number>
   updatedAt: number
 }
 
@@ -336,6 +353,35 @@ export interface ProviderSettings {
   readonly weeklyCapUsd?: number
   /** Optional explicit credential file for a read-only quota probe. */
   readonly credentialPath?: string
+  /**
+   * Gateway base URL. Only providers with a configurable endpoint use it.
+   * OpenDesign accepts the OpenAI-compatible gateway root; a path that
+   * already contains the version is never extended again.
+   */
+  readonly baseURL?: string
+  /** Account-control base URL, used only for an explicitly supplied control key. */
+  readonly controlBaseURL?: string
+  /** Optional explicit file holding an account-control key. */
+  readonly controlKeyPath?: string
+  /**
+   * Refuse to route when the subscription allowance is exhausted, so the
+   * gateway cannot fall back to purchased wallet balance.
+   */
+  readonly subscriptionOnly?: boolean
+  /** Credits per USD, when the provider denominates its allowance in credits. */
+  readonly creditsPerUsd?: number
+  /** Safety margin applied to locally estimated usage, in percent. */
+  readonly uncertaintyMarginPct?: number
+  /** What to do when the provider's quota state cannot be established. */
+  readonly unknownQuotaPolicy?: "route" | "block" | "ask"
+  /** Explicit per-model credit multiplier overrides. */
+  readonly multiplierOverrides?: Readonly<Record<string, number>>
+  /**
+   * True when the provider's allowance is one shared pool rather than a
+   * per-model allowance. Per-model quota snapshots are skipped in that case,
+   * because they would count the same pool more than once.
+   */
+  readonly providerScopedQuota?: boolean
 }
 
 export interface PrivacySettings {
@@ -366,6 +412,7 @@ export interface RoutingSettings {
 export interface QuotaSettings {
   readonly probeOpenCodeGo: boolean
   readonly probeCommandCode: boolean
+  readonly probeOpenDesign: boolean
   readonly probeIntervalMinutes: number
   readonly bootstrapSessions: number
   readonly bootstrapDays: number

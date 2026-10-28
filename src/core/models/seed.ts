@@ -1,4 +1,5 @@
 import type { CostTier, ModelRecord, PeakPricing } from "../types.js"
+import { OPENDESIGN_MODELS } from "../providers/opendesign-models.js"
 
 export interface SeedModel {
   key: string
@@ -14,6 +15,8 @@ export interface SeedModel {
   intelligence: number
   design: number
   designEvidence?: ModelRecord["designEvidence"]
+  /** Credit multiplier applied to usage value. One for plain USD billing. */
+  creditMultiplier?: number
   premium?: boolean
   training?: boolean
   free?: boolean
@@ -62,7 +65,7 @@ const COMMAND_CODE_DEEPSEEK_PEAK: PeakPricing = {
  * Design scores are curated quality estimates, not benchmark results. They are
  * separate from intelligence and are documented in docs/MODELS.md.
  */
-export const SEED_MODELS: ReadonlyArray<SeedModel> = [
+const BASE_SEED_MODELS: ReadonlyArray<SeedModel> = [
   // ---------------------------------------------------------------------------
   // OpenCode Go Plus: economy
   // ---------------------------------------------------------------------------
@@ -687,3 +690,35 @@ export const SEED_MODELS: ReadonlyArray<SeedModel> = [
     notes: "Duplicate route for the same upstream model. The GOAT ID is approved instead. Off-peak list price; 2x during 01-04 and 06-10 UTC Mon-Fri.",
   },
 ]
+
+/**
+ * OpenDesign Go: the Design Plan group served by the OpenDesign gateway.
+ *
+ * These entries are generated from the provider catalog so the published
+ * credit multipliers live in exactly one place. The gateway's `GET /v1/models`
+ * response is authoritative for entitlement and for the usable context window,
+ * and the discovery adapter merges it over these values at runtime.
+ */
+const OPENDESIGN_SEED_MODELS: ReadonlyArray<SeedModel> = OPENDESIGN_MODELS.map((model) => ({
+  key: `opendesign/${model.modelID}`,
+  providerID: "opendesign",
+  modelID: model.modelID,
+  name: model.name,
+  context: model.context,
+  maxOutput: model.maxOutput,
+  input: [...model.input],
+  tools: true,
+  cost: model.cost.map((tier) => ({ ...tier, cache: { ...tier.cache } })),
+  creditMultiplier: model.creditMultiplier,
+  intelligence: model.intelligence,
+  design: model.design,
+  designEvidence: model.designEvidence,
+  tier: model.tier,
+  approved: model.approved,
+  // The Design Plan allowance is one shared provider-level pool, so no model
+  // carries its own monthly allowance.
+  monthlyAllowanceUsd: 0,
+  notes: model.notes,
+}))
+
+export const SEED_MODELS: ReadonlyArray<SeedModel> = [...BASE_SEED_MODELS, ...OPENDESIGN_SEED_MODELS]

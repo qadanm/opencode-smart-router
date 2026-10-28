@@ -32,6 +32,7 @@ const emptyFailureCounts = (): Record<FailureClass, number> => ({
   image_rejected: 0,
   tool: 0,
   capability: 0,
+  interrupted: 0,
   unknown: 0,
 })
 
@@ -64,6 +65,7 @@ export const emptyLedger = (now = Date.now()): Ledger => ({
   sessions: {},
   decisions: [],
   metrics: emptyMetrics(now),
+  cooldowns: {},
   updatedAt: now,
 })
 
@@ -160,9 +162,16 @@ export const hydrateLedger = (value: unknown): { ledger: Ledger; warnings: strin
     }
   }
 
+  const cooldowns: Record<string, number> = {}
+  if (isRecord(value.cooldowns)) {
+    for (const [key, until] of Object.entries(value.cooldowns)) {
+      const parsed = finite(until)
+      if (parsed > 0) cooldowns[key] = parsed
+    }
+  }
+
   const sessions: Record<string, SessionState> = {}
-  if (isRecord(value.sessions)) {
-    for (const entry of Object.values(value.sessions)) {
+  if (isRecord(value.sessions)) {    for (const entry of Object.values(value.sessions)) {
       const session = asSessionState(entry)
       if (session) sessions[session.sessionID] = session
     }
@@ -196,6 +205,7 @@ export const hydrateLedger = (value: unknown): { ledger: Ledger; warnings: strin
     version: LEDGER_VERSION,
     bootstrappedAt: typeof value.bootstrappedAt === "number" ? value.bootstrappedAt : undefined,
     bootstrapSource: typeof value.bootstrapSource === "string" ? value.bootstrapSource : undefined,
+    cooldowns,
     usage: usage.slice(-MAX_USAGE_EVENTS),
     premiumSpend: Array.isArray(value.premiumSpend)
       ? value.premiumSpend
@@ -475,9 +485,17 @@ export class LedgerStore {
     this.touch()
   }
 
-  recordFailure(sessionID: string, model: ModelRef | undefined, failureClass: FailureClass, message: string) {
+  recordFailure(
+    sessionID: string,
+    model: ModelRef | undefined,
+    failureClass: FailureClass,
+    message: string,
+    options: { readonly countAgainstModel?: boolean; readonly cooldownMs?: number } = {},
+  ) {
     this.ledger.metrics.failures[failureClass] = (this.ledger.metrics.failures[failureClass] ?? 0) + 1
-    if (model) {
+    // Only a provider fault counts against a model's reliability. A user
+    // interrupt must never make the router distrust a healthy model.
+    if (model && options.countAgainstModel !== false) {
       const key = modelKey(model.providerID, model.id)
       const metrics = (this.ledger.metrics.byModel[key] ??= {
         requests: 0,
@@ -489,11 +507,30 @@ export class LedgerStore {
         failures: 0,
       })
       metrics.failures += 1
+      const cooldownMs = options.cooldownMs ?? 0
+      if (cooldownMs > 0) {
+        // Repeated faults extend the cooldown, so a model that keeps dropping
+        // streams is avoided for longer each time.
+        const previous = this.ledger.cooldowns?.[key] ?? 0
+        const strikes = Math.min(4, (metrics.failures % 4) + 1)
+        const until = Date.now() + cooldownMs * strikes
+        this.ledger.cooldowns = { ...(this.ledger.cooldowns ?? {}), [key]: Math.max(previous, until) }
+      }
     }
     const session = this.ensureSession(sessionID)
     session.failures = [...session.failures, { class: failureClass, at: Date.now(), message: safeError(message) }].slice(-12)
     session.updatedAt = Date.now()
     this.touch()
+  }
+
+  /** Active failure cooldowns, keyed by model key. */
+  cooldowns(): Readonly<Record<string, number>> {
+    return this.ledger.cooldowns ?? {}
+  }
+
+  isCoolingDown(modelKeyValue: string, now = Date.now()): boolean {
+    const until = this.ledger.cooldowns?.[modelKeyValue]
+    return typeof until === "number" && until > now
   }
 
   recordRetry(sessionID: string) {
@@ -630,6 +667,14 @@ export class LedgerStore {
 
   snapshotMetrics(): Metrics {
     return structuredClone(this.ledger.metrics)
+  }
+
+  /**
+   * Raw usage events, used by providers whose allowance must be modelled from
+   * local activity rather than read from a provider endpoint.
+   */
+  usageEvents(): ReadonlyArray<UsageEvent> {
+    return this.ledger.usage
   }
 
   prune(now = Date.now()) {

@@ -38,6 +38,12 @@ export const liveModels = [
 ]
 
 export const makeCtx = (directory: string) => {
+  // The router merges the user's global config file over plugin options, so
+  // the test suite must not read the developer's real
+  // ~/.config/opencode/smart-router.json. Point HOME at the test directory so
+  // the suite is hermetic and behaves the same on every machine.
+  const previousHome = process.env.HOME
+  process.env.HOME = directory
   const storage = new Map<string, unknown>()
   const hooks = new Map<string, (event: any) => Promise<void> | void>()
   const commands = new Map<string, (input: any) => Promise<void>>()
@@ -124,5 +130,19 @@ export const makeCtx = (directory: string) => {
       },
     },
   }
-  return { ctx, hooks, commands, switched, notices, syntheticCalls, sessions, titles, rpc: () => rpcImpl }
+  return {
+    ctx,
+    hooks,
+    commands,
+    switched,
+    notices,
+    syntheticCalls,
+    sessions,
+    titles,
+    rpc: () => rpcImpl,
+    restoreHome: () => {
+      if (previousHome === undefined) delete process.env.HOME
+      else process.env.HOME = previousHome
+    },
+  }
 }

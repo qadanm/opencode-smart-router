@@ -1,5 +1,7 @@
 import { execFile } from "node:child_process"
 import { promisify } from "node:util"
+import type { ProviderQuotaSnapshot } from "./types.js"
+import { percent, usd } from "./util.js"
 
 const run = promisify(execFile)
 
@@ -17,7 +19,63 @@ export const providerShort = (providerID: string | undefined): string => {
   if (!providerID) return "?"
   if (providerID === "opencode-go") return "Go"
   if (providerID === "commandcode") return "CC"
+  if (providerID === "opendesign") return "OD"
   return providerID
+}
+
+/**
+ * Human-readable confidence state for a provider quota snapshot.
+ *
+ * `verified` means the provider reported the numbers. `estimated` means the
+ * router modelled them from its own usage and they are a lower bound.
+ * `unknown` means nothing could be established safely.
+ */
+export const quotaStateLabel = (snapshot: ProviderQuotaSnapshot): string => {
+  if (snapshot.stale) return "stale"
+  switch (snapshot.quotaState) {
+    case "verified":
+      return "verified"
+    case "estimated":
+      return "estimated"
+    case "exhausted":
+      return "exhausted"
+    case "unavailable":
+      return "unavailable"
+    case "unknown":
+      return "unknown"
+    case "stale":
+      return "stale"
+    default:
+      return snapshot.source === "provider"
+        ? "verified"
+        : snapshot.source === "estimate"
+          ? "estimated"
+          : "unknown"
+  }
+}
+
+/**
+ * Render a provider quota line.
+ *
+ * OpenDesign is reported in Design Plan credits, which are USD-equivalent.
+ * The purchased wallet balance is always shown separately so a non-zero
+ * balance can never be mistaken for permission to spend it.
+ */
+export const formatQuotaLines = (snapshot: ProviderQuotaSnapshot): string[] => {
+  const lines = [
+    `${snapshot.label}: 5h ${percent(snapshot.rolling.usedPct)} · weekly ${percent(snapshot.weekly.usedPct)} · monthly ${percent(snapshot.monthly.usedPct)} (${quotaStateLabel(snapshot)})`,
+  ]
+  if (snapshot.providerID === "opendesign") {
+    const purchased = snapshot.extraCredits?.purchasedUsd ?? 0
+    lines.push(
+      `  Design Plan credits, USD-equivalent. Purchased wallet ${usd(purchased)} is never spent automatically.`,
+    )
+    if (snapshot.monthlyRemainingUsd !== undefined) {
+      lines.push(`  Monthly allowance remaining ${usd(snapshot.monthlyRemainingUsd)}.`)
+    }
+  }
+  if (snapshot.error) lines.push(`  ${snapshot.error}`)
+  return lines
 }
 
 export const indicatorState = (input: {
@@ -106,4 +164,4 @@ export class ChangeNotifier {
   }
 }
 
-export const __uiInternals = { stripTitlePrefix, buildIndicatorTitle, providerShort }
+export const __uiInternals = { stripTitlePrefix, buildIndicatorTitle, providerShort, quotaStateLabel }

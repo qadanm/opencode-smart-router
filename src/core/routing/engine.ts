@@ -33,6 +33,8 @@ export interface EngineInput {
   readonly now?: number
   readonly lastError?: string
   readonly modelHistory?: Readonly<Record<string, { requests: number; failures: number }>>
+  /** Model key to the epoch millisecond when its failure cooldown ends. */
+  readonly cooldowns?: Readonly<Record<string, number>>
 }
 
 export interface EngineResult {
@@ -88,6 +90,8 @@ export interface CostEstimate {
   readonly costTier: CostTier
   /** 2 during a documented peak window, otherwise 1. */
   readonly priceMultiplier: number
+  /** Per-model credit multiplier. One for every plain USD provider. */
+  readonly creditMultiplier: number
 }
 
 const isPeakPricingActive = (now: number, peak: PeakPricing): boolean => {
@@ -136,15 +140,20 @@ export const estimateTaskCost = (input: {
   const switchPenaltyUsd = sameModel
     ? 0
     : Math.max(0, (context * (inputPrice - cacheReadPrice)) / 1_000_000)
+  // OpenDesign converts the dollar value of usage into Design Plan credits
+  // with a per-model multiplier. The result is still an estimate of credits,
+  // never an observed provider charge.
+  const creditMultiplier = model.creditMultiplier && model.creditMultiplier > 0 ? model.creditMultiplier : 1
   return {
-    usd: Math.max(0, cost),
+    usd: Math.max(0, cost) * creditMultiplier,
     input: freshInput,
     output,
     cacheRead,
     cacheWrite: 0,
-    switchPenaltyUsd,
+    switchPenaltyUsd: switchPenaltyUsd * creditMultiplier,
     costTier: tier,
     priceMultiplier: peakMultiplier,
+    creditMultiplier,
   }
 }
 
@@ -181,11 +190,15 @@ export const estimateSuccess = (input: {
   }
   if (task.tier >= 2 && model.intelligence < 39.5) probability *= 0.7
   if (model.context > 0 && input.contextTokens > model.context * 0.8) probability *= 0.9
-  if (input.contextTokens > model.context * 0.95) probability *= 0.6
+  if (model.context > 0 && input.contextTokens > model.context * 0.95) probability *= 0.6
   probability *= observedSuccess(model, input.session, modelKey(model.providerID, model.modelID)) / 0.95
-  if (input.history && input.history.requests >= 5) {
-    const successRate = Math.max(0, (input.history.requests - input.history.failures) / input.history.requests)
-    probability *= 0.85 + 0.15 * successRate
+  if (input.history && input.history.requests >= 3) {
+    // Reliability is weighted more heavily than before. A model that drops
+    // streams is not worth a lower token price, because every dropped turn
+    // costs a full retry of the accumulated context.
+    const total = input.history.requests + input.history.failures
+    const successRate = total > 0 ? Math.max(0, input.history.requests) / total : 1
+    probability *= 0.6 + 0.4 * successRate
   }
   return Math.max(0.2, Math.min(0.99, probability))
 }
@@ -222,6 +235,7 @@ const candidateFor = (
     switchPenaltyUsd: estimate.switchPenaltyUsd,
     quotaPressure: pressure,
     retained: keyOfRef(input.current) === modelKey(model.providerID, model.modelID),
+    creditMultiplier: estimate.creditMultiplier,
   }
 }
 
@@ -302,6 +316,23 @@ export const routeTask = (input: EngineInput): EngineResult => {
     for (const model of input.models) {
       const provider = providerFor(input.quota, model.providerID)
       const modelQuota = modelQuotaFor(provider, model)
+      const key = modelKey(model.providerID, model.modelID)
+      // A model that just dropped a stream is held out for a cooling period
+      // instead of being re-selected on the next prompt.
+      const cooldownUntil = input.cooldowns?.[key]
+      if (typeof cooldownUntil === "number" && cooldownUntil > now) {
+        continue
+      }
+      // The estimate is computed first so the subscription-only guard can
+      // check the projected request cost against what is left of the
+      // subscription allowance.
+      const estimate = estimateTaskCost({
+        model,
+        task: input.task,
+        contextTokens: input.contextTokens,
+        currentModelKey: currentKey,
+        now,
+      })
       const eligibility = evaluateEligibility({
         model,
         task: taskForEvaluation,
@@ -313,6 +344,7 @@ export const routeTask = (input: EngineInput): EngineResult => {
         premium: premiumDecision,
         currentModelKey: currentKey,
         allowDesignRelaxation: designRelaxation === 2,
+        projectedUsd: estimate.usd,
       })
       if (!eligibility.eligible) continue
       const eligibleReason =
@@ -320,13 +352,6 @@ export const routeTask = (input: EngineInput): EngineResult => {
           ? `Standard design route: design ${model.design} is below the sophisticated ${input.settings.routing.sophisticatedDesignFloor} threshold`
           : eligibility.reason
       const displayedEligibility = eligibleReason === eligibility.reason ? eligibility : { ...eligibility, reason: eligibleReason }
-      const estimate = estimateTaskCost({
-        model,
-        task: input.task,
-        contextTokens: input.contextTokens,
-        currentModelKey: currentKey,
-        now,
-      })
       const probability = estimateSuccess({
         model,
         task: input.task,
@@ -368,6 +393,16 @@ export const routeTask = (input: EngineInput): EngineResult => {
       .map((model) => {
         const provider = providerFor(input.quota, model.providerID)
         const modelQuota = modelQuotaFor(provider, model)
+        const key = modelKey(model.providerID, model.modelID)
+        const cooldownUntil = input.cooldowns?.[key]
+        if (typeof cooldownUntil === "number" && cooldownUntil > now) return undefined
+        const estimate = estimateTaskCost({
+          model,
+          task: input.task,
+          contextTokens: input.contextTokens,
+          currentModelKey: currentKey,
+          now,
+        })
         const eligibility = evaluateEligibility({
           model,
           task: { ...input.task, designIntensive: false, sophisticatedDesign: false },
@@ -379,15 +414,9 @@ export const routeTask = (input: EngineInput): EngineResult => {
           premium: relaxedPremium,
           currentModelKey: currentKey,
           allowDesignRelaxation: true,
+          projectedUsd: estimate.usd,
         })
         if (!eligibility.eligible) return undefined
-        const estimate = estimateTaskCost({
-          model,
-          task: input.task,
-          contextTokens: input.contextTokens,
-          currentModelKey: currentKey,
-          now,
-        })
         const probability = estimateSuccess({
           model,
           task: input.task,

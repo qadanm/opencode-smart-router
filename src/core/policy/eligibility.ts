@@ -4,6 +4,7 @@ import type {
   ModelRecord,
   PremiumState,
   ProviderQuotaSnapshot,
+  QuotaWindow,
   RouterSettings,
   SessionState,
   TaskClass,
@@ -65,6 +66,8 @@ export interface EligibilityInput {
   readonly premium: PremiumDecision
   readonly currentModelKey?: string
   readonly allowDesignRelaxation?: boolean
+  /** Estimated cost of the request, used by the subscription-only guard. */
+  readonly projectedUsd?: number
 }
 
 export interface EligibilityResult {
@@ -127,6 +130,64 @@ const modelLimitReached = (quota: ModelQuotaSnapshot | undefined, settings: Rout
   }
   if (quota.blocked) return quota.blockReason ?? "Estimated model allowance is exhausted"
   return undefined
+}
+
+/**
+ * Subscription-only guard.
+ *
+ * When the provider bills from a subscription allowance and purchased balance
+ * is off limits, a request is only routed when it fits inside what is left of
+ * the subscription. This is a client-side guard: OpenDesign's gateway makes
+ * the final funding decision per request, so the router must never assume it
+ * can prevent a server-side wallet charge. It only avoids sending a request
+ * that it can already see would not fit.
+ */
+const subscriptionOnlyLimit = (
+  snapshot: ProviderQuotaSnapshot | undefined,
+  settings: RouterSettings,
+  projectedUsd: number | undefined,
+): string | undefined => {
+  if (!snapshot) return undefined
+  const providerSettings = settings.providers[snapshot.providerID]
+  if (!providerSettings?.subscriptionOnly) return undefined
+  if (projectedUsd === undefined || !Number.isFinite(projectedUsd) || projectedUsd <= 0) return undefined
+
+  const windows: ReadonlyArray<{ readonly label: string; readonly window: QuotaWindow }> = [
+    { label: "five-hour", window: snapshot.rolling },
+    { label: "weekly", window: snapshot.weekly },
+    { label: "monthly", window: snapshot.monthly },
+  ]
+  for (const { label, window } of windows) {
+    if (window.source === "unknown") continue
+    const cap = window.capUsd
+    if (cap === undefined || cap <= 0) continue
+    const used = window.usedUsd ?? 0
+    const remaining = Math.max(0, cap - used)
+    if (projectedUsd > remaining) {
+      return `Subscription-only policy: the projected request cost ($${projectedUsd.toFixed(4)}) exceeds the remaining ${label} allowance ($${remaining.toFixed(2)})`
+    }
+  }
+  return undefined
+}
+
+/**
+ * Policy for a provider whose quota state could not be established.
+ */
+const unknownQuotaLimit = (
+  snapshot: ProviderQuotaSnapshot | undefined,
+  settings: RouterSettings,
+): string | undefined => {
+  if (!snapshot) return undefined
+  const providerSettings = settings.providers[snapshot.providerID]
+  if (!providerSettings) return undefined
+  const state = snapshot.quotaState ?? (snapshot.source === "unknown" ? "unknown" : undefined)
+  if (state !== "unknown" && state !== "unavailable") return undefined
+  const policy = providerSettings.unknownQuotaPolicy ?? "route"
+  if (policy === "route") return undefined
+  if (policy === "ask") {
+    return "Provider quota state is unknown; the configured policy requires explicit approval before routing here"
+  }
+  return "Provider quota state is unknown; the configured policy blocks routing here"
 }
 
 /**
@@ -203,6 +264,10 @@ export const evaluateEligibility = (input: EligibilityInput): EligibilityResult 
 
   const providerLimit = providerLimitReached(providerQuota, settings)
   if (providerLimit) return { eligible: false, reason: providerLimit, warnings }
+  const unknownLimit = unknownQuotaLimit(providerQuota, settings)
+  if (unknownLimit) return { eligible: false, reason: unknownLimit, warnings }
+  const subscriptionLimit = subscriptionOnlyLimit(providerQuota, settings, input.projectedUsd)
+  if (subscriptionLimit) return { eligible: false, reason: subscriptionLimit, warnings }
   const modelLimit = modelLimitReached(modelQuota, settings)
   if (modelLimit) return { eligible: false, reason: modelLimit, warnings }
 

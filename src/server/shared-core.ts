@@ -1,7 +1,8 @@
 import type { LiveModel } from "../core/models/registry.js"
 import { LedgerStore } from "../core/quota/ledger.js"
 import { QuotaService } from "../core/quota/service.js"
-import type { ProviderQuotaSnapshot, RouterSettings } from "../core/types.js"
+import { discoverOpenDesignModels, toLiveModels } from "../core/providers/opendesign.js"
+import type { ProviderQuotaSnapshot, RouterSettings, UsageEvent } from "../core/types.js"
 import { safeError } from "../core/util.js"
 
 /**
@@ -56,6 +57,8 @@ export interface InitInput {
     goAccessToken?: string
     commandCodeIntegrationKey?: string
     commandCodeProviderKey?: string
+    openDesignApiKey?: string
+    openDesignControlKey?: string
   }>
 }
 
@@ -88,6 +91,9 @@ class SharedCore {
   private liveModels: LiveModel[] = []
   private modelsLoadedAt = 0
   private modelsLoading?: Promise<LiveModel[]>
+  private openDesignModels: LiveModel[] = []
+  private openDesignLoadedAt = 0
+  private openDesignLoading?: Promise<LiveModel[]>
   private eventsHandled = 0
   private eventsIgnored = 0
   private ownerCtx?: any
@@ -153,6 +159,7 @@ class SharedCore {
       this.quota = new QuotaService({
         getSettings: () => (this.getSettings?.().providers ?? {}) as any,
         getCredentials: () => this.getCredentials?.() ?? Promise.resolve({}),
+        getUsageEvents: () => this.ledger.usageEvents(),
         probeIntervalMinutes: this.getSettings?.().quota.probeIntervalMinutes ?? 5,
         initial: this.quotaInitial,
         onSnapshot: (snapshot) => {
@@ -175,6 +182,7 @@ class SharedCore {
       this.quota = new QuotaService({
         getSettings: () => (this.getSettings?.().providers ?? {}) as any,
         getCredentials: () => this.getCredentials?.() ?? Promise.resolve({}),
+        getUsageEvents: () => this.ledger.usageEvents(),
         probeIntervalMinutes: this.getSettings?.().quota.probeIntervalMinutes ?? 5,
         initial: this.quotaInitial,
         onSnapshot: () => {
@@ -273,24 +281,83 @@ class SharedCore {
   /** One catalog fetch per process; bridges rebuild their own registries from it. */
   async getLiveModels(force = false): Promise<LiveModel[]> {
     const fresh = this.modelsLoadedAt > 0 && Date.now() - this.modelsLoadedAt < MODEL_TTL_MS
-    if (!force && fresh) return this.liveModels
-    if (this.modelsLoading) return this.modelsLoading
-    if (!this.ownerCtx?.model?.list) return this.liveModels
-    this.modelsLoading = Promise.resolve(this.ownerCtx.model.list())
-      .then((result: any) => {
-        const data = Array.isArray(result) ? result : (result?.data ?? [])
-        this.liveModels = Array.isArray(data) ? (data as LiveModel[]) : []
-        this.modelsLoadedAt = Date.now()
-        return this.liveModels
-      })
-      .catch((error) => {
-        this.pushError(`models: ${safeError(error)}`)
-        return this.liveModels
-      })
-      .finally(() => {
-        this.modelsLoading = undefined
-      })
-    return this.modelsLoading
+    if ((!fresh || force) && !this.modelsLoading && this.ownerCtx?.model?.list) {
+      this.modelsLoading = Promise.resolve(this.ownerCtx.model.list())
+        .then((result: any) => {
+          const data = Array.isArray(result) ? result : (result?.data ?? [])
+          this.liveModels = Array.isArray(data) ? (data as LiveModel[]) : []
+          this.modelsLoadedAt = Date.now()
+          return this.liveModels
+        })
+        .catch((error) => {
+          this.pushError(`models: ${safeError(error)}`)
+          return this.liveModels
+        })
+        .finally(() => {
+          this.modelsLoading = undefined
+        })
+      await this.modelsLoading
+    }
+    // OpenDesign models come from the provider's own gateway rather than from
+    // OpenCode's catalog, so they are merged in here. The merge is one
+    // shared, single-flight discovery per process.
+    const openDesign = await this.getOpenDesignModels(force)
+    return openDesign.length > 0 ? [...this.liveModels, ...openDesign] : this.liveModels
+  }
+
+  /**
+   * Read the OpenDesign gateway's entitled model list.
+   *
+   * This is a read-only metadata call. It makes no inference request and
+   * consumes no plan credits. It runs at most once per catalog TTL per
+   * process, no matter how many project bridges are open.
+   */
+  async getOpenDesignModels(force = false): Promise<LiveModel[]> {
+    const settings = this.getSettings?.()
+    const provider = settings?.providers?.opendesign
+    if (!provider?.enabled) {
+      this.openDesignModels = []
+      this.openDesignLoadedAt = Date.now()
+      return []
+    }
+    const fresh = this.openDesignLoadedAt > 0 && Date.now() - this.openDesignLoadedAt < MODEL_TTL_MS
+    if (!force && fresh) return this.openDesignModels
+    if (this.openDesignLoading) return this.openDesignLoading
+    this.openDesignLoading = (async () => {
+      try {
+        const credentials = (await this.getCredentials?.()) ?? {}
+        if (!credentials.openDesignApiKey) {
+          this.openDesignModels = []
+          this.openDesignLoadedAt = Date.now()
+          return []
+        }
+        const result = await discoverOpenDesignModels({
+          apiKey: credentials.openDesignApiKey,
+          ...(provider.baseURL ? { baseURL: provider.baseURL } : {}),
+        })
+        if (!result.ok) {
+          this.pushError(`opendesign discovery: ${result.error ?? "unknown error"}`)
+          // Keep the last good catalog rather than dropping every OpenDesign
+          // route because one read-only probe failed.
+          this.openDesignLoadedAt = Date.now()
+          return this.openDesignModels
+        }
+        this.openDesignModels = toLiveModels(result.models) as LiveModel[]
+        this.openDesignLoadedAt = Date.now()
+        return this.openDesignModels
+      } catch (error) {
+        this.pushError(`opendesign discovery: ${safeError(error)}`)
+        return this.openDesignModels
+      } finally {
+        this.openDesignLoading = undefined
+      }
+    })()
+    return this.openDesignLoading
+  }
+
+  /** Local usage events, used by providers whose quota must be modelled locally. */
+  usageEvents(): ReadonlyArray<UsageEvent> {
+    return this.ledger.usageEvents()
   }
 
   ownerOf(sessionID: string): string | undefined {
@@ -492,6 +559,9 @@ class SharedCore {
     this.liveModels = []
     this.modelsLoadedAt = 0
     this.modelsLoading = undefined
+    this.openDesignModels = []
+    this.openDesignLoadedAt = 0
+    this.openDesignLoading = undefined
     this.errors.length = 0
     this.eventsHandled = 0
     this.eventsIgnored = 0

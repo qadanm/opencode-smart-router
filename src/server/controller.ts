@@ -1,3 +1,4 @@
+import { appendFileSync } from "node:fs"
 import { resolve } from "node:path"
 import type {
   ModelRecord,
@@ -17,17 +18,29 @@ import { classifyFailure } from "../core/failures.js"
 import { buildRegistry } from "../core/models/registry.js"
 import type { QuotaService } from "../core/quota/service.js"
 import { LedgerStore, type BootstrapSession } from "../core/quota/ledger.js"
+import {
+  discoverOpenDesignControlKey,
+  discoverOpenDesignCredentials,
+} from "../core/quota/credentials.js"
 import { routeTask } from "../core/routing/engine.js"
 import { decidePremium, evaluateEligibility } from "../core/policy/eligibility.js"
 import { sharedCore, type RuntimeOverrides } from "./shared-core.js"
 import {
   ChangeNotifier,
   buildIndicatorTitle,
+  formatQuotaLines,
   indicatorState,
   providerShort,
+  quotaStateLabel,
   stripTitlePrefix,
   type Indicator,
 } from "../core/ui.js"
+import {
+  discoverOpenDesignModels,
+  normalizeOpenDesignBaseURL,
+} from "../core/providers/opendesign.js"
+import { OPEN_DESIGN_MODEL_BY_ID } from "../core/providers/opendesign-models.js"
+import { creditMultiplierFor } from "../core/providers/opendesign-credits.js"
 import { SmartRouterRpc } from "../rpc.js"
 import {
   keyOfRef,
@@ -263,7 +276,56 @@ export class RouterController {
     } catch {
       // Ignore.
     }
-    return { goAccessToken, commandCodeIntegrationKey, commandCodeProviderKey }
+    const { openDesignApiKey, openDesignControlKey } = await this.resolveOpenDesignCredentials()
+    return {
+      goAccessToken,
+      commandCodeIntegrationKey,
+      commandCodeProviderKey,
+      openDesignApiKey,
+      openDesignControlKey,
+    }
+  }
+
+  /**
+   * Resolve the OpenDesign inference key and, only when the owner configured
+   * one explicitly, the account-control key.
+   *
+   * The inference key can call the model gateway but cannot read quota. The
+   * control key can read the account's usage windows and is a privileged
+   * credential, so it is never discovered automatically and never requested.
+   */
+  private async resolveOpenDesignCredentials(): Promise<{ openDesignApiKey?: string; openDesignControlKey?: string }> {
+    const providerSettings = this.settings.providers.opendesign
+    if (!providerSettings?.enabled) return {}
+
+    let providerSettingsKey: string | undefined
+    try {
+      const provider: any = await this.ctx.provider.get({ providerID: "opendesign" })
+      const info: any = provider?.data ?? provider
+      providerSettingsKey = info?.settings?.apiKey
+    } catch {
+      // The provider may not be configured in OpenCode; file discovery remains.
+    }
+
+    const discovered = discoverOpenDesignCredentials({
+      explicitPath: providerSettings.credentialPath,
+      providerSettingsKey,
+    })
+    for (const warning of discovered.warnings) {
+      if (!this.settingsWarnings.includes(warning)) this.settingsWarnings.push(warning)
+    }
+
+    const controls = discoverOpenDesignControlKey({
+      explicitPath: providerSettings.controlKeyPath,
+    })
+    for (const warning of controls.warnings) {
+      if (!this.settingsWarnings.includes(warning)) this.settingsWarnings.push(warning)
+    }
+
+    return {
+      openDesignApiKey: discovered.candidates[0]?.key,
+      openDesignControlKey: controls.candidates[0]?.key,
+    }
   }
 
   private sessionState(sessionID: string): SessionState {
@@ -505,9 +567,10 @@ export class RouterController {
     return this.quota
       ? this.quota.read().map((snapshot) => {
           const providerSettings = this.settings.providers[snapshot.providerID]
-          return providerSettings
-            ? this.ledger.attachModelQuotas(snapshot, this.registry.all(), providerSettings)
-            : snapshot
+          // A provider-scoped allowance is one shared pool. Per-model quota
+          // snapshots would count the same pool once per model.
+          if (!providerSettings || providerSettings.providerScopedQuota) return snapshot
+          return this.ledger.attachModelQuotas(snapshot, this.registry.all(), providerSettings)
         })
       : []
   }
@@ -742,6 +805,7 @@ export class RouterController {
       cachedTokens: session.cacheReadTokens,
       dryRun: settings.dryRun,
       modelHistory: this.ledger.snapshotMetrics().byModel,
+      cooldowns: this.ledger.cooldowns(),
     })
 
     let switchError: string | undefined
@@ -932,8 +996,61 @@ export class RouterController {
     }
   }
 
+  /**
+   * Record a provider fault against the model that was actually serving the
+   * session.
+   *
+   * The router's own session state is the primary source, but it can lag
+   * behind a manual model change. The host's session record is the
+   * authority, so it is consulted when the router has no model on record.
+   */
+  private async recordProviderFault(sessionID: string, outcome: string, error: any) {
+    const session = this.ledger.getSession(sessionID)
+    let model = session?.lastModel
+    if (!model) {
+      try {
+        const info: any = await this.ctx.session.get({ sessionID })
+        const ref = modelRefFrom(info?.model)
+        if (ref) {
+          model = ref
+          this.ledger.patchSession(sessionID, { lastModel: ref })
+        }
+      } catch {
+        // The session may already be gone; the fault is still recorded.
+      }
+    }
+    const message =
+      typeof error?.message === "string" && error.message.trim().length > 0
+        ? error.message
+        : outcome === "interrupted"
+          ? "Step interrupted"
+          : "The provider ended the response without completing it"
+    const assessment = classifyFailure(
+      {
+        type: typeof error?.type === "string" ? error.type : outcome,
+        message,
+        ...(typeof error?.status === "number" ? { status: error.status } : {}),
+      },
+      session,
+    )
+    this.ledger.recordFailure(sessionID, model, assessment.class, message, {
+      countAgainstModel: assessment.countAgainstModel,
+      cooldownMs: assessment.cooldownMs,
+    })
+  }
+
   async handleEvent(event: any) {
     const type = event?.type
+    // Env-gated event trace. Used to learn which bus events carry a provider
+    // fault; inert unless SMART_ROUTER_EVENT_LOG is set.
+    const eventLog = process.env.SMART_ROUTER_EVENT_LOG
+    if (eventLog) {
+      try {
+        appendFileSync(eventLog, `${JSON.stringify({ at: Date.now(), type, sessionID: event?.data?.sessionID, keys: Object.keys(event?.data ?? {}) })}\n`)
+      } catch {
+        // Diagnostics only.
+      }
+    }
     const data = event?.data ?? {}
     const eventSessionID = typeof data.sessionID === "string" ? data.sessionID : undefined
     if (eventSessionID && type !== "session.created") {
@@ -1032,6 +1149,16 @@ export class RouterController {
       if (typeof sessionID === "string") {
         this.ledger.patchSession(sessionID, { status: "idle" })
         this.stepStarted.delete(sessionID)
+        // `session.execution.failed` and `.interrupted` carry no outcome
+        // field; the event type itself is the signal. `session.idle` does
+        // carry an outcome. Recording these is what lets the router see a
+        // model that keeps dropping streams.
+        const outcome = typeof data.outcome === "string" ? data.outcome : undefined
+        if (type === "session.execution.failed" || outcome === "failed") {
+          await this.recordProviderFault(sessionID, "failed", data.error)
+        } else if (type === "session.execution.interrupted" || outcome === "interrupted") {
+          await this.recordProviderFault(sessionID, "interrupted", data.error)
+        }
         this.persistLedgerSoon()
       }
       return
@@ -1060,12 +1187,7 @@ export class RouterController {
     if (type === "session.step.failed") {
       const sessionID = data.sessionID
       if (typeof sessionID !== "string") return
-      const session = this.ledger.getSession(sessionID)
-      const assessment = classifyFailure(
-        { type: data.error?.type, message: data.error?.message ?? "", status: data.error?.status },
-        session,
-      )
-      this.ledger.recordFailure(sessionID, session?.lastModel, assessment.class, data.error?.message ?? "")
+      await this.recordProviderFault(sessionID, "failed", data.error)
       this.persistLedgerSoon()
       return
     }
@@ -1107,6 +1229,7 @@ export class RouterController {
           cachedTokens: session?.cacheReadTokens ?? 0,
           dryRun: true,
           modelHistory: this.ledger.snapshotMetrics().byModel,
+      cooldowns: this.ledger.cooldowns(),
         })
         return result.decision
       },
@@ -1323,10 +1446,7 @@ export class RouterController {
           status.current ? `Current: ${status.current.providerID}/${status.current.id}${status.currentTier ? ` (tier ${status.currentTier})` : ""}` : "Current: unknown",
           decision ? `Task: tier ${decision.task.tier} ${decision.task.kind}; chosen: ${decision.chosen ? `${decision.chosen.providerID}/${decision.chosen.id}` : "none"}` : "No decision yet",
           decision ? `Why: ${decision.switchReason}` : "",
-          ...status.quota.map(
-            (snapshot) =>
-              `${snapshot.label}: 5h ${percent(snapshot.rolling.usedPct)} · weekly ${percent(snapshot.weekly.usedPct)} · monthly ${percent(snapshot.monthly.usedPct)} (${snapshot.source})`,
-          ),
+          ...status.quota.flatMap((snapshot) => formatQuotaLines(snapshot)),
           status.premium.mode !== "off"
             ? `Premium: ${status.premium.mode}, ${usd(status.premium.remainingUsd)} remaining${status.premium.oneShotGranted ? ", one-shot approved" : ""}`
             : "Premium: off",
@@ -1551,12 +1671,82 @@ export class RouterController {
           `Warnings: ${decision.warnings.join(" ") || "none"}`,
           ...decision.candidates.slice(0, 5).map(
             (candidate) =>
-              `  ${candidate.model.providerID}/${candidate.model.modelID}: ${candidate.eligible ? "eligible" : candidate.reason} · ${usd(candidate.effectiveCost)} expected`,
+              `  ${candidate.model.providerID}/${candidate.model.modelID}: ${candidate.eligible ? "eligible" : candidate.reason} · ${usd(candidate.effectiveCost)} expected${candidate.creditMultiplier && candidate.creditMultiplier !== 1 ? ` · ${candidate.creditMultiplier}x credits` : ""}`,
+          ),
+          ...decision.quota.map(
+            (snapshot) => `  quota ${snapshot.label}: ${quotaStateLabel(snapshot)}`,
           ),
         ]
         await notice(sessionID, lines.join("\n"))
       }),
     )
+
+    this.registrations.push(
+      await command("router-opendesign", "Show OpenDesign connection, entitlement and credit diagnostics", async ({ sessionID }: any) => {
+        await notice(sessionID, await this.formatOpenDesignReport())
+      }),
+    )
+  }
+
+  /**
+   * Report the OpenDesign connection state.
+   *
+   * This command makes only read-only metadata requests. It never performs
+   * inference and never spends plan credits.
+   */
+  private async formatOpenDesignReport(): Promise<string> {
+    const providerSettings = this.settings.providers.opendesign
+    if (!providerSettings) return "OpenDesign is not configured."
+    const lines: string[] = []
+    lines.push(`OpenDesign provider: ${providerSettings.enabled ? "enabled" : "disabled"} · plan ${providerSettings.plan}`)
+    lines.push(`Base URL: ${normalizeOpenDesignBaseURL(providerSettings.baseURL)}`)
+    lines.push(
+      `Allowance: monthly ${usd(providerSettings.monthlyCreditsUsd ?? 0)} · 5h ${usd(providerSettings.fiveHourCapUsd ?? 0)} · weekly ${usd(providerSettings.weeklyCapUsd ?? 0)} (5h and weekly are nested inside the monthly maximum)`,
+    )
+    lines.push(`Subscription only: ${providerSettings.subscriptionOnly !== false ? "yes" : "no"} · purchased credits allowed: ${providerSettings.allowExtraUsage ? "yes" : "no"}`)
+    if (providerSettings.creditsPerUsd) lines.push(`Credits per USD: ${providerSettings.creditsPerUsd}`)
+
+    let apiKey: string | undefined
+    let controlKey: string | undefined
+    try {
+      const resolved = await this.resolveOpenDesignCredentials()
+      apiKey = resolved.openDesignApiKey
+      controlKey = resolved.openDesignControlKey
+    } catch {
+      // Fall through to the unknown state.
+    }
+    lines.push(`Inference key: ${apiKey ? "found" : "not found"}`)
+    lines.push(`Control key: ${controlKey ? "found (verified quota available)" : "not configured (quota is an estimate)"}`)
+
+    if (apiKey) {
+      const result = await discoverOpenDesignModels({
+        apiKey,
+        ...(providerSettings.baseURL ? { baseURL: providerSettings.baseURL } : {}),
+      })
+      if (!result.ok) {
+        lines.push(`Gateway discovery failed: ${result.error ?? "unknown error"}`)
+      } else {
+        lines.push(`Entitled models on the gateway: ${result.models.length}`)
+        for (const model of result.models.slice(0, 20)) {
+          const spec = OPEN_DESIGN_MODEL_BY_ID.get(model.id)
+          const multiplier = creditMultiplierFor(model.id)
+          const context = model.contextBudget ?? spec?.context ?? 0
+          const vision = model.inputModalities.includes("image") ? "image" : "text only"
+          lines.push(
+            `  ${model.id}: ${context.toLocaleString()} usable input · ${(model.outputBudget ?? spec?.maxOutput ?? 0).toLocaleString()} output · ${vision} · ${multiplier.multiplier}x credits${multiplier.evidence === "unverified" ? " (multiplier not published)" : ""}`,
+          )
+        }
+      }
+    }
+
+    const snapshot = this.quotaSnapshots().find((entry) => entry.providerID === "opendesign")
+    if (snapshot) {
+      lines.push(`Quota state: ${quotaStateLabel(snapshot)}`)
+      for (const note of snapshot.notes.slice(0, 4)) lines.push(`  ${note}`)
+      if (snapshot.error) lines.push(`  ${snapshot.error}`)
+    }
+    lines.push("No inference request was made by this command.")
+    return lines.join("\n")
   }
 
   private formatReport() {
@@ -1564,8 +1754,18 @@ export class RouterController {
     const modelLines = Object.entries(metrics.byModel)
       .sort((a, b) => b[1].usd - a[1].usd)
       .slice(0, 8)
-      .map(([key, value]) => `${key}: ${value.requests} req · ${value.input.toLocaleString()} in · ${value.cacheRead.toLocaleString()} cache · ${value.output.toLocaleString()} out · ${usd(value.usd)}`)
+      .map(([key, value]) => {
+        const reliability =
+          value.failures > 0
+            ? ` · ${value.failures} provider fault${value.failures === 1 ? "" : "s"}`
+            : ""
+        const cost = key.startsWith("opendesign/")
+          ? `${usd(value.usd)} est. credits`
+          : usd(value.usd)
+        return `${key}: ${value.requests} req · ${value.input.toLocaleString()} in · ${value.cacheRead.toLocaleString()} cache · ${value.output.toLocaleString()} out · ${cost}${reliability}`
+      })
     const latency = metrics.latencySamples > 0 ? `${Math.round(metrics.latencyMsTotal / metrics.latencySamples)} ms avg` : "no samples"
+    const cooldowns = Object.entries(this.ledger.cooldowns()).filter(([, until]) => until > Date.now())
     return [
       `Requests: ${metrics.requests.toLocaleString()}`,
       `Tokens: ${metrics.inputTokens.toLocaleString()} fresh input, ${metrics.cacheReadTokens.toLocaleString()} cache read, ${metrics.outputTokens.toLocaleString()} output`,
@@ -1573,6 +1773,9 @@ export class RouterController {
       `Switches: ${metrics.switches} · escalations: ${metrics.escalations} · prevented premium: ${metrics.preventedPremium} · retries: ${metrics.retries}`,
       `Premium spend: ${usd(metrics.premiumUsd)} across ${metrics.premiumRequests} requests`,
       `Latency: ${latency}`,
+      ...cooldowns.map(
+        ([key, until]) => `Cooling down: ${key} for another ${Math.max(0, Math.round((until - Date.now()) / 1000))}s after a provider fault`,
+      ),
       ...modelLines,
     ].join("\n")
   }

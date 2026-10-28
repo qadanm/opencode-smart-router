@@ -1,0 +1,569 @@
+import type { ProviderQuotaSnapshot, ProviderSettings, QuotaWindow, UsageEvent } from "../types.js"
+import { clamp, pct, redact } from "../util.js"
+import {
+  OPENDESIGN_DEFAULT_CONTROL_BASE_URL,
+  OPENDESIGN_USER_AGENT,
+  failureClassForStatus,
+  normalizeOpenDesignControlBaseURL,
+  openDesignControlEndpoint,
+  type FetchLike,
+} from "../providers/opendesign.js"
+import { OPEN_DESIGN_MODEL_BY_ID } from "../providers/opendesign-models.js"
+import { OPENDESIGN_GO_PLAN, creditMultiplierFor } from "../providers/opendesign-credits.js"
+
+/**
+ * OpenDesign quota integration.
+ *
+ * OpenDesign publishes no quota API for an inference key. `GET /v1/usage` and
+ * `GET /v1/me` on the inference gateway return 404, and the account-control
+ * host rejects an inference key with HTTP 401. The upstream feature request
+ * for a key-readable usage endpoint is still open (nexu-io/open-design#8674),
+ * and the control-key lifecycle request is still open (#8870).
+ *
+ * Three states are therefore supported:
+ *
+ *  - `verified`  A control key was explicitly configured, so the account's own
+ *                coding-plan usage windows are read directly.
+ *  - `estimated` Only the inference key is available, so the router models its
+ *                own credit consumption against the published plan caps.
+ *  - `unknown`   Nothing can be established safely.
+ *
+ * The estimated state is a lower bound: usage from the OpenDesign desktop app
+ * or any other client on the same subscription is invisible to the router. A
+ * configurable margin is applied and the uncertainty is reported, never hidden.
+ */
+
+export type OpenDesignQuotaState =
+  | "verified"
+  | "estimated"
+  | "stale"
+  | "unknown"
+  | "exhausted"
+  | "unavailable"
+
+export interface OpenDesignQuotaInput {
+  readonly settings: ProviderSettings
+  readonly apiKey?: string
+  readonly controlKey?: string
+  readonly controlBaseURL?: string
+  readonly usage: ReadonlyArray<UsageEvent>
+  readonly fetchImpl?: FetchLike
+  readonly now?: () => number
+  readonly multiplierOverrides?: Readonly<Record<string, number>>
+  /** Credits per USD as reported by the account. Defaults to the observed value. */
+  readonly creditsPerUsd?: number
+  /** Extra margin applied to locally observed usage, in percent. */
+  readonly uncertaintyMarginPct?: number
+  readonly timeoutMs?: number
+}
+
+export interface OpenDesignQuotaResult {
+  readonly snapshot: ProviderQuotaSnapshot
+  readonly state: OpenDesignQuotaState
+}
+
+/** Credits per USD observed from the OpenDesign account surface. */
+export const OPENDESIGN_DEFAULT_CREDITS_PER_USD = 10_000
+
+export const OPENDESIGN_DEFAULT_UNCERTAINTY_MARGIN_PCT = 20
+
+const FIVE_HOURS_MS = 5 * 60 * 60 * 1000
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000
+const MONTH_MS = 30 * 24 * 60 * 60 * 1000
+
+const unknownWindow: QuotaWindow = { usedPct: 0, remainingPct: 100, source: "unknown" }
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value)
+
+const numberOr = (value: unknown): number | undefined => {
+  if (typeof value === "number" && Number.isFinite(value)) return value
+  if (typeof value === "string") {
+    const parsed = Number(value)
+    if (Number.isFinite(parsed)) return parsed
+  }
+  return undefined
+}
+
+const timeValue = (value: unknown): number | undefined => {
+  if (typeof value === "number" && Number.isFinite(value)) return value
+  if (typeof value === "string") {
+    const parsed = Date.parse(value)
+    if (Number.isFinite(parsed)) return parsed
+  }
+  return undefined
+}
+
+/**
+ * Estimate the Design Plan credits consumed by one request.
+ *
+ * This converts token counts into credits using the curated vendor list price
+ * for the model and the published Design Plan multiplier. It is an estimate of
+ * the underlying usage value, never an observed provider charge.
+ */
+export const estimateDesignPlanCredits = (input: {
+  readonly modelID: string
+  readonly input: number
+  readonly output: number
+  readonly cacheRead: number
+  readonly cacheWrite?: number
+  readonly multiplierOverrides?: Readonly<Record<string, number>>
+  readonly now?: number
+}): { creditsUsd: number; multiplier: number; evidence: string } => {
+  const spec = OPEN_DESIGN_MODEL_BY_ID.get(input.modelID)
+  const tier = spec?.cost?.[0]
+  const multiplier = creditMultiplierFor(input.modelID, {
+    now: input.now,
+    ...(input.multiplierOverrides ? { overrides: input.multiplierOverrides } : {}),
+  })
+  if (!tier) {
+    return { creditsUsd: 0, multiplier: multiplier.multiplier, evidence: "no-price" }
+  }
+  const price = (tier.input * Math.max(0, input.input) +
+    tier.output * Math.max(0, input.output) +
+    (tier.cache?.read ?? 0) * Math.max(0, input.cacheRead) +
+    (tier.cache?.write ?? 0) * Math.max(0, input.cacheWrite ?? 0)) /
+    1_000_000
+  return {
+    creditsUsd: Math.max(0, price) * multiplier.multiplier,
+    multiplier: multiplier.multiplier,
+    evidence: multiplier.evidence,
+  }
+}
+
+interface LocalWindowTotals {
+  readonly rollingUsd: number
+  readonly weeklyUsd: number
+  readonly monthlyUsd: number
+  readonly observedRequests: number
+}
+
+const localTotals = (
+  usage: ReadonlyArray<UsageEvent>,
+  providerID: string,
+  now: number,
+  marginPct: number,
+  multiplierOverrides?: Readonly<Record<string, number>>,
+): LocalWindowTotals => {
+  const rollingCutoff = now - FIVE_HOURS_MS
+  const weekCutoff = now - WEEK_MS
+  const monthCutoff = now - MONTH_MS
+  let rollingUsd = 0
+  let weeklyUsd = 0
+  let monthlyUsd = 0
+  let observedRequests = 0
+  for (const event of usage) {
+    if (event.providerID !== providerID) continue
+    const credits = estimateDesignPlanCredits({
+      modelID: event.modelID,
+      input: event.input,
+      output: event.output,
+      cacheRead: event.cacheRead,
+      cacheWrite: event.cacheWrite,
+      now,
+      ...(multiplierOverrides ? { multiplierOverrides } : {}),
+    }).creditsUsd
+    if (credits <= 0) continue
+    observedRequests += 1
+    if (event.at >= rollingCutoff) rollingUsd += credits
+    if (event.at >= weekCutoff) weeklyUsd += credits
+    if (event.at >= monthCutoff) monthlyUsd += credits
+  }
+  const margin = 1 + Math.max(0, marginPct) / 100
+  return {
+    rollingUsd: rollingUsd * margin,
+    weeklyUsd: weeklyUsd * margin,
+    monthlyUsd: monthlyUsd * margin,
+    observedRequests,
+  }
+}
+
+const windowFrom = (
+  usedUsd: number,
+  capUsd: number,
+  resetsAt: number | undefined,
+  source: "provider" | "estimate",
+): QuotaWindow => {
+  const usedPct = capUsd > 0 ? pct(usedUsd, capUsd) : 0
+  return {
+    usedPct,
+    remainingPct: clamp(100 - usedPct, 0, 100),
+    usedUsd,
+    capUsd,
+    ...(resetsAt !== undefined ? { resetsAt } : {}),
+    exceeded: capUsd > 0 && usedUsd >= capUsd,
+    source,
+  }
+}
+
+const baseSnapshot = (
+  input: OpenDesignQuotaInput,
+  now: number,
+  error?: string,
+  retryAfterMs?: number,
+  notes: ReadonlyArray<string> = [],
+): ProviderQuotaSnapshot => ({
+  providerID: "opendesign",
+  label: "OpenDesign Go",
+  plan: input.settings.plan || OPENDESIGN_GO_PLAN.plan,
+  source: "unknown",
+  fetchedAt: now,
+  stale: false,
+  rolling: unknownWindow,
+  weekly: unknownWindow,
+  monthly: unknownWindow,
+  models: {},
+  notes: [...notes],
+  ...(error ? { error } : {}),
+  ...(retryAfterMs !== undefined ? { retryAfterMs } : {}),
+})
+
+const capsFor = (settings: ProviderSettings) => ({
+  monthly: settings.monthlyCreditsUsd && settings.monthlyCreditsUsd > 0
+    ? settings.monthlyCreditsUsd
+    : OPENDESIGN_GO_PLAN.designPlanMonthlyUsd,
+  weekly: settings.weeklyCapUsd && settings.weeklyCapUsd > 0
+    ? settings.weeklyCapUsd
+    : OPENDESIGN_GO_PLAN.weeklyCapUsd,
+  rolling: settings.fiveHourCapUsd && settings.fiveHourCapUsd > 0
+    ? settings.fiveHourCapUsd
+    : OPENDESIGN_GO_PLAN.fiveHourCapUsd,
+})
+
+interface ControlFetchResult {
+  readonly ok: boolean
+  readonly body?: unknown
+  readonly error?: string
+  readonly status?: number
+  readonly retryAfterMs?: number
+}
+
+const controlFetch = async (
+  url: string,
+  controlKey: string,
+  fetchImpl: FetchLike,
+  timeoutMs: number,
+): Promise<ControlFetchResult> => {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    const response = await fetchImpl(url, {
+      method: "GET",
+      headers: {
+        authorization: `Bearer ${controlKey}`,
+        accept: "application/json",
+        "user-agent": OPENDESIGN_USER_AGENT,
+      },
+      redirect: "error",
+      signal: controller.signal,
+    })
+    if (!response.ok) {
+      const retryAfter = Number(response.headers.get("retry-after"))
+      const retryAfterMs =
+        Number.isFinite(retryAfter) && retryAfter >= 0 ? Math.min(retryAfter * 1000, 15 * 60_000) : undefined
+      return {
+        ok: false,
+        error: `Account control request returned HTTP ${response.status}`,
+        status: response.status,
+        ...(retryAfterMs !== undefined ? { retryAfterMs } : {}),
+      }
+    }
+    const text = await response.text()
+    if (text.length > 2 * 1024 * 1024) {
+      return { ok: false, error: "Account control response was unexpectedly large" }
+    }
+    try {
+      return { ok: true, body: JSON.parse(text) as unknown }
+    } catch {
+      return { ok: false, error: "Account control response was malformed" }
+    }
+  } catch (error) {
+    return {
+      ok: false,
+      error: controller.signal.aborted
+        ? "Account control request timed out"
+        : redact(error instanceof Error ? error.message : String(error)),
+    }
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+interface ControlWindow {
+  readonly kind: "rolling" | "weekly" | "monthly"
+  readonly usedCredits: number
+  readonly limitCredits: number
+  readonly remainingCredits: number
+  readonly resetsAt?: number
+}
+
+const classifyWindow = (durationSeconds: number): ControlWindow["kind"] | undefined => {
+  if (durationSeconds <= 0) return undefined
+  if (durationSeconds <= 6 * 3600) return "rolling"
+  if (durationSeconds <= 8 * 86400) return "weekly"
+  if (durationSeconds <= 32 * 86400) return "monthly"
+  return undefined
+}
+
+const parseControlWindows = (value: unknown): ControlWindow[] => {
+  if (!Array.isArray(value)) return []
+  const out: ControlWindow[] = []
+  for (const row of value) {
+    if (!isRecord(row)) continue
+    const duration = numberOr(row.durationSeconds)
+    if (duration === undefined) continue
+    const kind = classifyWindow(duration)
+    if (!kind) continue
+    const usedCredits = numberOr(row.usedCredits) ?? 0
+    const limitCredits = numberOr(row.limitCredits) ?? 0
+    const remainingCredits = numberOr(row.remainingCredits) ?? Math.max(0, limitCredits - usedCredits)
+    const resetsAt = timeValue(row.resetsAt)
+    out.push({ kind, usedCredits, limitCredits, remainingCredits, ...(resetsAt !== undefined ? { resetsAt } : {}) })
+  }
+  return out
+}
+
+/**
+ * Read the account's coding-plan usage windows and wallet balance.
+ *
+ * The control key is a privileged credential. It is only used when the owner
+ * explicitly configures one; the router never obtains one on its own and never
+ * asks for a browser session.
+ */
+const probeVerified = async (
+  input: OpenDesignQuotaInput,
+  now: number,
+): Promise<OpenDesignQuotaResult> => {
+  const fetchImpl = input.fetchImpl ?? fetch
+  const timeoutMs = input.timeoutMs ?? 12_000
+  const controlBase = normalizeOpenDesignControlBaseURL(input.controlBaseURL ?? OPENDESIGN_DEFAULT_CONTROL_BASE_URL)
+  const controlKey = input.controlKey ?? ""
+
+  const current = await controlFetch(
+    openDesignControlEndpoint(controlBase, "/v1/workspaces/current"),
+    controlKey,
+    fetchImpl,
+    timeoutMs,
+  )
+  if (!current.ok || !isRecord(current.body)) {
+    return {
+      snapshot: baseSnapshot(input, now, current.error ?? "Could not read the current workspace", current.retryAfterMs, [
+        "Verified quota is unavailable.",
+      ]),
+      state: "unavailable",
+    }
+  }
+  const workspaceId =
+    typeof current.body.activeWorkspaceId === "string"
+      ? current.body.activeWorkspaceId
+      : typeof current.body.workspaceId === "string"
+        ? current.body.workspaceId
+        : undefined
+  if (!workspaceId) {
+    return {
+      snapshot: baseSnapshot(input, now, "The account did not report an active workspace", undefined, [
+        "Verified quota is unavailable.",
+      ]),
+      state: "unavailable",
+    }
+  }
+
+  const usage = await controlFetch(
+    openDesignControlEndpoint(controlBase, `/v1/workspaces/${encodeURIComponent(workspaceId)}/billing/coding-plan-usage`),
+    controlKey,
+    fetchImpl,
+    timeoutMs,
+  )
+  if (!usage.ok || !isRecord(usage.body)) {
+    return {
+      snapshot: baseSnapshot(input, now, usage.error ?? "Could not read coding-plan usage", usage.retryAfterMs, [
+        "Verified quota is unavailable.",
+      ]),
+      state: "unavailable",
+    }
+  }
+  // Never combine a workspace's usage with another workspace's balance.
+  const reportedWorkspace = typeof usage.body.workspaceId === "string" ? usage.body.workspaceId : undefined
+  if (reportedWorkspace && reportedWorkspace !== workspaceId) {
+    return {
+      snapshot: baseSnapshot(input, now, "The usage response did not match the active workspace", undefined, [
+        "Balances from different workspaces are never combined.",
+      ]),
+      state: "unavailable",
+    }
+  }
+
+  const summary = await controlFetch(
+    openDesignControlEndpoint(controlBase, "/v1/billing/summary"),
+    controlKey,
+    fetchImpl,
+    timeoutMs,
+  )
+  const summaryBody = summary.ok && isRecord(summary.body) ? summary.body : undefined
+  const creditsPerUsd = numberOr(summaryBody?.creditsPerUsd) ?? input.creditsPerUsd ?? OPENDESIGN_DEFAULT_CREDITS_PER_USD
+  const balances = isRecord(summaryBody?.balances) ? (summaryBody!.balances as Record<string, unknown>) : undefined
+  const rechargeCredits = numberOr(balances?.rechargeCredits) ?? 0
+  const subscriptionCredits = numberOr(balances?.subscriptionCredits) ?? 0
+  const purchasedUsd = rechargeCredits / creditsPerUsd
+
+  const windows = parseControlWindows(usage.body.windows)
+  const caps = capsFor(input.settings)
+  const find = (kind: ControlWindow["kind"]) => windows.find((window) => window.kind === kind)
+
+  const toWindow = (window: ControlWindow | undefined, fallbackCapUsd: number): QuotaWindow => {
+    if (!window || window.limitCredits <= 0) {
+      return { usedPct: 0, remainingPct: 100, source: "unknown" }
+    }
+    const usedPct = pct(window.usedCredits, window.limitCredits)
+    return {
+      usedPct,
+      remainingPct: clamp(100 - usedPct, 0, 100),
+      usedUsd: window.usedCredits / creditsPerUsd,
+      capUsd: window.limitCredits / creditsPerUsd,
+      ...(window.resetsAt !== undefined ? { resetsAt: window.resetsAt } : {}),
+      exceeded: window.usedCredits >= window.limitCredits,
+      source: "provider",
+    }
+  }
+
+  const rolling = toWindow(find("rolling"), caps.rolling)
+  const weekly = toWindow(find("weekly"), caps.weekly)
+  const monthlyWindow = find("monthly")
+  const monthly = monthlyWindow
+    ? toWindow(monthlyWindow, caps.monthly)
+    : {
+        usedPct: 0,
+        remainingPct: 100,
+        source: "unknown" as const,
+      }
+
+  const periodStart = timeValue(summaryBody?.subscriptionCurrentPeriodStart)
+  const periodEnd = timeValue(summaryBody?.subscriptionCurrentPeriodEnd)
+  const monthlyRemainingUsd = monthlyWindow
+    ? monthlyWindow.remainingCredits / creditsPerUsd
+    : subscriptionCredits > 0
+      ? subscriptionCredits / creditsPerUsd
+      : undefined
+
+  const notes = [
+    "Provider-reported OpenDesign coding-plan usage.",
+    "Read-only probe; no inference request is made.",
+    `Workspace ${workspaceId}.`,
+  ]
+  if (purchasedUsd > 0) {
+    notes.push(
+      `Wallet balance ${purchasedUsd.toFixed(2)} USD is separate from the subscription allowance and is not used for automatic routing.`,
+    )
+  }
+
+  const snapshot: ProviderQuotaSnapshot = {
+    providerID: "opendesign",
+    label: "OpenDesign Go",
+    plan: input.settings.plan || OPENDESIGN_GO_PLAN.plan,
+    source: "provider",
+    fetchedAt: now,
+    stale: false,
+    rolling,
+    weekly,
+    monthly,
+    monthlyGrantUsd: caps.monthly,
+    ...(monthlyRemainingUsd !== undefined ? { monthlyRemainingUsd } : {}),
+    extraCredits: {
+      purchasedUsd,
+      freeUsd: 0,
+      totalUsd: purchasedUsd,
+    },
+    planStatus: typeof summaryBody?.membershipTier === "string" ? summaryBody.membershipTier : undefined,
+    ...(periodStart !== undefined ? { periodStart } : {}),
+    ...(periodEnd !== undefined ? { periodEnd } : {}),
+    models: {},
+    notes,
+  }
+  const exhausted = Boolean(rolling.exceeded || weekly.exceeded || monthly.exceeded)
+  return { snapshot, state: exhausted ? "exhausted" : "verified" }
+}
+
+/**
+ * Model the router's own credit consumption against the published plan caps.
+ */
+const probeEstimated = (input: OpenDesignQuotaInput, now: number): OpenDesignQuotaResult => {
+  const caps = capsFor(input.settings)
+  const marginPct = input.uncertaintyMarginPct ?? OPENDESIGN_DEFAULT_UNCERTAINTY_MARGIN_PCT
+  const totals = localTotals(
+    input.usage,
+    "opendesign",
+    now,
+    marginPct,
+    input.multiplierOverrides,
+  )
+  const rolling = windowFrom(totals.rollingUsd, caps.rolling, undefined, "estimate")
+  const weekly = windowFrom(totals.weeklyUsd, caps.weekly, undefined, "estimate")
+  const monthly = windowFrom(totals.monthlyUsd, caps.monthly, undefined, "estimate")
+  const notes = [
+    "Estimated from this router's own OpenDesign usage. OpenDesign publishes no quota API for an inference key.",
+    `A ${marginPct}% safety margin is applied. Usage from the OpenDesign app or other clients on the same subscription is not visible, so this is a lower bound.`,
+    "Wallet balance is not included and is never used for automatic routing.",
+  ]
+  if (totals.observedRequests === 0) {
+    notes.push("No OpenDesign requests have been routed through this router yet, so the estimate starts at zero.")
+  }
+  const snapshot: ProviderQuotaSnapshot = {
+    providerID: "opendesign",
+    label: "OpenDesign Go",
+    plan: input.settings.plan || OPENDESIGN_GO_PLAN.plan,
+    source: "estimate",
+    fetchedAt: now,
+    stale: false,
+    rolling,
+    weekly,
+    monthly,
+    monthlyGrantUsd: caps.monthly,
+    monthlyRemainingUsd: Math.max(0, caps.monthly - totals.monthlyUsd),
+    models: {},
+    notes,
+  }
+  const exhausted = Boolean(rolling.exceeded || weekly.exceeded || monthly.exceeded)
+  return { snapshot, state: exhausted ? "exhausted" : "estimated" }
+}
+
+/**
+ * Resolve the OpenDesign quota state.
+ *
+ * A control key, when explicitly configured, produces verified provider
+ * numbers. Otherwise the router falls back to its own estimate. It never
+ * acquires a control key, never uses a browser session, and never treats a
+ * wallet balance as permission to spend.
+ */
+export const probeOpenDesignQuota = async (
+  input: OpenDesignQuotaInput,
+): Promise<OpenDesignQuotaResult> => {
+  const now = input.now?.() ?? Date.now()
+  if (!input.settings.enabled) {
+    return {
+      snapshot: baseSnapshot(input, now, "OpenDesign is disabled in router settings", undefined, [
+        "The provider is disabled; it takes no part in routing.",
+      ]),
+      state: "unavailable",
+    }
+  }
+  if (input.controlKey) {
+    return probeVerified(input, now)
+  }
+  if (!input.apiKey) {
+    return {
+      snapshot: baseSnapshot(input, now, "No OpenDesign credential is configured", undefined, [
+        "Add an OpenDesign API key, or configure a control key for verified quota.",
+      ]),
+      state: "unavailable",
+    }
+  }
+  return probeEstimated(input, now)
+}
+
+export const __opendesignQuotaInternals = {
+  classifyWindow,
+  parseControlWindows,
+  localTotals,
+  windowFrom,
+  failureClassForStatus,
+}

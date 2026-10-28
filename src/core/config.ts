@@ -42,6 +42,21 @@ export const DEFAULT_SETTINGS: RouterSettings = {
       fiveHourCapUsd: 14,
       weeklyCapUsd: 35,
     }),
+    // OpenDesign is optional and disabled by default. A user without
+    // OpenDesign credentials sees no behavior change at all.
+    opendesign: providerDefaults("go", {
+      enabled: false,
+      probeUsage: true,
+      monthlyCreditsUsd: 120,
+      fiveHourCapUsd: 10,
+      weeklyCapUsd: 30,
+      reserveMonthlyPct: 5,
+      reserveWeeklyPct: 10,
+      reserveFiveHourPct: 0,
+      allowExtraUsage: false,
+      subscriptionOnly: true,
+      providerScopedQuota: true,
+    }),
   },
   privacy: {
     allowTrainingModels: false,
@@ -67,6 +82,7 @@ export const DEFAULT_SETTINGS: RouterSettings = {
   quota: {
     probeOpenCodeGo: true,
     probeCommandCode: true,
+    probeOpenDesign: true,
     probeIntervalMinutes: 5,
     bootstrapSessions: 100,
     bootstrapDays: 31,
@@ -182,11 +198,83 @@ const validateProvider = (
       value.credentialPath === undefined
         ? base.credentialPath
         : asString(value.credentialPath, base.credentialPath ?? "", warnings, `${path}.credentialPath`) || undefined,
+    baseURL:
+      value.baseURL === undefined
+        ? base.baseURL
+        : asString(value.baseURL, base.baseURL ?? "", warnings, `${path}.baseURL`) || undefined,
+    controlBaseURL:
+      value.controlBaseURL === undefined
+        ? base.controlBaseURL
+        : asString(value.controlBaseURL, base.controlBaseURL ?? "", warnings, `${path}.controlBaseURL`) || undefined,
+    controlKeyPath:
+      value.controlKeyPath === undefined
+        ? base.controlKeyPath
+        : asString(value.controlKeyPath, base.controlKeyPath ?? "", warnings, `${path}.controlKeyPath`) || undefined,
+    subscriptionOnly:
+      value.subscriptionOnly === undefined
+        ? base.subscriptionOnly
+        : asBoolean(value.subscriptionOnly, base.subscriptionOnly ?? true, warnings, `${path}.subscriptionOnly`),
+    creditsPerUsd:
+      value.creditsPerUsd === undefined
+        ? base.creditsPerUsd
+        : asNumber(value.creditsPerUsd, base.creditsPerUsd ?? 10_000, warnings, `${path}.creditsPerUsd`, 1, 10_000_000),
+    uncertaintyMarginPct:
+      value.uncertaintyMarginPct === undefined
+        ? base.uncertaintyMarginPct
+        : asNumber(
+            value.uncertaintyMarginPct,
+            base.uncertaintyMarginPct ?? 20,
+            warnings,
+            `${path}.uncertaintyMarginPct`,
+            0,
+            500,
+          ),
+    unknownQuotaPolicy:
+      value.unknownQuotaPolicy === undefined
+        ? base.unknownQuotaPolicy
+        : asEnum(
+            value.unknownQuotaPolicy,
+            ["route", "block", "ask"] as const,
+            base.unknownQuotaPolicy ?? "route",
+            warnings,
+            `${path}.unknownQuotaPolicy`,
+          ),
+    multiplierOverrides:
+      value.multiplierOverrides === undefined
+        ? base.multiplierOverrides
+        : normalizeMultiplierOverrides(value.multiplierOverrides, base.multiplierOverrides, warnings, `${path}.multiplierOverrides`),
+    providerScopedQuota:
+      value.providerScopedQuota === undefined
+        ? base.providerScopedQuota
+        : asBoolean(value.providerScopedQuota, base.providerScopedQuota ?? false, warnings, `${path}.providerScopedQuota`),
   }
 }
 
 const finiteNonNegative = (value: unknown): number | undefined =>
   typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : undefined
+
+const normalizeMultiplierOverrides = (
+  value: unknown,
+  base: Readonly<Record<string, number>> | undefined,
+  warnings: string[],
+  path: string,
+): Readonly<Record<string, number>> | undefined => {
+  if (value === undefined) return base
+  if (!isRecord(value)) {
+    warnings.push(`${path} must be an object; using the previous value`)
+    return base
+  }
+  const out: Record<string, number> = { ...(base ?? {}) }
+  for (const [modelID, multiplier] of Object.entries(value)) {
+    const parsed = finiteNonNegative(multiplier)
+    if (parsed === undefined || parsed <= 0) {
+      warnings.push(`${path}.${modelID} must be a positive number; the entry was ignored`)
+      continue
+    }
+    out[modelID] = parsed
+  }
+  return out
+}
 
 const normalizeCostTiers = (value: unknown, index: number, warnings: string[]): CostTier[] => {
   if (!Array.isArray(value) || value.length === 0) {
@@ -401,6 +489,7 @@ export const validateSettings = (input: unknown, base: RouterSettings = DEFAULT_
   const quota = {
     probeOpenCodeGo: asBoolean(quotaInput.probeOpenCodeGo, base.quota.probeOpenCodeGo, warnings, "quota.probeOpenCodeGo"),
     probeCommandCode: asBoolean(quotaInput.probeCommandCode, base.quota.probeCommandCode, warnings, "quota.probeCommandCode"),
+    probeOpenDesign: asBoolean(quotaInput.probeOpenDesign, base.quota.probeOpenDesign, warnings, "quota.probeOpenDesign"),
     probeIntervalMinutes: asNumber(
       quotaInput.probeIntervalMinutes,
       base.quota.probeIntervalMinutes,

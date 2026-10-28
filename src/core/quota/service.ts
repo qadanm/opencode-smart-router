@@ -1,25 +1,34 @@
-import type { ProviderQuotaSnapshot, ProviderSettings, QuotaWindow } from "../types.js"
+import type { ProviderQuotaSnapshot, ProviderSettings, QuotaWindow, UsageEvent } from "../types.js"
 import { probeCommandCodeQuota, type FetchLike } from "./commandcode.js"
 import { probeOpenCodeGoQuota } from "./opencode-go.js"
+import { probeOpenDesignQuota } from "./opendesign.js"
 
 export interface QuotaCredentials {
   readonly goAccessToken?: string
   readonly commandCodeIntegrationKey?: string
   readonly commandCodeProviderKey?: string
+  /** OpenDesign inference key. It cannot read quota. */
+  readonly openDesignApiKey?: string
+  /** OpenDesign account-control key. Only used when explicitly configured. */
+  readonly openDesignControlKey?: string
 }
 
 export interface QuotaServiceOptions {
-  readonly getSettings: () => {
-    readonly "opencode-go": ProviderSettings
-    readonly commandcode: ProviderSettings
-  }
+  readonly getSettings: () => Readonly<Record<string, ProviderSettings>>
   readonly getCredentials: () => Promise<QuotaCredentials>
   readonly probeIntervalMinutes: number
   readonly fetchImpl?: FetchLike
   readonly now?: () => number
   readonly onSnapshot?: (snapshot: ProviderQuotaSnapshot) => void
   readonly initial?: ReadonlyArray<ProviderQuotaSnapshot>
+  /** Local usage events, used by providers whose quota must be modelled. */
+  readonly getUsageEvents?: () => ReadonlyArray<UsageEvent>
 }
+
+/** Providers the router can probe. Order does not imply preference. */
+export const QUOTA_PROVIDER_IDS = ["opencode-go", "commandcode", "opendesign"] as const
+
+export type QuotaProviderID = (typeof QUOTA_PROVIDER_IDS)[number]
 
 interface ProviderState {
   snapshot?: ProviderQuotaSnapshot
@@ -50,11 +59,15 @@ const unknownSnapshot = (
   models: {},
   notes: [],
   error,
+  quotaState: "unknown",
 })
 
 const withStale = (snapshot: ProviderQuotaSnapshot, now: number, intervalMs: number): ProviderQuotaSnapshot => ({
   ...snapshot,
   stale: now - snapshot.fetchedAt > Math.max(intervalMs * 2, 60_000),
+  ...(snapshot.quotaState && snapshot.quotaState !== "unknown" && snapshot.quotaState !== "unavailable"
+    ? { quotaState: now - snapshot.fetchedAt > Math.max(intervalMs * 2, 60_000) ? ("stale" as const) : snapshot.quotaState }
+    : {}),
 })
 
 const backoffFor = (failures: number) => {
@@ -72,6 +85,7 @@ export class QuotaService {
   private readonly state: Record<string, ProviderState> = {
     "opencode-go": { lastAttempt: 0, nextAllowed: 0, failures: 0 },
     commandcode: { lastAttempt: 0, nextAllowed: 0, failures: 0 },
+    opendesign: { lastAttempt: 0, nextAllowed: 0, failures: 0 },
   }
 
   constructor(options: QuotaServiceOptions) {
@@ -111,8 +125,9 @@ export class QuotaService {
     const now = this.now()
     const interval = this.intervalMs()
     const settings = this.options.getSettings()
-    for (const providerID of ["opencode-go", "commandcode"] as const) {
-      if (!settings[providerID].enabled || !settings[providerID].probeUsage) continue
+    for (const providerID of QUOTA_PROVIDER_IDS) {
+      const providerSettings = settings[providerID]
+      if (!providerSettings?.enabled || !providerSettings.probeUsage) continue
       const state = this.state[providerID]
       if (!state) continue
       if ((!state.snapshot || now - state.lastAttempt > interval) && now >= state.nextAllowed && !state.inFlight) {
@@ -122,11 +137,11 @@ export class QuotaService {
     return this.getCached()
   }
 
-  async refresh(providerID: "opencode-go" | "commandcode", force = false): Promise<ProviderQuotaSnapshot> {
+  async refresh(providerID: QuotaProviderID | string, force = false): Promise<ProviderQuotaSnapshot> {
     const settings = this.options.getSettings()[providerID]
     const state = this.state[providerID]
-    if (!state) {
-      return unknownSnapshot(providerID, providerID, settings.plan, this.now(), "Unknown provider")
+    if (!settings || !state) {
+      return unknownSnapshot(providerID, providerID, settings?.plan ?? "unknown", this.now(), "Unknown provider")
     }
     if (!settings.enabled || !settings.probeUsage) {
       return (
@@ -176,7 +191,7 @@ export class QuotaService {
     return task
   }
 
-  private async probe(providerID: "opencode-go" | "commandcode", settings: ProviderSettings) {
+  private async probe(providerID: string, settings: ProviderSettings) {
     const credentials = await this.options.getCredentials()
     if (providerID === "opencode-go") {
       const result = await probeOpenCodeGoQuota({
@@ -186,6 +201,21 @@ export class QuotaService {
         now: this.options.now,
       })
       return result.snapshot
+    }
+    if (providerID === "opendesign") {
+      const result = await probeOpenDesignQuota({
+        settings,
+        apiKey: credentials.openDesignApiKey,
+        controlKey: credentials.openDesignControlKey,
+        usage: this.options.getUsageEvents?.() ?? [],
+        fetchImpl: this.options.fetchImpl,
+        now: this.options.now,
+        ...(settings.controlBaseURL ? { controlBaseURL: settings.controlBaseURL } : {}),
+        ...(settings.creditsPerUsd !== undefined ? { creditsPerUsd: settings.creditsPerUsd } : {}),
+        ...(settings.uncertaintyMarginPct !== undefined ? { uncertaintyMarginPct: settings.uncertaintyMarginPct } : {}),
+        ...(settings.multiplierOverrides ? { multiplierOverrides: settings.multiplierOverrides } : {}),
+      })
+      return { ...result.snapshot, quotaState: result.state }
     }
     const result = await probeCommandCodeQuota({
       settings,
@@ -200,8 +230,10 @@ export class QuotaService {
   async initialize(): Promise<ProviderQuotaSnapshot[]> {
     const settings = this.options.getSettings()
     const tasks: Array<Promise<ProviderQuotaSnapshot>> = []
-    if (settings["opencode-go"].enabled && settings["opencode-go"].probeUsage) tasks.push(this.refresh("opencode-go", true))
-    if (settings.commandcode.enabled && settings.commandcode.probeUsage) tasks.push(this.refresh("commandcode", true))
+    for (const providerID of QUOTA_PROVIDER_IDS) {
+      const providerSettings = settings[providerID]
+      if (providerSettings?.enabled && providerSettings.probeUsage) tasks.push(this.refresh(providerID, true))
+    }
     if (tasks.length === 0) return this.getCached()
     await Promise.allSettled(tasks)
     return this.getCached()
