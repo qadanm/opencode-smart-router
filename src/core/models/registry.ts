@@ -48,6 +48,7 @@ const fromSeed = (seed: SeedModel): ModelRecord => ({
   outputModalities: ["text"],
   tools: seed.tools ?? true,
   cost: seed.cost,
+  ...(seed.peakPricing ? { peakPricing: seed.peakPricing } : {}),
   intelligence: seed.intelligence,
   design: seed.design,
   designEvidence: seed.designEvidence ?? "curated",

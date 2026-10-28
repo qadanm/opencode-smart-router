@@ -1,0 +1,28 @@
+artifact=8c71c46c5f7616f950c6a3fcf5c42be2198407848cf9ffac15d01504496f8920
+--- commands ---
+router_commands=0
+--- diagnostics ---
+{"coreID":"qx6m87mr","pid":8745,"bridgeCount":1,"setups":1,"eventStreams":1,"errors":0}
+--- status ---
+{"enabled":true,"approvals":2,"quota":[]}
+--- create session ---
+sid=ses_e7f2058d8ffeYt6Gs4MQwu0Zi5
+prompt_http=200
+--- session ---
+{"title":"AUTO · lab-cc · Lab DeepSeek V4.1 Flash — artifact validation 8c71c46c","model":{"id":"deepseek-v4.1-flash","providerID":"lab-cc","variant":"default"},"outcome":"succeeded","tokens":{"input":10,"output":2,"reasoning":0,"cache":{"read":0,"write":0}},"cost":0.0000027}
+--- decision ---
+{"chosen":{"providerID":"lab-cc","id":"deepseek-v4.1-flash"},"current":{"providerID":"lab-cc","id":"deepseek-v4.1-flash","variant":"default"},"switched":false,"warnings":[]}
+--- mock request count ---
+mock_chat_requests=1
+--- errors ---
+thrash=0 errors=0
+bridge_dir=/private/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T/opencode/smart-router-lab10
+router_commands_retry=16
+--- design fallback session ---
+design_sid=ses_e7f2020e9ffe2QjxCUEvGx1U9g
+design_http=200
+{"title":"AUTO · lab-cc · Lab Claude Haiku 5.5 — artifact design validation 8c71c46c","model":{"id":"claude-haiku-5-5","providerID":"lab-cc","variant":"default"},"outcome":"succeeded","tokens":{"input":10,"output":2,"reasoning":0,"cache":{"read":0,"write":0}},"cost":0.000002}
+{"chosen":{"providerID":"lab-cc","id":"claude-haiku-5-5"},"warnings":["No model met the sophisticated design threshold; using the best qualified standard design route."],"candidate_reason":"Standard design route: design 70 is below the sophisticated 75 threshold","needsPremiumApproval":true}
+--- mock/errors ---
+mock_chat_requests=2
+thrash=0 errors=0

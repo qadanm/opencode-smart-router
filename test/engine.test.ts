@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import { DEFAULT_SETTINGS } from "../src/core/config.js"
 import { classifyTask } from "../src/core/classify/classifier.js"
 import { buildRegistry } from "../src/core/models/registry.js"
+import { evaluateEligibility } from "../src/core/policy/eligibility.js"
 import { LedgerStore } from "../src/core/quota/ledger.js"
 import { estimateTaskCost, routeTask } from "../src/core/routing/engine.js"
 import type { ProviderQuotaSnapshot, RouterSettings, SessionState } from "../src/core/types.js"
@@ -132,6 +133,63 @@ describe("routing engine", () => {
     expect(result.decision.chosen?.id).not.toBe("glm-5.3")
   })
 
+  it("separates Haiku's standard intelligence from sophisticated-design eligibility", () => {
+    const registry = buildRegistry({ live: [], settings: settings() })
+    const haiku = registry.get("commandcode", "claude-haiku-5-5")!
+    const deepseek = registry.get("commandcode", "deepseek-v4.1-flash")!
+    expect(deepseek.intelligence).toBe(DEFAULT_SETTINGS.routing.intelligenceFloor)
+    expect(haiku.intelligence).toBeGreaterThanOrEqual(DEFAULT_SETTINGS.routing.intelligenceFloor)
+    expect(haiku.design).toBeLessThan(DEFAULT_SETTINGS.routing.sophisticatedDesignFloor)
+
+    const task = classifyTask({
+      text: "Redesign the landing page. Improve typography, spacing, and responsive layout. Make it sophisticated.",
+    })
+    expect(task.designIntensive).toBe(true)
+    expect(task.sophisticatedDesign).toBe(true)
+    const base = {
+      model: haiku,
+      task,
+      settings: settings(),
+      mode: "balanced" as const,
+      contextTokens: 10_000,
+      premium: { allowed: false, requiresApproval: true, reason: "test" },
+    }
+    const strict = evaluateEligibility(base)
+    expect(strict.eligible).toBe(false)
+    expect(strict.reason).toMatch(/Design capability 70 is below the 75/)
+    const relaxed = evaluateEligibility({ ...base, allowDesignRelaxation: true })
+    expect(relaxed.eligible).toBe(true)
+    expect(relaxed.reason).toMatch(/design fallback/i)
+    expect(relaxed.warnings.join(" ")).toMatch(/below the preferred 75/)
+  })
+
+  it("labels a sophisticated-design fallback as such in the routing decision", () => {
+    const config = settings()
+    const registry = buildRegistry({ live: [], settings: config })
+    const haiku = registry.get("commandcode", "claude-haiku-5-5")!
+    const task = classifyTask({
+      text: "Redesign the landing page. Improve typography, spacing, and responsive layout. Make it sophisticated.",
+    })
+    const result = routeTask({
+      task,
+      settings: config,
+      mode: "balanced",
+      runtime: "automatic",
+      models: [haiku],
+      current: undefined,
+      session: session(),
+      quota: quota(),
+      premium: premiumState(config),
+      contextTokens: 10_000,
+      cachedTokens: 0,
+      dryRun: false,
+      now: NOW,
+    })
+    expect(result.chosenModel?.key).toBe("commandcode/claude-haiku-5-5")
+    expect(result.decision.warnings.join(" ")).toMatch(/No model met the sophisticated design threshold/)
+    expect(result.decision.candidates[0]?.reason).toMatch(/Standard design route.*75/)
+  })
+
   it("never routes a screenshot task to a text-only model", () => {
     const { task, result } = run({
       text: "Debug this screenshot: the sidebar overlaps the header on small screens.",
@@ -213,6 +271,56 @@ describe("routing engine", () => {
     expect(result.decision.warnings.join(" ")).toMatch(/No approved model|exhausted|credits/i)
   })
 
+  it("blocks a zero remaining balance before purchased credits unless extra usage is explicitly allowed", () => {
+    const baseProviders = {
+      "opencode-go": { ...DEFAULT_SETTINGS.providers["opencode-go"]!, enabled: false },
+      commandcode: {
+        ...DEFAULT_SETTINGS.providers.commandcode!,
+        reserveMonthlyPct: 0,
+        reserveWeeklyPct: 0,
+        reserveFiveHourPct: 0,
+      },
+    }
+    const snapshot: ProviderQuotaSnapshot = {
+      ...provider("commandcode", { rolling: 0, weekly: 0, monthly: 99 }),
+      monthly: { usedPct: 99, remainingPct: 1, source: "provider" },
+      monthlyRemainingUsd: 0,
+      monthlyGrantUsd: 70,
+      extraCredits: { purchasedUsd: 10, freeUsd: 0, totalUsd: 10 },
+    }
+    const blockedConfig = settings({ providers: baseProviders })
+    const blocked = run({
+      text: "Implement a feature in src/app.ts",
+      settings: blockedConfig,
+      quota: [snapshot],
+    })
+    expect(blocked.result.decision.chosen).toBeUndefined()
+    const model = buildRegistry({ live: [], settings: blockedConfig }).get("commandcode", "deepseek-v4.1-flash")!
+    const eligibility = evaluateEligibility({
+      model,
+      task: classifyTask({ text: "Implement a feature in src/app.ts" }),
+      settings: blockedConfig,
+      mode: "balanced",
+      contextTokens: 10_000,
+      providerQuota: snapshot,
+      premium: { allowed: false, requiresApproval: true, reason: "test" },
+    })
+    expect(eligibility.eligible).toBe(false)
+    expect(eligibility.reason).toMatch(/included credits are exhausted|extra-credit/i)
+
+    const allowed = run({
+      text: "Implement a feature in src/app.ts",
+      settings: settings({
+        providers: {
+          ...baseProviders,
+          commandcode: { ...baseProviders.commandcode, allowExtraUsage: true },
+        },
+      }),
+      quota: [snapshot],
+    })
+    expect(allowed.result.decision.chosen?.providerID).toBe("commandcode")
+  })
+
   it("keeps a large-context session on its current model instead of paying a cache-loss switch", () => {
     const config = settings()
     const large = session({ contextTokens: 600_000, cacheReadTokens: 550_000 })
@@ -272,7 +380,7 @@ describe("routing engine", () => {
     const model = { ...base, cost: [{ input: 0.15, output: 0.6 }] } as any
     const task = classifyTask({ text: "Implement a feature in src/app.ts" })
     expect(() =>
-      estimateTaskCost({ model, task, contextTokens: 1000, currentModelKey: model.key }),
+      estimateTaskCost({ model, task, contextTokens: 1000, currentModelKey: model.key, now: NOW }),
     ).not.toThrow()
   })
 
@@ -280,10 +388,71 @@ describe("routing engine", () => {
     const registry = buildRegistry({ live: [], settings: settings() })
     const model = registry.get("opencode-go", "deepseek-v4.1-flash")!
     const task = classifyTask({ text: "Implement a feature in src/app.ts" })
-    const same = estimateTaskCost({ model, task, contextTokens: 600_000, currentModelKey: "opencode-go/deepseek-v4.1-flash" })
-    const different = estimateTaskCost({ model, task, contextTokens: 600_000, currentModelKey: "commandcode/deepseek-v4.1-flash" })
+    const same = estimateTaskCost({
+      model,
+      task,
+      contextTokens: 600_000,
+      currentModelKey: "opencode-go/deepseek-v4.1-flash",
+      now: NOW,
+    })
+    const different = estimateTaskCost({
+      model,
+      task,
+      contextTokens: 600_000,
+      currentModelKey: "commandcode/deepseek-v4.1-flash",
+      now: NOW,
+    })
     expect(different.usd).toBeGreaterThan(same.usd)
     expect(different.switchPenaltyUsd).toBeGreaterThan(0)
+  })
+
+  it("applies Command Code's documented 2x peak rate only inside weekday peak windows", () => {
+    const registry = buildRegistry({ live: [], settings: settings() })
+    const model = registry.get("commandcode", "deepseek-v4.1-flash")!
+    const task = classifyTask({ text: "Implement a feature in src/app.ts" })
+    const offPeak = estimateTaskCost({
+      model,
+      task,
+      contextTokens: 1000,
+      currentModelKey: model.key,
+      now: Date.UTC(2026, 9, 27, 12, 0, 0),
+    })
+    const peak = estimateTaskCost({
+      model,
+      task,
+      contextTokens: 1000,
+      currentModelKey: model.key,
+      now: Date.UTC(2026, 9, 27, 2, 0, 0),
+    })
+    const weekend = estimateTaskCost({
+      model,
+      task,
+      contextTokens: 1000,
+      currentModelKey: model.key,
+      now: Date.UTC(2026, 10, 1, 2, 0, 0),
+    })
+    expect(offPeak.priceMultiplier).toBe(1)
+    expect(peak.priceMultiplier).toBe(2)
+    expect(weekend.priceMultiplier).toBe(1)
+    expect(peak.usd).toBeCloseTo(offPeak.usd * 2, 10)
+    expect(weekend.usd).toBeCloseTo(offPeak.usd, 10)
+  })
+
+  it("preserves documented peak pricing when the live catalog overrides token rates", () => {
+    const registry = buildRegistry({
+      live: [
+        {
+          id: "deepseek-v4.1-flash",
+          providerID: "commandcode",
+          name: "DeepSeek V4.1 Flash (GOAT)",
+          limit: { context: 1_000_000, output: 384_000 },
+          capabilities: { tools: true, input: ["text", "image"], output: ["text"] },
+          cost: [{ input: 0.15, output: 0.6, cache: { read: 0.003, write: 0 } }],
+        },
+      ],
+      settings: settings(),
+    })
+    expect(registry.get("commandcode", "deepseek-v4.1-flash")?.peakPricing?.multiplier).toBe(2)
   })
 })
 

@@ -1,4 +1,4 @@
-import type { CostTier, ModelRecord } from "../types.js"
+import type { CostTier, ModelRecord, PeakPricing } from "../types.js"
 
 export interface SeedModel {
   key: string
@@ -10,6 +10,7 @@ export interface SeedModel {
   input: string[]
   tools?: boolean
   cost: CostTier[]
+  peakPricing?: PeakPricing
   intelligence: number
   design: number
   designEvidence?: ModelRecord["designEvidence"]
@@ -39,6 +40,19 @@ const tieredCost = (
     tier: { type: "context", size },
   },
 ]
+
+/**
+ * Command Code documents these DeepSeek models at off-peak rates and charges
+ * 2x from 01:00-04:00 and 06:00-10:00 UTC, Monday-Friday.
+ */
+const COMMAND_CODE_DEEPSEEK_PEAK: PeakPricing = {
+  multiplier: 2,
+  windowsUtc: [
+    { startHour: 1, endHour: 4 },
+    { startHour: 6, endHour: 10 },
+  ],
+  weekdaysOnly: true,
+}
 
 /**
  * Curated seed. Intelligence values come from Command Code's published model
@@ -295,12 +309,13 @@ export const SEED_MODELS: ReadonlyArray<SeedModel> = [
     maxOutput: 384_000,
     input: ["text", "image"],
     cost: cost(0.15, 0.6, 0.003),
+    peakPricing: COMMAND_CODE_DEEPSEEK_PEAK,
     intelligence: 39.5,
     design: 65,
     designEvidence: "observed",
     tier: 2,
     monthlyAllowanceUsd: 80,
-    notes: "Approved standard floor on Command Code.",
+    notes: "Approved standard floor on Command Code. Off-peak list price; 2x during 01-04 and 06-10 UTC Mon-Fri.",
   },
   {
     key: "commandcode/z-ai/glm-5.3-flash",
@@ -662,12 +677,13 @@ export const SEED_MODELS: ReadonlyArray<SeedModel> = [
     maxOutput: 384_000,
     input: ["text", "image"],
     cost: cost(0.15, 0.6, 0.003),
+    peakPricing: COMMAND_CODE_DEEPSEEK_PEAK,
     intelligence: 39.5,
     design: 65,
     designEvidence: "observed",
     tier: 2,
     approved: false,
     monthlyAllowanceUsd: 80,
-    notes: "Duplicate route for the same upstream model. The GOAT ID is approved instead.",
+    notes: "Duplicate route for the same upstream model. The GOAT ID is approved instead. Off-peak list price; 2x during 01-04 and 06-10 UTC Mon-Fri.",
   },
 ]

@@ -38,8 +38,9 @@ describe("Command Code quota adapter", () => {
     expect(snapshot.plan).toBe("GOAT")
     expect(snapshot.planStatus).toBe("active")
     expect(snapshot.monthlyRemainingUsd).toBeCloseTo(44.7413639595, 4)
-    expect(snapshot.monthlyGrantUsd).toBeCloseTo(70.4139092338, 4)
-    expect(snapshot.monthly.usedPct).toBeCloseTo(36.45, 1)
+    expect(snapshot.monthlyGrantUsd).toBeCloseTo(70, 4)
+    expect(snapshot.monthly.usedUsd).toBeCloseTo(25.2586360405, 4)
+    expect(snapshot.monthly.usedPct).toBeCloseTo(36.0838, 2)
     expect(snapshot.rolling.usedPct).toBeCloseTo(8.89, 1)
     expect(snapshot.weekly.usedPct).toBeCloseTo(72.17, 1)
     expect(snapshot.rolling.capUsd).toBe(14)
@@ -48,7 +49,59 @@ describe("Command Code quota adapter", () => {
     expect(snapshot.weekly.resetsAt).toBe(1793428863795)
     expect(snapshot.periodStart).toBe(Date.parse("2026-10-24T06:25:44.000Z"))
     expect(snapshot.extraCredits?.totalUsd).toBe(0)
+    expect(snapshot.notes.join(" ")).toMatch(/remaining credits are authoritative/i)
+    expect(snapshot.notes.join(" ")).toMatch(/differs from the credit balance/i)
     expect(snapshot.notes.join(" ")).toContain("Credential source: OpenCode integration")
+  })
+
+  it("does not let the usage summary move the monthly grant or usage", async () => {
+    const home = mkdtempSync(join(tmpdir(), "router-cc-"))
+    const fetchImpl = async (input: string | URL | Request) => {
+      const url = String(input)
+      if (url.includes("/alpha/whoami")) return json(fixture("commandcode-whoami.json"))
+      if (url.includes("/alpha/billing/credits")) return json(fixture("commandcode-credits.json"))
+      if (url.includes("/alpha/billing/subscriptions")) return json(fixture("commandcode-subscription.json"))
+      if (url.includes("/alpha/usage/summary")) {
+        const summary = fixture("commandcode-summary.json") as Record<string, unknown>
+        return json({ ...summary, totalMonthlyCredits: 69, totalCost: 69, totalCredits: 69 })
+      }
+      return json({}, 404)
+    }
+    const result = await probeCommandCodeQuota({
+      settings: providerSettings,
+      home,
+      env: {},
+      openCodeIntegrationKey: "user_test_key_that_is_long_enough",
+      fetchImpl,
+      now: () => Date.UTC(2026, 9, 27, 12, 0, 0),
+    })
+    expect(result.snapshot.monthlyGrantUsd).toBeCloseTo(70, 4)
+    expect(result.snapshot.monthly.usedUsd).toBeCloseTo(25.2586360405, 4)
+    expect(result.snapshot.monthly.usedPct).toBeCloseTo(36.0838, 2)
+    expect(result.snapshot.notes.join(" ")).toMatch(/differs from the credit balance/i)
+  })
+
+  it("derives monthly usage from remaining credits when the summary is unavailable", async () => {
+    const home = mkdtempSync(join(tmpdir(), "router-cc-"))
+    const fetchImpl = async (input: string | URL | Request) => {
+      const url = String(input)
+      if (url.includes("/alpha/whoami")) return json(fixture("commandcode-whoami.json"))
+      if (url.includes("/alpha/billing/credits")) return json(fixture("commandcode-credits.json"))
+      if (url.includes("/alpha/billing/subscriptions")) return json(fixture("commandcode-subscription.json"))
+      return json({ error: "unavailable" }, 503)
+    }
+    const result = await probeCommandCodeQuota({
+      settings: providerSettings,
+      home,
+      env: {},
+      openCodeIntegrationKey: "user_test_key_that_is_long_enough",
+      fetchImpl,
+      now: () => Date.UTC(2026, 9, 27, 12, 0, 0),
+    })
+    expect(result.snapshot.monthlyGrantUsd).toBeCloseTo(70, 4)
+    expect(result.snapshot.monthly.usedUsd).toBeCloseTo(25.2586360405, 4)
+    expect(result.snapshot.monthly.usedPct).toBeCloseTo(36.0838, 2)
+    expect(result.snapshot.notes.join(" ")).toMatch(/Usage summary unavailable/i)
   })
 
   it("falls back from an unauthorized environment key to an authorized CLI key", async () => {

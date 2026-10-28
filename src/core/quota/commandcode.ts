@@ -343,16 +343,31 @@ export const probeCommandCodeQuota = async (input: CommandCodeProbeInput): Promi
     summary?.used !== undefined &&
     (summary.basis === "billing-period" ||
       (summary.periodStart !== undefined && periodStart !== undefined && summary.periodStart === periodStart))
-  const monthlyUsed = summaryUsable ? summary?.used : undefined
-  const fallbackGrant = PLAN_CREDITS[planID] ?? input.settings.monthlyCreditsUsd
+  const summaryUsed = summaryUsable ? summary?.used : undefined
+  // The usage summary and the credit balance are different accounting pools.
+  // The remaining-credit balance is the authoritative included-credit figure:
+  // when it is available, monthly usage is the stable plan grant minus that
+  // balance. The summary is retained only as a diagnostic cross-check.
+  const configuredGrant = input.settings.monthlyCreditsUsd && input.settings.monthlyCreditsUsd > 0
+    ? input.settings.monthlyCreditsUsd
+    : undefined
+  // The provider's 5-hour and weekly caps are 20% and 50% of the monthly
+  // grant. Prefer those provider-reported values so a plan change cannot
+  // silently shift the derived percentage.
+  const windowGrant =
+    credits?.fiveHour?.capUsd !== undefined && credits.fiveHour.capUsd > 0
+      ? credits.fiveHour.capUsd / 0.2
+      : credits?.weekly?.capUsd !== undefined && credits.weekly.capUsd > 0
+        ? credits.weekly.capUsd / 0.5
+        : undefined
+  const planGrant = windowGrant ?? PLAN_CREDITS[planID] ?? configuredGrant
   const monthlyGrant =
-    monthlyRemaining !== undefined && monthlyUsed !== undefined
-      ? monthlyRemaining + monthlyUsed
-      : fallbackGrant && monthlyRemaining !== undefined
-        ? Math.max(fallbackGrant, monthlyRemaining)
-        : fallbackGrant
+    planGrant ??
+    (monthlyRemaining !== undefined && summaryUsed !== undefined ? monthlyRemaining + summaryUsed : undefined)
   const derivedUsed =
-    monthlyUsed ?? (monthlyGrant !== undefined && monthlyRemaining !== undefined ? Math.max(0, monthlyGrant - monthlyRemaining) : undefined)
+    monthlyRemaining !== undefined && monthlyGrant !== undefined
+      ? Math.max(0, monthlyGrant - monthlyRemaining)
+      : summaryUsed
   const monthlyPct = derivedUsed !== undefined && monthlyGrant && monthlyGrant > 0 ? pct(derivedUsed, monthlyGrant) : 0
 
   const monthly: QuotaWindow =
@@ -380,10 +395,26 @@ export const probeCommandCodeQuota = async (input: CommandCodeProbeInput): Promi
   const notes: string[] = [
     "Provider-reported from Command Code's read-only alpha billing endpoints; polling consumes no credits.",
   ]
-  if (monthlyRemaining !== undefined && monthlyUsed !== undefined) {
-    notes.push("Monthly grant is the sum of remaining included credits and billing-period usage.")
-  } else if (fallbackGrant) {
-    notes.push("Monthly usage is derived from the plan allowance because the billing summary was unavailable.")
+  if (planGrant !== undefined) {
+    const grantSource =
+      windowGrant !== undefined
+        ? "the provider's 5-hour/weekly window caps"
+        : PLAN_CREDITS[planID] !== undefined
+          ? "the plan registry"
+          : "the configured monthly allowance"
+    notes.push(
+      `Monthly allowance is derived from ${grantSource}; provider-reported remaining credits are authoritative.`,
+    )
+  } else if (monthlyRemaining !== undefined && summaryUsed !== undefined) {
+    notes.push("Monthly grant is the sum of remaining included credits and billing-period usage because no plan allowance was available.")
+  }
+  if (monthlyRemaining !== undefined && summaryUsed !== undefined && derivedUsed !== undefined) {
+    const summaryDelta = summaryUsed - derivedUsed
+    if (Math.abs(summaryDelta) >= 0.005) {
+      notes.push(
+        `Billing-period usage summary differs from the credit balance by $${summaryDelta.toFixed(4)}; remaining credits are authoritative.`,
+      )
+    }
   }
   if (summaryResult.status !== 200) notes.push(`Usage summary unavailable (${summaryResult.error ?? summaryResult.status}).`)
   if (creditsResult.status !== 200) notes.push(`Credit windows unavailable (${creditsResult.error ?? creditsResult.status}).`)

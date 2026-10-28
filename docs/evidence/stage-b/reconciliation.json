@@ -1,0 +1,86 @@
+{
+  "generatedAt": "2026-10-28T04:59:08.391127+00:00",
+  "artifact": "8c71c46c5f7616f950c6a3fcf5c42be2198407848cf9ffac15d01504496f8920",
+  "provider": "Command Code GOAT (individual-goat)",
+  "pricingSource": "https://commandcode.ai/models/deepseek-v4-1-flash and https://commandcode.ai/docs/plans/goat",
+  "publishedPricing": {
+    "offPeakPerMillion": {
+      "input": 0.15,
+      "output": 0.6,
+      "cacheRead": 0.003,
+      "cacheWrite": 0
+    },
+    "peakPerMillion": {
+      "input": 0.3,
+      "output": 1.2,
+      "cacheRead": 0.006,
+      "cacheWrite": 0
+    },
+    "peakWindowsUtc": [
+      "01:00-04:00",
+      "06:00-10:00"
+    ],
+    "peakDays": "Monday-Friday",
+    "stageBTimeUtc": "2026-10-28T04:27-04:36Z (off-peak)"
+  },
+  "localCanaryCost": {
+    "ccRequests": 2,
+    "request1Usd": 0.001523118,
+    "request2Usd": 5.772e-05,
+    "totalUsd": 0.001580838,
+    "arithmetic": "request1: 10117 input*0.15/M + 8 output*0.6/M + 256 cacheRead*0.003/M; request2: 136 input*0.15/M + 11 output*0.6/M + 10240 cacheRead*0.003/M"
+  },
+  "monthlyPools": {
+    "planGrantUsd": 70.0,
+    "fiveHourCapUsd": 14,
+    "weeklyCapUsd": 35,
+    "before": {
+      "remainingUsd": 42.3942488727,
+      "weeklyUsedUsd": 27.6057511273,
+      "derivedMonthlyUsedUsd": 27.605751127300003,
+      "summaryMonthlyUsedUsd": 27.924756068800004,
+      "summaryMinusDerivedUsd": 0.31900494150000114,
+      "grantIfRemainingPlusSummary": 70.3190049415
+    },
+    "after": {
+      "remainingUsd": 42.3333618818,
+      "weeklyUsedUsd": 27.6666381182,
+      "derivedMonthlyUsedUsd": 27.666638118199998,
+      "summaryMonthlyUsedUsd": 28.08054735200001,
+      "summaryMinusDerivedUsd": 0.41390923380001254,
+      "grantIfRemainingPlusSummary": 70.41390923380001
+    },
+    "deltas": {
+      "weeklyUsedUsd": 0.06088699090000205,
+      "fiveHourUsedUsd": 0.06088699090000005,
+      "monthlyRemainingUsd": -0.06088699089999494,
+      "derivedMonthlyUsedUsd": 0.06088699089999494,
+      "summaryMonthlyUsedUsd": 0.15579128320000635
+    }
+  },
+  "naiveRatio": {
+    "providerWindowDeltaUsd": 0.06088699090000005,
+    "canaryLocalCostUsd": 0.001580838,
+    "ratio": 38.51564227327535,
+    "valid": false,
+    "reason": "The provider delta is account-wide and includes concurrent live-desktop usage; it is not a per-canary request price."
+  },
+  "concurrentLiveActivity": {
+    "source": "Read-only metadata from the live OpenCode SQLite database (session_v2/session_message); no prompt text read or stored.",
+    "windowUtc": "2026-10-28T04:20:00Z/04:40:00Z",
+    "commandCodeAssistantMessages": 74,
+    "localEstimatedCostUsd": 0.284917,
+    "minute04_27": {
+      "messages": 11,
+      "localEstimatedCostUsd": 0.082297
+    },
+    "note": "Local estimated cost is OpenCode's session accounting, not provider-billed cost. It proves concurrent account activity, not exact billing."
+  },
+  "conclusions": [
+    "The 38.5x figure is not a pricing error: its denominator is the two canary requests while the provider delta is account-wide and includes live-desktop usage.",
+    "The local Command Code token arithmetic matches the published off-peak rates exactly.",
+    "The provider's 5h and weekly windows and monthly remaining credits move together; the billing-period usage summary is a separate pool and does not reconcile exactly.",
+    "The router now derives monthly usage from the stable provider window grant minus the authoritative remaining balance; the summary is diagnostic only.",
+    "Exact per-request provider attribution is not possible from the aggregate billing windows; no request-level provider history was available."
+  ]
+}

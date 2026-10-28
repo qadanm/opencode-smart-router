@@ -5,6 +5,7 @@ import type {
   ModelQuotaSnapshot,
   ModelRecord,
   ModelRef,
+  PeakPricing,
   PremiumState,
   ProviderQuotaSnapshot,
   RouterSettings,
@@ -85,33 +86,49 @@ export interface CostEstimate {
   readonly cacheWrite: number
   readonly switchPenaltyUsd: number
   readonly costTier: CostTier
+  /** 2 during a documented peak window, otherwise 1. */
+  readonly priceMultiplier: number
+}
+
+const isPeakPricingActive = (now: number, peak: PeakPricing): boolean => {
+  const date = new Date(now)
+  const day = date.getUTCDay()
+  if (peak.weekdaysOnly && (day === 0 || day === 6)) return false
+  const hour = date.getUTCHours() + date.getUTCMinutes() / 60 + date.getUTCSeconds() / 3600
+  return peak.windowsUtc.some((window) => hour >= window.startHour && hour < window.endHour)
 }
 
 /**
  * Estimate the total request cost of a task, not just one call. The estimate
  * deliberately includes later agent-loop steps and treats a model switch as a
- * cache loss.
+ * cache loss. Documented peak pricing is applied using the supplied time;
+ * omitting `now` uses the current time.
  */
 export const estimateTaskCost = (input: {
   model: ModelRecord
   task: TaskClass
   contextTokens: number
   currentModelKey?: string
+  now?: number
 }): CostEstimate => {
   const { model, task } = input
   const context = Math.max(input.contextTokens, task.scope.promptTokens)
   const sameModel = input.currentModelKey === modelKey(model.providerID, model.modelID)
   const steps = stepsFor[task.kind]
   const tier = selectCostTier(model, context)
+  const peakMultiplier =
+    model.peakPricing && isPeakPricingActive(input.now ?? Date.now(), model.peakPricing) && model.peakPricing.multiplier > 0
+      ? model.peakPricing.multiplier
+      : 1
   const outputPer = Math.min(outputPerStep[task.kind] * (task.tier === 3 ? 1.5 : 1), model.maxOutput || outputPerStep[task.kind])
   const output = outputPer * steps
   const freshInput = task.scope.promptTokens + context * (sameModel ? 0.15 : 1) + context * 0.05 * (steps - 1)
   const cacheRead = context * (sameModel ? 0.85 : 0) + context * 0.95 * (steps - 1)
   // A live catalog entry or a hand-written definition can omit cache pricing.
   // Price it as zero rather than letting the router throw and fail open.
-  const inputPrice = Number.isFinite(tier.input) ? tier.input : 0
-  const outputPrice = Number.isFinite(tier.output) ? tier.output : 0
-  const cacheReadPrice = Number.isFinite(tier.cache?.read) ? (tier.cache?.read ?? 0) : 0
+  const inputPrice = (Number.isFinite(tier.input) ? tier.input : 0) * peakMultiplier
+  const outputPrice = (Number.isFinite(tier.output) ? tier.output : 0) * peakMultiplier
+  const cacheReadPrice = (Number.isFinite(tier.cache?.read) ? (tier.cache?.read ?? 0) : 0) * peakMultiplier
   const cost =
     (freshInput * inputPrice) / 1_000_000 +
     (output * outputPrice) / 1_000_000 +
@@ -127,6 +144,7 @@ export const estimateTaskCost = (input: {
     cacheWrite: 0,
     switchPenaltyUsd,
     costTier: tier,
+    priceMultiplier: peakMultiplier,
   }
 }
 
@@ -297,11 +315,17 @@ export const routeTask = (input: EngineInput): EngineResult => {
         allowDesignRelaxation: designRelaxation === 2,
       })
       if (!eligibility.eligible) continue
+      const eligibleReason =
+        designRelaxation === 1 && input.task.sophisticatedDesign
+          ? `Standard design route: design ${model.design} is below the sophisticated ${input.settings.routing.sophisticatedDesignFloor} threshold`
+          : eligibility.reason
+      const displayedEligibility = eligibleReason === eligibility.reason ? eligibility : { ...eligibility, reason: eligibleReason }
       const estimate = estimateTaskCost({
         model,
         task: input.task,
         contextTokens: input.contextTokens,
         currentModelKey: currentKey,
+        now,
       })
       const probability = estimateSuccess({
         model,
@@ -312,8 +336,8 @@ export const routeTask = (input: EngineInput): EngineResult => {
         history: input.modelHistory?.[modelKey(model.providerID, model.modelID)],
       })
       const pressure = providerPressure(provider) * modelPressure(modelQuota)
-      const candidate = candidateFor(input, model, eligibility, estimate, probability, pressure, currentKey)
-      results.push({ model, eligibility, estimate, probability, pressure, candidate })
+      const candidate = candidateFor(input, model, displayedEligibility, estimate, probability, pressure, currentKey)
+      results.push({ model, eligibility: displayedEligibility, estimate, probability, pressure, candidate })
     }
     return results.sort((a, b) => a.candidate.effectiveCost - b.candidate.effectiveCost)
   }
@@ -357,7 +381,13 @@ export const routeTask = (input: EngineInput): EngineResult => {
           allowDesignRelaxation: true,
         })
         if (!eligibility.eligible) return undefined
-        const estimate = estimateTaskCost({ model, task: input.task, contextTokens: input.contextTokens, currentModelKey: currentKey })
+        const estimate = estimateTaskCost({
+          model,
+          task: input.task,
+          contextTokens: input.contextTokens,
+          currentModelKey: currentKey,
+          now,
+        })
         const probability = estimateSuccess({
           model,
           task: input.task,
@@ -454,7 +484,13 @@ export const routeTask = (input: EngineInput): EngineResult => {
           allowDesignRelaxation: false,
         })
         if (!eligibility.eligible) return undefined
-        const estimate = estimateTaskCost({ model, task: input.task, contextTokens: input.contextTokens, currentModelKey: currentKey })
+        const estimate = estimateTaskCost({
+          model,
+          task: input.task,
+          contextTokens: input.contextTokens,
+          currentModelKey: currentKey,
+          now,
+        })
         return { model, estimate }
       })
       .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry))

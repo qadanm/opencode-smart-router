@@ -92,6 +92,14 @@ const providerLimitReached = (snapshot: ProviderQuotaSnapshot | undefined, setti
     if (extras > 0) return "Provider would spend purchased credits; automatic extra-credit use is disabled"
     return "Provider allowance is exhausted"
   }
+  // Some providers report a zero remaining balance slightly before they set
+  // the window's exceeded flag. Treat the balance as authoritative so a
+  // request cannot knowingly roll into purchased credits.
+  if (snapshot.monthlyRemainingUsd !== undefined && snapshot.monthlyRemainingUsd <= 0) {
+    if (extras > 0 && providerSettings.allowExtraUsage) return undefined
+    if (extras > 0) return "Provider included credits are exhausted; automatic extra-credit use is disabled"
+    return "Provider allowance is exhausted"
+  }
   if (snapshot.monthly.source !== "unknown" && snapshot.monthly.usedPct >= 100 - reserveMonthly) {
     return "Provider monthly allowance is at or near its configured reserve"
   }
@@ -165,10 +173,12 @@ export const evaluateEligibility = (input: EligibilityInput): EligibilityResult 
     return { eligible: false, reason: "Premium models are not used for trivial or mechanical work", warnings }
   }
 
+  let designFallbackThreshold: number | undefined
   if (task.designIntensive) {
     const threshold = task.sophisticatedDesign ? settings.routing.sophisticatedDesignFloor : settings.routing.designFloor
     if (model.design < threshold) {
       if (input.allowDesignRelaxation) {
+        designFallbackThreshold = threshold
         warnings.push(
           `Design capability ${model.design} is below the preferred ${threshold} threshold; selected as the best available fallback`,
         )
@@ -200,6 +210,14 @@ export const evaluateEligibility = (input: EligibilityInput): EligibilityResult 
   // permits standard models when the task clears the standard floor.
   if (mode === "efficiency" && task.tier >= 2 && model.tier === 1) {
     return { eligible: false, reason: "Economy models cannot handle substantive engineering in Maximum Efficiency mode", warnings }
+  }
+
+  if (designFallbackThreshold !== undefined) {
+    return {
+      eligible: true,
+      reason: `Eligible only as a design fallback: design ${model.design} is below the ${designFallbackThreshold} threshold`,
+      warnings,
+    }
   }
 
   return { eligible: true, reason: "Meets every hard requirement", warnings }

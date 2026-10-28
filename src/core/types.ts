@@ -41,6 +41,15 @@ export interface CostTier {
   readonly tier?: { readonly type: "context"; readonly size: number }
 }
 
+export interface PeakPricing {
+  /** Multiplier applied to every token rate inside the peak windows. */
+  readonly multiplier: number
+  /** UTC hour ranges [startHour, endHour); 0-24. */
+  readonly windowsUtc: ReadonlyArray<{ readonly startHour: number; readonly endHour: number }>
+  /** When true, peak pricing applies Monday-Friday only. */
+  readonly weekdaysOnly: boolean
+}
+
 export interface ModelRecord {
   readonly key: string
   readonly providerID: string
@@ -52,6 +61,8 @@ export interface ModelRecord {
   readonly outputModalities: ReadonlyArray<string>
   readonly tools: boolean
   readonly cost: ReadonlyArray<CostTier>
+  /** Documented time-of-day pricing, when the provider changes rates. */
+  readonly peakPricing?: PeakPricing
   /** Curated aggregate coding-intelligence score. Higher is better. */
   readonly intelligence: number
   /** Curated front-end and UX quality score. */
