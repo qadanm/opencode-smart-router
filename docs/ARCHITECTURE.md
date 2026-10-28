@@ -33,8 +33,9 @@ The plugin does not modify the prompt text, attachments, tools, or agent. It nev
 | `src/core/routing/engine.ts` | Cost estimation, success probability, quota pressure, affinity, decision record |
 | `src/core/failures.ts` | Failure classification and bounded escalation |
 | `src/core/config.ts` | Defaults, validation, global/project precedence, project guardrails |
-| `src/server/controller.ts` | Hooks, events, RPC, commands, persistence, session state |
-| `src/index.ts` | Single active server controller per process |
+| `src/server/shared-core.ts` | One process-wide core: ledger, quota service, persistence, event stream, session ownership, catalog cache |
+| `src/server/controller.ts` | Per-location bridge: hooks, RPC, commands, title queue, session-local state |
+| `src/index.ts` | Plugin definition; creates one bridge per loaded location |
 
 ## Prompt timing
 
@@ -69,7 +70,8 @@ The ledger is bounded: 2,000 usage events, 120 decisions, 250 sessions, and 40 d
 
 ## Concurrency
 
-- One controller is active per server process; a reload disposes the previous controller first.
+- One shared core is active per server process; each loaded location registers a lightweight bridge.
+- A reload disposes only that location’s bridge. The core persists across reloads, stops its timers after a grace period, and revives on the next setup.
 - Prompt routing is serialized per session. Concurrent submissions for the same session do not double-switch.
 - Different sessions can route concurrently.
 - The ledger is updated in one event loop; persistence is debounced. There is no cross-process writer.

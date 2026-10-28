@@ -55,9 +55,13 @@ GET https://opencode.ai/zen/go/v1/usage
 
 It is queried with OpenCode's existing OAuth access token from the `opencode` connection. It returns percentages and reset times, not dollar balances. It is not part of the public inference schema and may change. On failure, the router uses the local ledger and labels the source `estimate` or `unknown`.
 
-## 4. No prompt rejection API
+## 4. Prompt rejection is untyped
 
-The V2 prompt admission hook can mutate a prompt but has no typed rejection operation. If no approved model meets the hard requirements, the router cannot stop admission. It fails closed by leaving the current model unchanged and recording a warning. The warning is available in `/router-status`, `/router-explain`, and RPC status. It is not silently presented as a successful qualified route.
+The V2 prompt admission hook can mutate a prompt but exposes no typed rejection operation. The router blocks admission by throwing `RouterBlockedError` from the prompt hook. On the installed 2.1.4 server this was verified to reject the prompt with HTTP 500 and no provider request; the session title changes to `BLOCKED` and the reason is recorded in the decision.
+
+This is safe but not polished: the HTTP error is generic, so the title and notification are the user-facing explanation. `routing.failClosed` defaults to true. Manual selections and paused routing are outside the strict block.
+
+A routing exception must also block. The earlier catch-and-continue path was a fail-open defect and is being removed.
 
 ## 5. Manual CLI selection at session creation
 
