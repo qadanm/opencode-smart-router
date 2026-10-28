@@ -132,7 +132,9 @@ const fetchJson = async (
       return {
         status: response.status,
         error: `HTTP ${response.status}`,
-        retryAfterMs: Number.isFinite(retryAfter) ? Math.max(0, retryAfter * 1000) : undefined,
+        retryAfterMs: Number.isFinite(retryAfter)
+          ? Math.min(Math.max(0, retryAfter * 1000), 15 * 60_000)
+          : undefined,
       }
     }
     const text = await response.text()

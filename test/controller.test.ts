@@ -3,6 +3,7 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { beforeEach, describe, expect, it } from "vitest"
 import { RouterBlockedError, RouterController } from "../src/server/controller.js"
+import { DEFAULT_SETTINGS } from "../src/core/config.js"
 import { sharedCore } from "../src/server/shared-core.js"
 import { liveModels, makeCtx } from "./helpers/ctx.js"
 
@@ -323,8 +324,10 @@ describe("plugin controller integration", () => {
     const controller = new RouterController({ ctx: fake.ctx, pluginOptions: fake.ctx.options })
     await controller.initialize()
     let release: (() => void) | undefined
+    let setCalls = 0
     fake.ctx.storage.set = () =>
       new Promise<void>((resolve) => {
+        setCalls += 1
         release = resolve
       })
     const outcome = await Promise.race([
@@ -333,6 +336,7 @@ describe("plugin controller integration", () => {
     ])
     release?.()
     expect(outcome).toBe("done")
+    expect(setCalls).toBeGreaterThan(0)
   })
 
   it("fetches the live model catalog once across bridges", async () => {
@@ -382,6 +386,39 @@ describe("plugin controller integration", () => {
     await a.dispose()
   })
 
+  it("waits for an in-flight core teardown before reviving", async () => {
+    const first = makeCtx(mkdtempSync(join(tmpdir(), "router-revive-a-")))
+    const second = makeCtx(mkdtempSync(join(tmpdir(), "router-revive-b-")))
+    const controller = new RouterController({ ctx: first.ctx, pluginOptions: first.ctx.options })
+    await controller.initialize()
+
+    const gate = { released: false, waiters: [] as Array<() => void> }
+    fakeStorageSet(first.ctx, gate)
+    const disposing = (sharedCore as any).dispose() as Promise<void>
+    await new Promise((resolve) => setTimeout(resolve, 10))
+
+    let revived = false
+    const revive = sharedCore
+      .init({
+        ctx: second.ctx,
+        getSettings: () => DEFAULT_SETTINGS,
+        getCredentials: async () => ({}),
+      })
+      .then(() => {
+        revived = true
+      })
+    await new Promise((resolve) => setTimeout(resolve, 10))
+    expect(revived).toBe(false)
+
+    gate.released = true
+    for (const release of gate.waiters.splice(0)) release()
+    await disposing
+    await revive
+    expect(revived).toBe(true)
+    expect((sharedCore as any).ownerCtx).toBe(second.ctx)
+    expect(sharedCore.quota).toBeDefined()
+  })
+
   it("isolates a bridge setup failure instead of rejecting plugin setup", async () => {
     const fake = makeCtx(mkdtempSync(join(tmpdir(), "router-setup-fail-")))
     fake.ctx.command.transform = () => {
@@ -391,6 +428,19 @@ describe("plugin controller integration", () => {
     const cleanup = await entry.setup(fake.ctx)
     expect(typeof cleanup).toBe("function")
     expect(sharedCore.diagnostics().errors.some((error) => error.includes("setup"))).toBe(true)
+    const fallback = fake.hooks.get("prompt")
+    expect(typeof fallback).toBe("function")
+    await expect(fallback!({ sessionID: "ses_setup_failed", prompt: { text: "Implement a feature" } })).rejects.toBeInstanceOf(
+      RouterBlockedError,
+    )
     await cleanup?.()
   })
 })
+
+function fakeStorageSet(ctx: any, gate: { released: boolean; waiters: Array<() => void> }) {
+  ctx.storage.set = () =>
+    new Promise<void>((resolve) => {
+      if (gate.released) resolve()
+      else gate.waiters.push(resolve)
+    })
+}

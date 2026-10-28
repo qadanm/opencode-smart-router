@@ -35,6 +35,19 @@ describe("routing exception policy", () => {
     await controller.dispose()
   })
 
+  it("records the actual runtime on a failed decision", async () => {
+    const fake = makeCtx(mkdtempSync(join(tmpdir(), "router-paused-")))
+    const controller = new RouterController({ ctx: fake.ctx, pluginOptions: fake.ctx.options })
+    await controller.initialize()
+    await fake.rpc().setPaused({ paused: true })
+    await expect(
+      fake.hooks.get("prompt")!({ sessionID: "ses_paused", prompt: { text: "Implement a feature" } }),
+    ).rejects.toBeInstanceOf(RouterBlockedError)
+    const status = await fake.rpc().status({ sessionID: "ses_paused" })
+    expect(status.lastDecision?.runtime).toBe("paused")
+    await controller.dispose()
+  })
+
   it("records the failure and continues when failClosed is disabled", async () => {
     const fake = makeCtx(mkdtempSync(join(tmpdir(), "router-open-")))
     fake.ctx.options = { ...fake.ctx.options, routing: { failClosed: false } }

@@ -95,6 +95,7 @@ class SharedCore {
   private getCredentials?: InitInput["getCredentials"]
   private ready?: Promise<void>
   private loading?: Promise<void>
+  private disposing?: Promise<void>
   private quotaInitial: ProviderQuotaSnapshot[] = []
   private ledgerTimer?: ReturnType<typeof setTimeout>
   private quotaTimer?: ReturnType<typeof setTimeout>
@@ -121,6 +122,7 @@ class SharedCore {
 
   async init(input: InitInput): Promise<void> {
     this.setups += 1
+    if (this.disposing) await this.disposing
     if (this.ready && this.ownerCtx && this.started) return this.ready
     // Several locations can initialize in the same tick when a server restores
     // its session list. Share one load; a second load would replace the ledger
@@ -480,6 +482,7 @@ class SharedCore {
     this.ownerCtx = undefined
     this.ready = undefined
     this.loading = undefined
+    this.disposing = undefined
     this.started = false
     this.quotaInitialized = false
     this.bootstrapped = false
@@ -528,9 +531,22 @@ class SharedCore {
     }
   }
 
-  private async dispose() {
+  private dispose(): Promise<void> {
+    if (this.disposing) return this.disposing
+    const running = this.teardown()
+    const tracked = running.finally(() => {
+      if (this.disposing === tracked) this.disposing = undefined
+    })
+    this.disposing = tracked
+    return tracked
+  }
+
+  private async teardown() {
     if (this.shutdownTimer) clearTimeout(this.shutdownTimer)
     this.shutdownTimer = undefined
+    this.eventAbort?.abort()
+    this.eventAbort = undefined
+    this.eventsStarted = false
     clearTimeout(this.ledgerTimer)
     clearTimeout(this.quotaTimer)
     clearTimeout(this.runtimeTimer)

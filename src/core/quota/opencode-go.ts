@@ -92,7 +92,9 @@ export const probeOpenCodeGoQuota = async (input: GoUsageProbeInput): Promise<Go
     if (!response.ok) {
       const retryAfter = Number(response.headers.get("retry-after"))
       const retryAfterMs =
-        Number.isFinite(retryAfter) && retryAfter >= 0 ? retryAfter * 1000 : undefined
+        Number.isFinite(retryAfter) && retryAfter >= 0
+          ? Math.min(retryAfter * 1000, 15 * 60_000)
+          : undefined
       return {
         snapshot: baseSnapshot(input, now, `Usage endpoint returned HTTP ${response.status}`, retryAfterMs),
       }

@@ -145,8 +145,11 @@ export class QuotaService {
       .then((snapshot) => {
         state.snapshot = snapshot
         state.failures = snapshot.error ? state.failures + 1 : 0
+        const retryAfter = snapshot.retryAfterMs === undefined
+          ? undefined
+          : Math.min(Math.max(0, snapshot.retryAfterMs), 15 * 60_000)
         state.nextAllowed = snapshot.error
-          ? this.now() + (snapshot.retryAfterMs ?? backoffFor(state.failures))
+          ? this.now() + (retryAfter ?? backoffFor(state.failures))
           : 0
         this.options.onSnapshot?.(snapshot)
         return snapshot

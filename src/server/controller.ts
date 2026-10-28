@@ -631,13 +631,14 @@ export class RouterController {
       contextTokens: session.contextTokens,
       recentFailures: session.failures.length,
     })
+    const runtime = !this.settings.enabled || this.runtime.paused === true ? "paused" : session.manualOverride ? "manual" : "automatic"
     const decision: RoutingDecision = {
       id: nowId("dec"),
       at: Date.now(),
       sessionID,
       mode: this.settings.mode,
       dryRun: this.settings.dryRun,
-      runtime: "automatic",
+      runtime,
       task,
       ...(session.lastModel ? { current: session.lastModel } : {}),
       switched: false,
@@ -1585,8 +1586,8 @@ export class RouterController {
     this.cleanupDone = true
     if (this.bridgeID) sharedCore.removeBridge(this.bridgeID)
     await Promise.allSettled(this.registrations.map((registration) => registration?.dispose?.()))
-    // Never block a reload on storage. The core flushes on debounce, and the
+    // Start the write immediately, but do not block a reload on storage. The
     // grace timer performs the final flush when the last bridge leaves.
-    sharedCore.persistSoon()
+    void sharedCore.persistNow()
   }
 }
