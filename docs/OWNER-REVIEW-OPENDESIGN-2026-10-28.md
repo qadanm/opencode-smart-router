@@ -251,16 +251,52 @@ off OpenDesign when a window runs out.
 
 ---
 
-## Build identity
+## A correction I owe you
+
+Earlier I told you the router's price table had GLM's cache-read price about
+5× too high, and said I should correct it. **I checked properly and that claim
+was premature. I have not changed the price table.**
+
+What I actually found:
+
+| | |
+|---|---|
+| The router's seed for GLM-5.3 Flash cache-read | $0.03 / Mtok |
+| The models.dev catalog, which OpenCode uses | **$0.03 / Mtok** — identical |
+| What OpenCode's own cost figure for your GLM session implies | ~$0.0058 / Mtok |
+
+Your GLM session reported **$6.05** for 715M cache-read tokens. The catalog
+prices predict **$23.37** for the same tokens — OpenCode's figure is 3.86×
+lower. For contrast, your DeepSeek sessions report 1.22× the catalog figure,
+which is expected because peak pricing is 2×.
+
+So the router matches the authoritative catalog, and the discrepancy is
+between OpenCode's own session cost and that catalog. I cannot tell which is
+correct, because the provider-reported dollar figure I would need to settle it
+is currently `null` in the router's OpenCode Go quota snapshot.
+
+Changing the price would alter routing decisions on ambiguous evidence, so I
+have left it alone and recorded the discrepancy instead. If you want it
+settled, the clean test is one isolated request on GLM-5.3 Flash with the
+account's usage delta measured before and after — which needs your approval
+because it is a real, paid request.
+
+---
 
 | | |
 |---|---|
 | Branch | `feature/opendesign-provider` |
-| Code commit | `94cc38b` |
+| Code commit | `1e46f6a` |
 | Baseline | `e8fa5ac` (preserved) |
-| Tests | 183 passing |
+| Tests | 185 passing |
 | Typecheck | clean |
-| Live deployment | **untouched** |
+| Soak | 30 minutes, PASS |
+| Live deployment | **untouched** — still running `8c71c46c` |
 
-Exact artifact SHA-256 is recorded in `dist-release/RELEASE.json` once the soak
-completes. Rollback instructions are in `docs/OPENDESIGN-INTEGRATION.md` §11.
+Exact artifact SHA-256:
+
+```
+33401a1f5af2ca85f210fd5d8c0b30088bd9ddf5abfa76df05b450e130047246
+```
+
+Rollback instructions are in `docs/OPENDESIGN-INTEGRATION.md` §11.
