@@ -70,6 +70,14 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
  */
 const FAULT_DEDUPE_WINDOW_MS = 30_000
 
+/**
+ * How many attempts a provider-scoped failure may have before the router
+ * stops retrying. Each attempt is refused before a model runs, so it costs
+ * no allowance — the delay is the only price, and it is far cheaper than a
+ * turn dying and waiting for the owner to restart it.
+ */
+const PROVIDER_SCOPED_RETRY_ATTEMPTS = 5
+
 const unwrap = <T>(value: unknown): T[] => {
   if (Array.isArray(value)) return value as T[]
   if (isRecord(value) && Array.isArray(value.data)) return value.data as T[]
@@ -1025,7 +1033,19 @@ export class RouterController {
           event.decision = { retry: true, delay: Math.max(5_000, event.error?.retryAfterMs ?? 15_000) }
           return
         }
-        if (assessment.class === "provider_outage" || assessment.class === "network") {
+        if (assessment.providerScoped) {
+          // The provider's own pre-request path failed before a model ran, so
+          // the attempt cost nothing. These failures come in runs: the gateway
+          // is slow for a stretch and every immediate retry lands inside the
+          // same stretch and dies with it, which is what turns a recoverable
+          // blip into a turn that stops and waits for the owner to say
+          // continue. Back off long enough for the stretch to pass.
+          if (event.attempt >= PROVIDER_SCOPED_RETRY_ATTEMPTS) {
+            event.decision = { retry: false }
+          } else {
+            event.decision = { retry: true, delay: Math.min(40_000, 5_000 * 2 ** (event.attempt - 1)) }
+          }
+        } else if (assessment.class === "provider_outage" || assessment.class === "network") {
           if (event.attempt >= 3) event.decision = { retry: false }
         }
       }),
