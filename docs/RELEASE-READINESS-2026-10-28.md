@@ -1,12 +1,14 @@
 # Release readiness — Option C
 
-> **Stage A update (2026-10-28): FAIL on `f2e76af…`.** Two blockers were found: command notifications resumed the model, and the `BLOCKED` title did not clear. Both are fixed in the superseding build `e65326c9…` (commit `6099a3d`), and a targeted re-canary passes. Details: [STAGE-A-CANARY-REPORT-2026-10-28.md](STAGE-A-CANARY-REPORT-2026-10-28.md) and [STAGE-A-RECANARY-2026-10-28.md](STAGE-A-RECANARY-2026-10-28.md). A fresh 30-minute soak of the fix build is still required. Do not proceed to Stage B or live installation.
+> **Stage A final (2026-10-28): PASS on `e65326c9…` (commit `6099a3d`).** A fresh 30-minute soak and the complete Stage A matrix passed: 98 tests, all 16 commands zero-token, premium protection, large context, concurrency, outage, fail-closed recovery, reloads, restart, rollback. See [STAGE-A-FINAL-REPORT-2026-10-28.md](STAGE-A-FINAL-REPORT-2026-10-28.md). Stage B and live installation remain unauthorized. The earlier `f2e76af…` report is historical and must not be deployed.
 
 **Date:** 2026-10-28
 **Branch:** `option-c`
-**Code commit:** `9577da3051a01ab69de98ca38bd5ea51cd98604c`
+**Current fix build:** `6099a3dae7807a31058ae3396ba8cd1f128f13aa`
 **Final artifact:** `dist-release/index.js`
-**SHA-256:** `f2e76af0fc6c889e5693308309128067d99f551b272538492836049a5e4dbe74`
+**SHA-256:** `e65326c9bc7b36a4470bab2d631253d233e918fc76b4b93d5cf1bab8020a5fa4`
+
+> `f2e76af0…` (commit `9577da3`) is the historical pre-fix build and **must not be installed**. It failed Stage A. The gate results below were measured on `f2e76af…`; the full 30-minute soak and Stage A matrix for the fix build `e65326c9…` have now passed. Use `e65326c9…` for any canary.
 **Size:** 219,760 bytes
 **Live installation:** **not performed**
 
@@ -129,10 +131,13 @@ The `smart-router-single` lab is exactly this shape: isolated HOME/data/config, 
 
 ## 7. Final tests and artifact
 
+> Current fix build is `e65326c9…` / `6099a3d`; the `f2e76af…` numbers below are historical.
+
 ```text
 npm run typecheck  → clean
-npm test           → 9 files, 95 tests passed
-sha256(dist-release/index.js) = f2e76af0fc6c889e5693308309128067d99f551b272538492836049a5e4dbe74
+npm test           → 9 files, 98 tests passed (fix build e65326c9)
+sha256(dist-release/index.js) = e65326c9bc7b36a4470bab2d631253d233e918fc76b4b93d5cf1bab8020a5fa4
+npm test                     = 9 files, 98 tests passed
 cmp with the lab plugin       = byte-identical
 ```
 

@@ -1,0 +1,19 @@
+{
+  "peak": {
+    "ts": 1793159070,
+    "rssMb": 731.171875,
+    "mockRequests": 511,
+    "setups": 42,
+    "disposes": 21
+  },
+  "trough": {
+    "ts": 1793159737,
+    "rssMb": 333.125,
+    "mockRequests": 1042,
+    "setups": 63
+  },
+  "last": {
+    "ts": 1793160257,
+    "rssMb": 376.6875
+  }
+}

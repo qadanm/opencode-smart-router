@@ -4,6 +4,9 @@
 
 ```text
 Plugin source:  ~/Documents/opencode-smart-router
+Artifact:      ~/Documents/opencode-smart-router/dist-release/index.js
+SHA-256:       e65326c9bc7b36a4470bab2d631253d233e918fc76b4b93d5cf1bab8020a5fa4
+               Do not install f2e76af0… (failed Stage A).
 Installed at:   ~/.config/opencode/plugins/opencode-smart-router
 Config entry:   ~/.config/opencode/opencode.json → plugins[]
 Config backup:  ~/.config/opencode/opencode.json.bak-smart-router-20261027-150549
@@ -93,7 +96,7 @@ A project may add `.opencode/smart-router.json`. It can tighten privacy and spen
 - `"enabled": false` in `~/.config/opencode/smart-router.json` disables the router on the next load.
 - `/router-auto` clears a per-session manual override.
 
-The plugin fails closed. If it is paused, disabled, or has no qualified route, it leaves the current model unchanged.
+The plugin fails closed. If no qualified route exists, it writes a BLOCKED title and **throws `RouterBlockedError` from the prompt hook**, so admission is rejected rather than running on an unqualified model. The installed 2.1.4 server returns a generic HTTP 500 and does not execute the prompt. If setup itself fails, a minimal fallback hook blocks prompts for that location; remove the plugin entry and restart/reload to recover. The next successful prompt clears the BLOCKED title back to AUTO.
 
 ## Uninstall
 

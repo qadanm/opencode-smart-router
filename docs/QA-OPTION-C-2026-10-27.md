@@ -1,9 +1,11 @@
 # QA — Option C implementation
 
+> **Final Stage A:** [STAGE-A-FINAL-REPORT-2026-10-28.md](STAGE-A-FINAL-REPORT-2026-10-28.md) — PASS on `e65326c9…` / `6099a3d`; 98 tests and full 30-minute soak.
+
 > **Release gate:** the final 30-minute soak and release-readiness results are in [RELEASE-READINESS-2026-10-28.md](RELEASE-READINESS-2026-10-28.md). The proposed canary is in [CANARY-PLAN.md](CANARY-PLAN.md).
 
 **Date:** 2026-10-27/28
-**Branch:** `option-c` (baseline `af28882`, HEAD `9577da3`)
+**Branch:** `option-c` (baseline `af28882`, final fix commit `6099a3d`)
 **Status:** implementation and isolated verification complete; **live installation not performed**
 
 ## Artifacts
@@ -11,9 +13,10 @@
 | Build | SHA-256 | Size | What it covers |
 |---|---|---:|---|
 | 30-minute soak build | `6e793e1fbc9a28fe484a3ac4a30afb479a5281d2320aab1ef7c863ca162139aa` | 213 KB | Full 30-minute soak, outage/recovery, large context, reloads |
-| Final review build | `f2e76af0fc6c889e5693308309128067d99f551b272538492836049a5e4dbe74` | 220 KB | 95 tests, 20-project gate, 3 cold starts, fail-closed |
+| Final review build | `f2e76af0fc6c889e5693308309128067d99f551b272538492836049a5e4dbe74` | 220 KB | 95 tests, 20-project gate, 3 cold starts, fail-closed; **superseded** |
+| Stage A fix build | `e65326c9bc7b36a4470bab2d631253d233e918fc76b4b93d5cf1bab8020a5fa4` | 220 KB | 98 tests, targeted re-canary; full soak pending |
 
-The final build adds five review fixes after the soak: teardown barrier, setup-failure fallback hook, retry-after clamp, accurate failed-decision runtime, and immediate fire-and-forget persistence on dispose. Those changes are unit-tested; a fresh 30-minute soak of the final build remains a canary gate.
+The final build adds five review fixes after the soak: teardown barrier, setup-failure fallback hook, retry-after clamp, accurate failed-decision runtime, and immediate fire-and-forget persistence on dispose. Those changes are unit-tested; the full 30-minute soak on `e65326c9…` passed in the Stage A final report.
 
 ## 1. Scope
 

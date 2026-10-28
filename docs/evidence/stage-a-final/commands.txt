@@ -1,0 +1,36 @@
+sid=ses_e7f5012f8ffeWRVyja0zu9j81A
+--- informational success ---
+router-status            http=204 mock_before=4 mock_after=4 delta=0
+router-report            http=204 mock_before=4 mock_after=4 delta=0
+router-explain           http=204 mock_before=4 mock_after=4 delta=0
+router-diagnostics       http=204 mock_before=4 mock_after=4 delta=0
+--- control success ---
+router-auto              http=204 mock_before=4 mock_after=4 delta=0
+router-mode              http=204 mock_before=4 mock_after=4 delta=0
+router-approve           http=204 mock_before=4 mock_after=4 delta=0
+router-pause             http=204 mock_before=4 mock_after=4 delta=0
+router-resume            http=204 mock_before=4 mock_after=4 delta=0
+router-dry-run           http=204 mock_before=4 mock_after=4 delta=0
+router-dry-run           http=204 mock_before=4 mock_after=4 delta=0
+router-title             http=204 mock_before=4 mock_after=4 delta=0
+router-title             http=204 mock_before=4 mock_after=4 delta=0
+router-pin               http=204 mock_before=4 mock_after=4 delta=0
+router-exclude           http=204 mock_before=4 mock_after=4 delta=0
+router-premium-budget    http=204 mock_before=4 mock_after=4 delta=0
+router-reserve           http=204 mock_before=4 mock_after=4 delta=0
+router-auto              http=204 mock_before=4 mock_after=4 delta=0
+--- failure paths ---
+router-nope              http=404 mock_before=4 mock_after=4 delta=0
+router-pin               http=204 mock_before=4 mock_after=4 delta=0
+router-mode              http=204 mock_before=4 mock_after=4 delta=0
+router-dry-run           http=204 mock_before=4 mock_after=4 delta=0
+router-title             http=204 mock_before=4 mock_after=4 delta=0
+router-exclude           http=204 mock_before=4 mock_after=4 delta=0
+router-premium-budget    http=204 mock_before=4 mock_after=4 delta=0
+router-reserve           http=204 mock_before=4 mock_after=4 delta=0
+router-reset-metrics     http=204 mock_before=4 mock_after=4 delta=0
+--- reset metrics confirm last ---
+router-reset-metrics     http=204 mock_before=4 mock_after=4 delta=0
+--- reset overrides ---
+resetOverrides=200
+commands=16

@@ -1,0 +1,19 @@
+{
+  "providers": {
+    "opencode-go": { "enabled": false, "probeUsage": false },
+    "commandcode": { "enabled": false, "probeUsage": false },
+    "lab-cc": { "enabled": true, "probeUsage": false, "reserveMonthlyPct": 0, "reserveWeeklyPct": 0, "reserveFiveHourPct": 0 }
+  },
+  "quota": { "probeOpenCodeGo": false, "probeCommandCode": false, "bootstrapSessions": 20, "bootstrapDays": 31 },
+  "routing": { "failClosed": true },
+  "ui": { "notifications": false, "titleIndicator": true },
+  "premium": { "mode": "ask", "monthlyBudgetUsd": 0, "oneShotApproval": true },
+  "models": {
+    "definitions": [
+      { "key": "lab-cc/claude-haiku-5-5", "providerID": "lab-cc", "modelID": "claude-haiku-5-5", "name": "Canary Haiku", "context": 1000000, "maxOutput": 128000, "input": ["text","image"], "cost": [{ "input": 0.1, "output": 0.5, "cache": { "read": 0.01, "write": 0.125 } }], "intelligence": 43.4, "design": 70, "tier": 2, "approved": true, "monthlyAllowanceUsd": 1000 },
+      { "key": "lab-cc/deepseek-v4.1-flash", "providerID": "lab-cc", "modelID": "deepseek-v4.1-flash", "name": "Canary DeepSeek", "context": 1000000, "maxOutput": 384000, "input": ["text","image"], "cost": [{ "input": 0.15, "output": 0.6, "cache": { "read": 0.003, "write": 0 } }], "intelligence": 39.5, "design": 65, "tier": 2, "approved": true, "monthlyAllowanceUsd": 1000 },
+      { "key": "lab-cc/glm-5.3-flash", "providerID": "lab-cc", "modelID": "glm-5.3-flash", "name": "Canary GLM Premium", "context": 1000000, "maxOutput": 131072, "input": ["text","image","video"], "cost": [{ "input": 0.15, "output": 0.5, "cache": { "read": 0.03, "write": 0 } }], "intelligence": 60, "design": 90, "premium": true, "tier": 3, "approved": true, "monthlyAllowanceUsd": 100 },
+      { "key": "lab-cc/mimo-v2.6-flash", "providerID": "lab-cc", "modelID": "mimo-v2.6-flash", "name": "Canary MiMo Unapproved", "context": 1048576, "maxOutput": 131072, "input": ["text","image","audio","video"], "cost": [{ "input": 0.14, "output": 0.28, "cache": { "read": 0.0028, "write": 0 } }], "intelligence": 55, "design": 95, "tier": 3, "approved": false, "monthlyAllowanceUsd": 100 }
+    ]
+  }
+}

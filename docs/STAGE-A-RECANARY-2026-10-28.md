@@ -1,5 +1,7 @@
 # Stage A re-canary — blocker fixes verified
 
+> **Superseded by [STAGE-A-FINAL-REPORT-2026-10-28.md](STAGE-A-FINAL-REPORT-2026-10-28.md):** the full 30-minute soak and Stage A matrix on `e65326c9…` passed. This report remains the targeted-fix record.
+
 **Date:** 2026-10-28
 **Artifact:** `dist-release/index.js`
 **SHA-256:** `e65326c9bc7b36a4470bab2d631253d233e918fc76b4b93d5cf1bab8020a5fa4`
@@ -43,8 +45,8 @@ Evidence: `docs/evidence/canary-stage-a-recanary/`.
 
 This re-canary verifies the two blockers and the minor title fix. It is **not** a full release gate for the new artifact:
 
-- The 30-minute soak was run on `f2e76af…`, not this fix build. A fresh 30-minute soak on `e65326c9…` is still required.
-- Large context, concurrency, and premium approval were validated on `f2e76af…`; they were not repeated on the fix build. The fixes touch command notifications and titles, not routing, but the exact artifact rule still requires a full Stage A pass.
+- The full 30-minute soak and Stage A matrix on `e65326c9…` have now passed; see [STAGE-A-FINAL-REPORT-2026-10-28.md](STAGE-A-FINAL-REPORT-2026-10-28.md).
+- Large context, concurrency, premium approval, outage, fail-closed, reload, restart, and rollback were repeated on the fix build.
 - Live quota exhaustion remains a Stage B/live-provider check; the unit test passes.
 - Stage B, real credentials, and live installation remain unauthorized.
 

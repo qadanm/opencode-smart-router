@@ -1,11 +1,13 @@
 # Controlled canary plan — DO NOT EXECUTE YET
 
-> **Stage A result (2026-10-28): FAIL on `f2e76af…`; blockers fixed in `e65326c9…`.** A targeted re-canary passes. The fix build still needs a fresh 30-minute soak and full Stage A matrix. See [STAGE-A-CANARY-REPORT-2026-10-28.md](STAGE-A-CANARY-REPORT-2026-10-28.md) and [STAGE-A-RECANARY-2026-10-28.md](STAGE-A-RECANARY-2026-10-28.md). Do not run Stage B.
+> **Stage A result (2026-10-28): PASS on `e65326c9…` (commit `6099a3d`).** The full 30-minute soak and Stage A matrix passed, including command-token, premium, large-context, concurrency, outage, fail-closed, reload, restart, and rollback checks. See [STAGE-A-FINAL-REPORT-2026-10-28.md](STAGE-A-FINAL-REPORT-2026-10-28.md). Stage B remains unauthorized.
 
 **Status:** prepared only; nothing in this document has been run against the live environment.
 **Artifact:** `dist-release/index.js`
-**SHA-256:** `f2e76af0fc6c889e5693308309128067d99f551b272538492836049a5e4dbe74`
-**Code commit:** `9577da3`
+**SHA-256:** `e65326c9bc7b36a4470bab2d631253d233e918fc76b4b93d5cf1bab8020a5fa4`
+**Code commit:** `6099a3dae7807a31058ae3396ba8cd1f128f13aa`
+
+> **Do not install `f2e76af0fc6c889e5693308309128067d99f551b272538492836049a5e4dbe74`.** That build failed Stage A (command inference and sticky `BLOCKED` title). It is retained only as the historical failure artifact.
 
 ## Why a separate server, not the desktop app
 
@@ -51,7 +53,7 @@ rsync -a --exclude '.git' --exclude 'node_modules' --exclude '.next' "$SOURCE_PR
 ```bash
 cp ~/Documents/opencode-smart-router/dist-release/index.js "$CANARY_ROOT/plugin/index.js"
 shasum -a 256 "$CANARY_ROOT/plugin/index.js"
-# Must equal f2e76af0fc6c889e5693308309128067d99f551b272538492836049a5e4dbe74
+# Must equal e65326c9bc7b36a4470bab2d631253d233e918fc76b4b93d5cf1bab8020a5fa4
 ```
 
 ### A3. Isolated config
@@ -293,6 +295,10 @@ pgrep -fl 'OpenCode' | head
 ```
 
 After the canary, repeat the config hash and PID check. The desktop server must be untouched.
+
+## Command output limitation (SDK-level)
+
+The v2 SDK accepts `session.synthetic({ resume:false })`, but such a synthetic message is admitted to the session inbox and delivered only when the session next runs. There is no supported API to deliver a full command result immediately without resuming execution, and resuming would cause a model turn. The router therefore chooses **zero-token correctness** over immediate rendering: command output appears on the next turn. The existing session title is the only immediate, supported, token-free UI surface; it is already used for AUTO/MANUAL/PAUSED/DRY RUN/BLOCKED. Do not add a title hack or another listener as a substitute.
 
 ## Approval gates
 

@@ -1,0 +1,87 @@
+baseline_sid=ses_e7f50b581ffeNyCZZFdIlVdhJF
+prompt_http=200
+{"title":"AUTO · lab-cc · Canary Haiku — final baseline","model":{"id":"claude-haiku-5-5","providerID":"lab-cc","variant":"default"},"outcome":"succeeded"}
+{"runtime":"automatic","last":{"chosen":{"providerID":"lab-cc","id":"claude-haiku-5-5"},"task":{"tier":2,"kind":"feature"},"warnings":[]}}
+--- manual/resume ---
+switch=204
+{"title":"MANUAL · lab-cc · Canary DeepSeek — final baseline","model":{"id":"deepseek-v4.1-flash","providerID":"lab-cc","variant":"default"}}
+resume=200
+{"title":"AUTO · lab-cc · Canary DeepSeek — final baseline","model":{"id":"deepseek-v4.1-flash","providerID":"lab-cc","variant":"default"}}
+--- premium ---
+premium_prompt=200
+{"title":"AUTO · lab-cc · Canary Haiku — final premium","model":{"id":"claude-haiku-5-5","providerID":"lab-cc","variant":"default"},"outcome":"succeeded"}
+{"premium":{"mode":"ask","monthlyBudgetUsd":0,"spentUsd":0,"remainingUsd":0,"oneShotGranted":false},"last":{"chosen":{"providerID":"lab-cc","id":"claude-haiku-5-5"},"needsPremiumApproval":true,"error":null}}
+glm_before=0 glm_after_first=0
+approve=200
+approved_prompt=200
+{"title":"AUTO · lab-cc · Canary GLM Premium — final premium","model":{"id":"glm-5.3-flash","providerID":"lab-cc","variant":"default"},"outcome":"succeeded"}
+{"premium":{"mode":"ask","monthlyBudgetUsd":0,"spentUsd":0.0015836499999999998,"remainingUsd":0,"oneShotGranted":false},"last":{"chosen":{"providerID":"lab-cc","id":"glm-5.3-flash"},"needsPremiumApproval":false}}
+glm_after_approval=1
+--- large context ses_e7f4f5821ffeEE48lPFl0gIn2Y ---
+large_http=200
+{"title":"AUTO · lab-cc · Canary Haiku — final large","model":{"id":"claude-haiku-5-5","providerID":"lab-cc","variant":"default"},"outcome":"succeeded","tokens":{"input":340574,"output":2,"reasoning":0,"cache":{"read":0,"write":0}}}
+followup_http=200
+{"context":{"tokens":340611,"cacheRead":0,"cacheSharePct":0,"state":"healthy","message":"340,611 context tokens; 0% arrived as cache reads. Cache reads are cheaper than fresh input but are not free."},"last":{"chosen":{"providerID":"lab-cc","id":"claude-haiku-5-5"},"switched":false,"switchReason":"The current model already is the least-cost qualified route."}}
+--- concurrent 10 ---
+created=      10 mock_before=6 mock_after=16
+AUTO · lab-cc · Canary Haiku — final concurrent 3	claude-haiku-5-5	succeeded
+AUTO · lab-cc · Canary Haiku — final concurrent 2	claude-haiku-5-5	succeeded
+AUTO · lab-cc · Canary Haiku — final concurrent 9	claude-haiku-5-5	succeeded
+AUTO · lab-cc · Canary Haiku — final concurrent 1	claude-haiku-5-5	succeeded
+AUTO · lab-cc · Canary Haiku — final concurrent 8	claude-haiku-5-5	succeeded
+AUTO · lab-cc · Canary Haiku — final concurrent 4	claude-haiku-5-5	succeeded
+AUTO · lab-cc · Canary Haiku — final concurrent 6	claude-haiku-5-5	succeeded
+AUTO · lab-cc · Canary Haiku — final concurrent 7	claude-haiku-5-5	succeeded
+AUTO · lab-cc · Canary Haiku — final concurrent 10	claude-haiku-5-5	succeeded
+AUTO · lab-cc · Canary Haiku — final concurrent 5	claude-haiku-5-5	succeeded
+{"coreID":"ntfgtbiu","pid":81870,"bridgeCount":1,"setups":1,"disposes":0,"eventStreams":1,"eventsHandled":274,"eventsIgnored":36,"errors":1}
+--- provider outage ---
+baseline=ses_e7f50b581ffeNyCZZFdIlVdhJF
+outage_prompt=200
+{"title":"AUTO · lab-cc · Canary DeepSeek — final baseline","outcome":"failed","model":{"id":"deepseek-v4.1-flash","providerID":"lab-cc","variant":"default"}}
+server_after_outage=200
+recovered_prompt=200
+{"title":"AUTO · lab-cc · Canary DeepSeek — final baseline","outcome":"succeeded"}
+--- fail-closed disable ---
+reload_disable=204
+blocked_prompt=500
+blocked_mock_before=17 blocked_mock_after=17
+blocked_title=BLOCKED · lab-cc · Canary DeepSeek — final baseline
+--- restore + recovery ---
+reload_restore=204
+recovery_prompt=200
+{"title":"AUTO · lab-cc · Canary DeepSeek — final baseline","outcome":"succeeded"}
+--- reloads x3 ---
+reload1=204
+{"coreID":"ntfgtbiu","bridgeCount":1,"setups":4,"disposes":3,"eventStreams":1,"errors":1}
+reload2=204
+{"coreID":"ntfgtbiu","bridgeCount":1,"setups":5,"disposes":4,"eventStreams":1,"errors":1}
+reload3=204
+{"coreID":"ntfgtbiu","bridgeCount":1,"setups":6,"disposes":5,"eventStreams":1,"errors":1}
+title_after_reloads=AUTO · lab-cc · Canary DeepSeek — final baseline
+commands=16
+--- restart ---
+new_pid=85335
+commands=0
+{"coreID":"l9eaa7qw","pid":85335,"bridgeCount":1,"setups":1,"eventStreams":1,"errors":0}
+recovered_title_after_restart=AUTO · lab-cc · Canary DeepSeek — final baseline
+post_restart_prompt=200
+{"title":"AUTO · lab-cc · Canary DeepSeek — final baseline","outcome":"succeeded"}
+thrash=0 errors=0
+commands_retry=16
+--- premium after restart ---
+premium_restart_prompt=200
+{"title":"AUTO · lab-cc · Canary Haiku — final premium restart","model":{"id":"claude-haiku-5-5","providerID":"lab-cc","variant":"default"},"outcome":"succeeded"}
+{"premium":{"mode":"ask","monthlyBudgetUsd":0,"spentUsd":0,"remainingUsd":0,"oneShotGranted":false},"last":{"chosen":{"providerID":"lab-cc","id":"claude-haiku-5-5"},"needsPremiumApproval":true}}
+glm_before=1 glm_after=1
+--- rollback ---
+context_before=16
+rollback_reload=204
+commands_after_remove=0
+ordinary_prompt=200
+context_after=19
+{"title":"AUTO · lab-cc · Canary DeepSeek — final baseline","outcome":"succeeded"}
+footprint:
+    phys_footprint: 210 MB
+    phys_footprint_peak: 289 MB
+
