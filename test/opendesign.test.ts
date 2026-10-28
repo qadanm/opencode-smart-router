@@ -916,3 +916,32 @@ describe("OpenDesign control base URL", () => {
     expect(discoverOpenDesignControlKey({}).candidates).toHaveLength(0)
   })
 })
+
+describe("model registry and the live catalog", () => {
+  it("keeps a provider's seeds approved when its live catalog is unavailable", () => {
+    const registry = buildRegistry({
+      live: [],
+      settings: settings({ providers: { opendesign: openDesignSettings() } }),
+    })
+    expect(registry.get("opendesign", "claude-haiku-5.5")?.approved).toBe(true)
+  })
+
+  it("merges the gateway usable window over the seed value", () => {
+    const registry = buildRegistry({
+      live: [
+        {
+          id: "deepseek-v4.1-flash",
+          providerID: "opendesign",
+          name: "DeepSeek V4.1 Flash",
+          limit: { context: 328000, output: 128000 },
+          capabilities: { tools: true, input: ["text", "image"], output: ["text"] },
+          cost: [{ input: 0.15, output: 0.6, cache: { read: 0.003, write: 0 } }],
+        },
+      ] as any,
+      settings: settings({ providers: { opendesign: openDesignSettings() } }),
+    })
+    const model = registry.get("opendesign", "deepseek-v4.1-flash")!
+    expect(model.context).toBe(328000)
+    expect(model.creditMultiplier).toBe(0.5)
+  })
+})
