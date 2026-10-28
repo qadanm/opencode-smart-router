@@ -83,10 +83,16 @@ describe("compacting an idle session to keep it on the cheap provider", () => {
     expect(fake.compactions.length).toBe(1)
   })
 
-  it("does not compact on a failed or interrupted turn", async () => {
+  it("compacts after a failed turn too, since the context is just as large", async () => {
     setContext(325_000)
     await goIdle("failed")
-    expect(fake.compactions.length).toBe(0)
+    expect(fake.compactions.length).toBe(1)
+  })
+
+  it("compacts when the host reports a clean execution, not only on idle", async () => {
+    setContext(325_000)
+    await controller.handleEvent({ type: "session.execution.succeeded", data: { sessionID } })
+    expect(fake.compactions.length).toBe(1)
   })
 
   it("targets the cheapest variant's window, not the current provider's", async () => {

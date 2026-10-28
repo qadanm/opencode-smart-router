@@ -1386,7 +1386,13 @@ export class RouterController {
         // interrupted. Compacting here keeps the session inside the cheapest
         // provider's window, so the next prompt does not get pushed onto a
         // costlier provider purely because the conversation grew.
-        if (type === "session.idle" && outcome === "succeeded") {
+        //
+        // Note the host's `session.idle` bus event carries no outcome field
+        // (only the persisted message does), so success cannot be read here.
+        // `session.execution.succeeded` is the signal that a turn finished
+        // cleanly; the idle event covers the rest. The compaction cooldown is
+        // what stops the two from both firing.
+        if (type === "session.execution.succeeded" || type === "session.idle") {
           this.maybeCompactForCost(sessionID)
         }
         this.persistLedgerSoon()
