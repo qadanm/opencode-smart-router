@@ -370,6 +370,18 @@ describe("plugin controller integration", () => {
     await controller.dispose()
   })
 
+  it("refuses to create a second quota service when the core quota is missing", async () => {
+    const first = makeCtx(mkdtempSync(join(tmpdir(), "router-quota-a-")))
+    const second = makeCtx(mkdtempSync(join(tmpdir(), "router-quota-b-")))
+    const a = new RouterController({ ctx: first.ctx, pluginOptions: first.ctx.options })
+    await a.initialize()
+    ;(sharedCore as any).quota = undefined
+    const b = new RouterController({ ctx: second.ctx, pluginOptions: second.ctx.options })
+    await expect(b.initialize()).rejects.toThrow(/quota/i)
+    await b.dispose().catch(() => undefined)
+    await a.dispose()
+  })
+
   it("isolates a bridge setup failure instead of rejecting plugin setup", async () => {
     const fake = makeCtx(mkdtempSync(join(tmpdir(), "router-setup-fail-")))
     fake.ctx.command.transform = () => {

@@ -15,7 +15,7 @@ import { computeContextHealth } from "../core/context-health.js"
 import { loadSettings, type SettingsLoadResult } from "../core/config.js"
 import { classifyFailure } from "../core/failures.js"
 import { buildRegistry } from "../core/models/registry.js"
-import { QuotaService } from "../core/quota/service.js"
+import type { QuotaService } from "../core/quota/service.js"
 import { LedgerStore, type BootstrapSession } from "../core/quota/ledger.js"
 import { routeTask } from "../core/routing/engine.js"
 import { decidePremium, evaluateEligibility } from "../core/policy/eligibility.js"
@@ -217,14 +217,9 @@ export class RouterController {
     })
     this.ledger = sharedCore.ledger
     this.runtime = sharedCore.runtime
-    this.quota =
-      sharedCore.quota ??
-      new QuotaService({
-        getSettings: () => this.settings.providers as any,
-        getCredentials: () => this.resolveQuotaCredentials(),
-        probeIntervalMinutes: this.settings.quota.probeIntervalMinutes,
-        initial: [],
-      })
+    const quota = sharedCore.quota
+    if (!quota) throw new Error("Shared quota service is not initialized")
+    this.quota = quota
     this.bridgeID = sharedCore.addBridge(this.ctx.location?.directory ?? "", this)
     this.modelList = []
     this.rebuildRegistry()
