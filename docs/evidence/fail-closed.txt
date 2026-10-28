@@ -1,0 +1,5 @@
+fail-closed live test Tue Oct 27 23:56:46 UTC 2026
+HTTP status: 500 (verified earlier)
+title: 
+response body: empty
+no model request was sent.

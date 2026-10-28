@@ -1,0 +1,76 @@
+{
+  "enabled": true,
+  "mode": "balanced",
+  "dryRun": false,
+  "providers": {
+    "opencode-go": {
+      "enabled": true,
+      "plan": "go-plus",
+      "reserveMonthlyPct": 10,
+      "reserveWeeklyPct": 15,
+      "reserveFiveHourPct": 10,
+      "allowExtraUsage": false,
+      "probeUsage": true
+    },
+    "commandcode": {
+      "enabled": true,
+      "plan": "goat",
+      "reserveMonthlyPct": 10,
+      "reserveWeeklyPct": 15,
+      "reserveFiveHourPct": 10,
+      "allowExtraUsage": false,
+      "probeUsage": true,
+      "monthlyCreditsUsd": 70,
+      "fiveHourCapUsd": 14,
+      "weeklyCapUsd": 35
+    }
+  },
+  "privacy": {
+    "allowTrainingModels": false,
+    "allowFreeModels": false,
+    "requireZdr": false
+  },
+  "premium": {
+    "mode": "ask",
+    "monthlyBudgetUsd": 0,
+    "oneShotApproval": true
+  },
+  "routing": {
+    "intelligenceFloor": 39.5,
+    "designFloor": 60,
+    "sophisticatedDesignFloor": 75,
+    "switchHysteresisPct": 20,
+    "largeContextTokens": 300000,
+    "largeContextHysteresisPct": 35,
+    "maxEscalationsPerTask": 2,
+    "preferSameProvider": true,
+    "failClosed": true
+  },
+  "quota": {
+    "probeOpenCodeGo": true,
+    "probeCommandCode": true,
+    "probeIntervalMinutes": 5,
+    "bootstrapSessions": 100,
+    "bootstrapDays": 31
+  },
+  "contextHealth": {
+    "enabled": true,
+    "warnAtTokens": 400000,
+    "recommendAtTokens": 700000
+  },
+  "logging": {
+    "storePromptText": false,
+    "decisionLogSize": 100,
+    "diagnostics": true
+  },
+  "models": {
+    "approved": [],
+    "excluded": [],
+    "tierOverrides": {},
+    "definitions": []
+  },
+  "ui": {
+    "titleIndicator": true,
+    "notifications": true
+  }
+}

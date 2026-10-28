@@ -1,0 +1,5 @@
+{
+  "success": true,
+  "user": { "id": "user_redacted", "userName": "redacted", "name": "Redacted", "email": "redacted@example.invalid" },
+  "org": null
+}

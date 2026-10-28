@@ -1,0 +1,42 @@
+[
+  {
+    "id": "ours",
+    "url": "local",
+    "commit": "~/Documents/opencode-smart-router",
+    "tests": "77 tests pass",
+    "host_api": "v2 / 2.1.4",
+    "license": "none"
+  },
+  {
+    "id": "marco",
+    "url": "https://github.com/marco-jardim/opencode-model-router",
+    "commit": "d2837cc0d086bf814694811e359cf12a9c2c0a32",
+    "tests": "342 test files (not run)",
+    "host_api": "v1 + v2 adapter (2.0.20+)",
+    "license": "GPL-3.0-only"
+  },
+  {
+    "id": "sberdia",
+    "url": "https://github.com/s-berdia/Opencode_router",
+    "commit": "54256a9c42842ad878111425a440bc5e2f381f33",
+    "tests": "101 tests pass (executed)",
+    "host_api": "plugin API 1.19 (v1)",
+    "license": "MIT"
+  },
+  {
+    "id": "sertdisk",
+    "url": "https://github.com/sertdisk/OpenCode-Model-Router",
+    "commit": "0529a145e01b8c8eb588742b509eac2f852a963a",
+    "tests": "no tests",
+    "host_api": "v2",
+    "license": "MIT"
+  },
+  {
+    "id": "usage-limits",
+    "url": "https://github.com/mynameistito/opencode-plugins",
+    "commit": "151405a66fd74f00b34f771e0a073ab57b4df3f0",
+    "tests": "27 test files, 95% coverage gate (not run)",
+    "host_api": "v2 TUI plugin",
+    "license": "MIT"
+  }
+]

@@ -1,0 +1,32 @@
+{
+  "name": "opencode-smart-router",
+  "version": "0.1.0",
+  "description": "Capability-aware, quota-conscious model router for OpenCode",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts",
+    "./rpc": "./src/rpc.ts"
+  },
+  "files": [
+    "src",
+    "docs",
+    "config.example.json",
+    "README.md"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "typecheck && test",
+    "build:server": "esbuild src/index.ts --bundle --format=esm --platform=node --target=node22 --external:@opencode/plugin --external:@opencode/plugin/* --outfile=dist/index.js --legal-comments=none"
+  },
+  "dependencies": {
+    "@opencode/plugin": "2.1.4"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}

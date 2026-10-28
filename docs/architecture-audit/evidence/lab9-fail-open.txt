@@ -1,0 +1,24 @@
+# Verified defect: routing errors are swallowed (fail-open)
+
+Lab: isolated HOME, OpenCode 2.1.4, port 4210, fake provider credentials.
+Session: ses_e80241c6effeSuJVfeFtj5HRE9
+Settings: routing.failClosed = true; one user-defined model whose cost entry omitted `cache`.
+
+Instrumented prompt route log:
+{"event":"route-start","sid":"ses_e80241c6effeSuJVfeFtj5HRE9","enabled":true}
+{"event":"route-loaded","sid":"ses_e80241c6effeSuJVfeFtj5HRE9","manual":false,"sameLedger":true}
+{"event":"route-task","sid":"ses_e80241c6effeSuJVfeFtj5HRE9","tier":2}
+
+No `route-record` line. RPC status reported lastDecision=null and no router warning.
+The prompt still reached the provider (HTTP 401 from the fake provider).
+
+Deterministic reproduction of the underlying throw:
+  estimateTaskCost -> TypeError: Cannot read properties of undefined (reading 'read')
+  at src/core/routing/engine.ts:113
+
+Cause:
+- src/core/config.ts:210-211 accepts a cost tier with only input/output.
+- src/core/routing/engine.ts:113 reads tier.cache.read without a fallback.
+- src/server/controller.ts:807-811 catches every non-RouterBlockedError and only records it.
+
+Impact: a config mistake or an unexpected routing exception bypasses fail-closed.

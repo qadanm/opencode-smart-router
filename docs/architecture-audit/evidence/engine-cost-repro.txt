@@ -1,0 +1,33 @@
+# Deterministic reproduction: cost tier without cache
+
+Test source:
+import { describe, expect, it } from "vitest"
+import { classifyTask } from "../src/core/classify/classifier.js"
+import { estimateTaskCost } from "../src/core/routing/engine.js"
+import type { ModelRecord } from "../src/core/types.js"
+
+describe("audit reproduction", () => {
+  it("estimateTaskCost throws when a user cost tier omits cache pricing", () => {
+    const model = {
+      key: "lab/x", providerID: "lab", modelID: "x", name: "X",
+      context: 200000, maxOutput: 8192, inputModalities: ["text"],
+      cost: [{ input: 0.1, output: 0.2 }],
+      intelligence: 45, design: 65, tier: 2, approved: true,
+      premium: false, training: false, free: false, monthlyAllowanceUsd: 100,
+    } as unknown as ModelRecord
+    const task = classifyTask({ text: "Implement a feature in src/app.ts", files: [], contextTokens: 0, recentFailures: 0 })
+    expect(() => estimateTaskCost({ model, task, contextTokens: 1000, currentModelKey: model.key })).toThrow(TypeError)
+  })
+})
+
+Result:
+
+ RUN  v3.2.4 /Users/muhammedqadan/Documents/opencode-smart-router
+
+ ✓ test/audit-repro.test.ts (1 test) 6ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  17:22:25
+   Duration  595ms (transform 107ms, setup 0ms, collect 89ms, tests 6ms, environment 0ms, prepare 155ms)
+

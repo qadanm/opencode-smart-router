@@ -1,0 +1,131 @@
+{
+  "coreID": "7lmovocl",
+  "pid": 99627,
+  "createdAt": 1793143232971,
+  "uptimeMs": 1300359,
+  "bridges": [
+    {
+      "id": "bridge-99627-295",
+      "directory": "/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T//opencode/smart-router-lab5/projects/p13",
+      "createdAt": 1793144464649
+    },
+    {
+      "id": "bridge-99627-296",
+      "directory": "/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T//opencode/smart-router-lab5/projects/p12",
+      "createdAt": 1793144464705
+    },
+    {
+      "id": "bridge-99627-297",
+      "directory": "/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T//opencode/smart-router-lab5/projects/p19",
+      "createdAt": 1793144464761
+    },
+    {
+      "id": "bridge-99627-298",
+      "directory": "/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T//opencode/smart-router-lab5/projects/p16",
+      "createdAt": 1793144464827
+    },
+    {
+      "id": "bridge-99627-299",
+      "directory": "/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T//opencode/smart-router-lab5/projects/p15",
+      "createdAt": 1793144464892
+    },
+    {
+      "id": "bridge-99627-300",
+      "directory": "/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T//opencode/smart-router-lab5/projects/p7",
+      "createdAt": 1793144464948
+    },
+    {
+      "id": "bridge-99627-301",
+      "directory": "/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T//opencode/smart-router-lab5/projects/p9",
+      "createdAt": 1793144464997
+    },
+    {
+      "id": "bridge-99627-302",
+      "directory": "/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T//opencode/smart-router-lab5/projects/p20",
+      "createdAt": 1793144465038
+    },
+    {
+      "id": "bridge-99627-303",
+      "directory": "/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T//opencode/smart-router-lab5/projects/p14",
+      "createdAt": 1793144465112
+    },
+    {
+      "id": "bridge-99627-304",
+      "directory": "/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T//opencode/smart-router-lab5/projects/p18",
+      "createdAt": 1793144465147
+    },
+    {
+      "id": "bridge-99627-305",
+      "directory": "/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T//opencode/smart-router-lab5/projects/p1",
+      "createdAt": 1793144465193
+    },
+    {
+      "id": "bridge-99627-306",
+      "directory": "/private/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T/opencode/smart-router-lab5",
+      "createdAt": 1793144465239
+    },
+    {
+      "id": "bridge-99627-307",
+      "directory": "/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T//opencode/smart-router-lab5/projects/p3",
+      "createdAt": 1793144465281
+    },
+    {
+      "id": "bridge-99627-308",
+      "directory": "/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T//opencode/smart-router-lab5/projects/p4",
+      "createdAt": 1793144465318
+    },
+    {
+      "id": "bridge-99627-309",
+      "directory": "/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T//opencode/smart-router-lab5/projects/p5",
+      "createdAt": 1793144465351
+    },
+    {
+      "id": "bridge-99627-310",
+      "directory": "/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T//opencode/smart-router-lab5/projects/p6",
+      "createdAt": 1793144465385
+    },
+    {
+      "id": "bridge-99627-311",
+      "directory": "/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T//opencode/smart-router-lab5/projects/p2",
+      "createdAt": 1793144465420
+    },
+    {
+      "id": "bridge-99627-312",
+      "directory": "/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T//opencode/smart-router-lab5/projects/p10",
+      "createdAt": 1793144465454
+    },
+    {
+      "id": "bridge-99627-313",
+      "directory": "/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T//opencode/smart-router-lab5/projects/p8",
+      "createdAt": 1793144465485
+    },
+    {
+      "id": "bridge-99627-314",
+      "directory": "/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T//opencode/smart-router-lab5/projects/p11",
+      "createdAt": 1793144465513
+    },
+    {
+      "id": "bridge-99627-315",
+      "directory": "/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T//opencode/smart-router-lab5/projects/p17",
+      "createdAt": 1793144465542
+    }
+  ],
+  "bridgeCount": 21,
+  "setups": 315,
+  "disposes": 294,
+  "ledgerEvents": 897,
+  "decisions": 120,
+  "sessions": 21,
+  "quotaSnapshots": 0,
+  "quotaRefreshes": 0,
+  "ledgerWrites": 821,
+  "quotaWrites": 0,
+  "lastLedgerWriteAt": 1793144533096,
+  "quotaInitialized": true,
+  "bootstrapped": true,
+  "eventsHandled": 189976,
+  "eventsIgnored": 203551,
+  "errors": [
+    "No saved ledger found"
+  ]
+}

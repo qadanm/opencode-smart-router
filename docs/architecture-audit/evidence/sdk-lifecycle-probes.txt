@@ -1,0 +1,26 @@
+# Lifecycle evidence collected earlier in this session (pre-audit rebuild)
+
+## Plugin setup across locations (isolated OpenCode 2.1.4 server)
+- 20 project locations created and prompted sequentially.
+- setup events: 133 total for 20 locations (reloads during the test).
+- unique process ids: 1
+- unique globalThis core ids: 1
+- last setup counter: 21
+- unique locations: 19 at sample time (one location's log line was still in flight)
+
+Raw log: docs/evidence/sdk-sharing-probe.jsonl
+
+## Plugin storage across locations
+- Location 1 wrote { location: p1, n: 1 }.
+- Location 2 read location 1's value as `before`, then wrote its own.
+- Conclusion: OpenCode plugin storage is process-global across locations, not per-location.
+
+Raw log: docs/evidence/storage-sharing-probe.jsonl
+
+## Live fail-closed probe (isolated server, port 4208)
+- Prompt hook threw; HTTP status 500.
+- Session had no model and no provider request was made.
+- Title: BLOCKED · Go · GPT-6 Luna — blocked test
+- Reason: Provider is disabled in router settings
+
+Raw note: docs/evidence/fail-closed.txt

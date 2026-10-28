@@ -1,0 +1,29 @@
+# Our suite: typecheck + tests
+$ npm run typecheck
+
+> opencode-smart-router@0.1.0 typecheck
+> tsc --noEmit
+
+
+$ npm test
+
+> opencode-smart-router@0.1.0 test
+> vitest run
+
+
+ RUN  v3.2.4 /Users/muhammedqadan/Documents/opencode-smart-router
+
+ ✓ test/ui.test.ts (4 tests) 2ms
+ ✓ test/classifier.test.ts (13 tests) 9ms
+ ✓ test/ledger.test.ts (7 tests) 8ms
+ ✓ test/quota.test.ts (10 tests) 30ms
+ ✓ test/behavior.test.ts (12 tests) 79ms
+ ✓ test/engine.test.ts (16 tests) 27ms
+ ✓ test/controller.test.ts (15 tests) 1155ms
+   ✓ plugin controller integration > writes a persistent AUTO/MANUAL title and exposes the indicator state  552ms
+
+ Test Files  7 passed (7)
+      Tests  77 passed (77)
+   Start at  17:22:21
+   Duration  2.07s (transform 947ms, setup 0ms, collect 1.82s, tests 1.31s, environment 2ms, prepare 1.18s)
+

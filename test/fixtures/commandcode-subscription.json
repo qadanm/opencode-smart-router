@@ -1,0 +1,14 @@
+{
+  "success": true,
+  "data": {
+    "id": "sub_redacted",
+    "planId": "individual-goat",
+    "status": "active",
+    "currentPeriodStart": "2026-10-24T06:25:44.000Z",
+    "currentPeriodEnd": "2026-11-24T06:25:44.000Z",
+    "cancelAtPeriodEnd": false,
+    "orgId": null,
+    "userId": "user_redacted",
+    "metadata": {}
+  }
+}

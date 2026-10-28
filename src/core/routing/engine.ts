@@ -1,0 +1,539 @@
+import type {
+  CandidateEvaluation,
+  CostTier,
+  Mode,
+  ModelQuotaSnapshot,
+  ModelRecord,
+  ModelRef,
+  PremiumState,
+  ProviderQuotaSnapshot,
+  RouterSettings,
+  RoutingDecision,
+  SessionState,
+  TaskClass,
+  TaskKind,
+} from "../types.js"
+import { keyOfRef, modelKey, nowId, safeError, usd } from "../util.js"
+import { decidePremium, evaluateEligibility, modelPressure, providerPressure, type PremiumDecision } from "../policy/eligibility.js"
+
+export interface EngineInput {
+  readonly task: TaskClass
+  readonly settings: RouterSettings
+  readonly mode: Mode
+  readonly runtime: "automatic" | "manual" | "paused"
+  readonly models: ReadonlyArray<ModelRecord>
+  readonly current?: ModelRef
+  readonly session?: SessionState
+  readonly quota: ReadonlyArray<ProviderQuotaSnapshot>
+  readonly premium: PremiumState
+  readonly contextTokens: number
+  readonly cachedTokens: number
+  readonly dryRun: boolean
+  readonly now?: number
+  readonly lastError?: string
+  readonly modelHistory?: Readonly<Record<string, { requests: number; failures: number }>>
+}
+
+export interface EngineResult {
+  readonly decision: RoutingDecision
+  readonly chosenModel?: ModelRecord
+  readonly premiumDecision: PremiumDecision
+}
+
+const outputPerStep: Record<TaskKind, number> = {
+  deterministic: 200,
+  mechanical: 300,
+  docs: 800,
+  test: 1000,
+  debug: 1100,
+  feature: 1300,
+  refactor: 1500,
+  security: 1800,
+  architecture: 2000,
+  design: 2400,
+  unknown: 1000,
+}
+
+const stepsFor: Record<TaskKind, number> = {
+  deterministic: 1,
+  mechanical: 1,
+  docs: 1,
+  test: 2,
+  debug: 3,
+  feature: 3,
+  refactor: 3,
+  security: 3,
+  architecture: 3,
+  design: 3,
+  unknown: 2,
+}
+
+const selectCostTier = (model: ModelRecord, contextTokens: number): CostTier => {
+  const sorted = [...model.cost].sort((a, b) => (a.tier?.size ?? 0) - (b.tier?.size ?? 0))
+  let selected = sorted[0] ?? { input: 0, output: 0, cache: { read: 0, write: 0 } }
+  for (const tier of sorted) {
+    if (tier.tier?.type === "context" && contextTokens >= tier.tier.size) selected = tier
+  }
+  return selected
+}
+
+export interface CostEstimate {
+  readonly usd: number
+  readonly input: number
+  readonly output: number
+  readonly cacheRead: number
+  readonly cacheWrite: number
+  readonly switchPenaltyUsd: number
+  readonly costTier: CostTier
+}
+
+/**
+ * Estimate the total request cost of a task, not just one call. The estimate
+ * deliberately includes later agent-loop steps and treats a model switch as a
+ * cache loss.
+ */
+export const estimateTaskCost = (input: {
+  model: ModelRecord
+  task: TaskClass
+  contextTokens: number
+  currentModelKey?: string
+}): CostEstimate => {
+  const { model, task } = input
+  const context = Math.max(input.contextTokens, task.scope.promptTokens)
+  const sameModel = input.currentModelKey === modelKey(model.providerID, model.modelID)
+  const steps = stepsFor[task.kind]
+  const tier = selectCostTier(model, context)
+  const outputPer = Math.min(outputPerStep[task.kind] * (task.tier === 3 ? 1.5 : 1), model.maxOutput || outputPerStep[task.kind])
+  const output = outputPer * steps
+  const freshInput = task.scope.promptTokens + context * (sameModel ? 0.15 : 1) + context * 0.05 * (steps - 1)
+  const cacheRead = context * (sameModel ? 0.85 : 0) + context * 0.95 * (steps - 1)
+  const cost =
+    (freshInput * tier.input) / 1_000_000 +
+    (output * tier.output) / 1_000_000 +
+    (cacheRead * tier.cache.read) / 1_000_000
+  const switchPenaltyUsd = sameModel ? 0 : Math.max(0, (context * (tier.input - tier.cache.read)) / 1_000_000)
+  return {
+    usd: Math.max(0, cost),
+    input: freshInput,
+    output,
+    cacheRead,
+    cacheWrite: 0,
+    switchPenaltyUsd,
+    costTier: tier,
+  }
+}
+
+const observedSuccess = (model: ModelRecord, session: EngineInput["session"], _key: string): number => {
+  // Only capability failures should reduce a model's expected success rate.
+  // Provider, network, auth, tool, and context-overflow errors are handled by
+  // their own recovery paths.
+  if (!session) return 0.95
+  const capabilityFailures = session.failures.filter((failure) => failure.class === "capability").length
+  return Math.max(0.55, 0.95 - capabilityFailures * 0.1)
+}
+
+export const estimateSuccess = (input: {
+  model: ModelRecord
+  task: TaskClass
+  contextTokens: number
+  session?: SessionState
+  currentModelKey?: string
+  history?: { requests: number; failures: number }
+}): number => {
+  const { model, task } = input
+  let probability: number
+  if (task.tier <= 1) {
+    probability = model.tier === 1 ? 0.93 : 0.97
+  } else if (task.tier === 2) {
+    probability = model.tier === 2 ? 0.94 : 0.97
+  } else {
+    probability = model.tier === 3 ? 0.93 : 0.7
+  }
+  if (model.training) probability -= 0.05
+  if (task.designIntensive) {
+    const threshold = task.sophisticatedDesign ? 75 : 60
+    if (model.design < threshold) probability *= 0.72
+  }
+  if (task.tier >= 2 && model.intelligence < 39.5) probability *= 0.7
+  if (model.context > 0 && input.contextTokens > model.context * 0.8) probability *= 0.9
+  if (input.contextTokens > model.context * 0.95) probability *= 0.6
+  probability *= observedSuccess(model, input.session, modelKey(model.providerID, model.modelID)) / 0.95
+  if (input.history && input.history.requests >= 5) {
+    const successRate = Math.max(0, (input.history.requests - input.history.failures) / input.history.requests)
+    probability *= 0.85 + 0.15 * successRate
+  }
+  return Math.max(0.2, Math.min(0.99, probability))
+}
+
+const premiumState = (input: EngineInput): PremiumState => input.premium
+
+const providerFor = (quota: ReadonlyArray<ProviderQuotaSnapshot>, providerID: string) =>
+  quota.find((snapshot) => snapshot.providerID === providerID)
+
+const modelQuotaFor = (snapshot: ProviderQuotaSnapshot | undefined, model: ModelRecord): ModelQuotaSnapshot | undefined =>
+  snapshot?.models[modelKey(model.providerID, model.modelID)]
+
+const toRef = (model: ModelRecord): ModelRef => ({ providerID: model.providerID, id: model.modelID })
+
+const candidateFor = (
+  input: EngineInput,
+  model: ModelRecord,
+  eligibility: { eligible: boolean; reason: string; warnings: string[] },
+  estimate: CostEstimate,
+  probability: number,
+  pressure: number,
+  currentModelKey: string | undefined,
+): CandidateEvaluation => {
+  const expectedTotal = (estimate.usd * (1 + (1 - probability) * 2)) * pressure
+  return {
+    model: { providerID: model.providerID, modelID: model.modelID },
+    name: model.name,
+    tier: model.tier,
+    eligible: eligibility.eligible,
+    reason: eligibility.reason,
+    estimatedUsd: estimate.usd,
+    effectiveCost: expectedTotal,
+    successProbability: probability,
+    switchPenaltyUsd: estimate.switchPenaltyUsd,
+    quotaPressure: pressure,
+    retained: keyOfRef(input.current) === modelKey(model.providerID, model.modelID),
+  }
+}
+
+/**
+ * Deterministic routing engine. It never calls a model to classify or decide.
+ * Every candidate is evaluated against hard requirements first, then ranked by
+ * expected total quota cost, with a cache-aware affinity threshold.
+ */
+export const routeTask = (input: EngineInput): EngineResult => {
+  const now = input.now ?? Date.now()
+  const warnings: string[] = []
+  const reasons: string[] = []
+  const currentKey = keyOfRef(input.current)
+  const premiumDecision = decidePremium({
+    settings: input.settings,
+    mode: input.mode,
+    task: input.task,
+    session: input.session,
+    premium: input.premium,
+  })
+
+  if (input.runtime === "paused") {
+    const decision: RoutingDecision = {
+      id: nowId("dec"),
+      at: now,
+      sessionID: input.session?.sessionID ?? "unknown",
+      mode: input.mode,
+      dryRun: input.dryRun,
+      runtime: input.runtime,
+      task: input.task,
+      current: input.current,
+      switched: false,
+      switchReason: "Routing is paused; the current model is unchanged.",
+      reasons: ["Pause switch is active."],
+      warnings: [],
+      candidates: [],
+      premium: premiumState(input),
+      quota: input.quota,
+      contextTokens: input.contextTokens,
+      cachedTokens: input.cachedTokens,
+      estimatedUsd: 0,
+      needsPremiumApproval: false,
+      manualOverride: false,
+    }
+    return { decision, premiumDecision }
+  }
+
+  if (input.runtime === "manual") {
+    const decision: RoutingDecision = {
+      id: nowId("dec"),
+      at: now,
+      sessionID: input.session?.sessionID ?? "unknown",
+      mode: input.mode,
+      dryRun: input.dryRun,
+      runtime: input.runtime,
+      task: input.task,
+      current: input.current,
+      switched: false,
+      switchReason: "Manual model selection is active for this session; the router did not override it.",
+      reasons: ["Manual override respected."],
+      warnings: [],
+      candidates: [],
+      premium: premiumState(input),
+      quota: input.quota,
+      contextTokens: input.contextTokens,
+      cachedTokens: input.cachedTokens,
+      estimatedUsd: 0,
+      needsPremiumApproval: false,
+      manualOverride: true,
+    }
+    return { decision, premiumDecision }
+  }
+
+  const evaluate = (designRelaxation: 0 | 1 | 2) => {
+    const taskForEvaluation =
+      designRelaxation === 1 ? { ...input.task, sophisticatedDesign: false } : input.task
+    const results: Array<{ model: ModelRecord; eligibility: ReturnType<typeof evaluateEligibility>; estimate: CostEstimate; probability: number; pressure: number; candidate: CandidateEvaluation }> = []
+    for (const model of input.models) {
+      const provider = providerFor(input.quota, model.providerID)
+      const modelQuota = modelQuotaFor(provider, model)
+      const eligibility = evaluateEligibility({
+        model,
+        task: taskForEvaluation,
+        settings: input.settings,
+        mode: input.mode,
+        contextTokens: input.contextTokens,
+        providerQuota: provider,
+        modelQuota,
+        premium: premiumDecision,
+        currentModelKey: currentKey,
+        allowDesignRelaxation: designRelaxation === 2,
+      })
+      if (!eligibility.eligible) continue
+      const estimate = estimateTaskCost({
+        model,
+        task: input.task,
+        contextTokens: input.contextTokens,
+        currentModelKey: currentKey,
+      })
+      const probability = estimateSuccess({
+        model,
+        task: input.task,
+        contextTokens: input.contextTokens,
+        session: input.session,
+        currentModelKey: currentKey,
+        history: input.modelHistory?.[modelKey(model.providerID, model.modelID)],
+      })
+      const pressure = providerPressure(provider) * modelPressure(modelQuota)
+      const candidate = candidateFor(input, model, eligibility, estimate, probability, pressure, currentKey)
+      results.push({ model, eligibility, estimate, probability, pressure, candidate })
+    }
+    return results.sort((a, b) => a.candidate.effectiveCost - b.candidate.effectiveCost)
+  }
+
+  let evaluated = evaluate(0)
+  if (evaluated.length === 0 && input.task.designIntensive) {
+    // First fall back to the standard design floor, which keeps a qualified
+    // design model instead of jumping straight to the cheapest model overall.
+    evaluated = evaluate(1)
+    if (evaluated.length > 0) {
+      warnings.push("No model met the sophisticated design threshold; using the best qualified standard design route.")
+    }
+  }
+  if (evaluated.length === 0 && input.task.designIntensive) {
+    evaluated = evaluate(2)
+    if (evaluated.length > 0) {
+      warnings.push("No model met the standard design floor; using the best available design-capable fallback.")
+    }
+  }
+
+  // Premium tasks without approval still need a deliberately chosen standard
+  // fallback rather than silently keeping an unqualified cheap model.
+  let premiumFallback = false
+  if (evaluated.length === 0 && input.task.tier === 3) {
+    const relaxedPremium: PremiumDecision = { allowed: false, requiresApproval: premiumDecision.requiresApproval, reason: premiumDecision.reason }
+    const fallbackModels = input.models
+      .filter((model) => !model.premium)
+      .map((model) => {
+        const provider = providerFor(input.quota, model.providerID)
+        const modelQuota = modelQuotaFor(provider, model)
+        const eligibility = evaluateEligibility({
+          model,
+          task: { ...input.task, designIntensive: false, sophisticatedDesign: false },
+          settings: input.settings,
+          mode: input.mode,
+          contextTokens: input.contextTokens,
+          providerQuota: provider,
+          modelQuota,
+          premium: relaxedPremium,
+          currentModelKey: currentKey,
+          allowDesignRelaxation: true,
+        })
+        if (!eligibility.eligible) return undefined
+        const estimate = estimateTaskCost({ model, task: input.task, contextTokens: input.contextTokens, currentModelKey: currentKey })
+        const probability = estimateSuccess({
+          model,
+          task: input.task,
+          contextTokens: input.contextTokens,
+          session: input.session,
+          currentModelKey: currentKey,
+          history: input.modelHistory?.[modelKey(model.providerID, model.modelID)],
+        })
+        const pressure = providerPressure(provider) * modelPressure(modelQuota)
+        return { model, eligibility, estimate, probability, pressure, candidate: candidateFor(input, model, eligibility, estimate, probability, pressure, currentKey) }
+      })
+      .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry))
+      .sort((a, b) => a.candidate.effectiveCost - b.candidate.effectiveCost)
+    if (fallbackModels.length > 0) {
+      evaluated = fallbackModels
+      premiumFallback = true
+      warnings.push("Premium is unavailable; selected the best qualified standard fallback.")
+    }
+  }
+
+  if (evaluated.length === 0) {
+    warnings.push("No approved model meets every hard requirement; the current model was left unchanged.")
+    const decision: RoutingDecision = {
+      id: nowId("dec"),
+      at: now,
+      sessionID: input.session?.sessionID ?? "unknown",
+      mode: input.mode,
+      dryRun: input.dryRun,
+      runtime: input.runtime,
+      task: input.task,
+      current: input.current,
+      switched: false,
+      switchReason: "No eligible route was found; the router failed closed and kept the current model.",
+      reasons: [...input.task.reasons, ...warnings],
+      warnings,
+      candidates: [],
+      premium: premiumState(input),
+      quota: input.quota,
+      contextTokens: input.contextTokens,
+      cachedTokens: input.cachedTokens,
+      estimatedUsd: 0,
+      needsPremiumApproval: premiumDecision.requiresApproval,
+      manualOverride: false,
+      ...(input.lastError ? { error: safeError(input.lastError) } : {}),
+    }
+    return { decision, premiumDecision }
+  }
+
+  const best = evaluated[0]!
+  const currentEval = currentKey
+    ? evaluated.find((entry) => modelKey(entry.model.providerID, entry.model.modelID) === currentKey)
+    : undefined
+  const largeContext = input.contextTokens >= input.settings.routing.largeContextTokens
+  const hysteresis = largeContext
+    ? input.settings.routing.largeContextHysteresisPct
+    : input.settings.routing.switchHysteresisPct
+
+  let chosen = best
+  let keptForAffinity = false
+  if (currentEval && currentEval.model.tier >= input.task.tier && currentEval.candidate.eligible) {
+    const savings = currentEval.candidate.effectiveCost - best.candidate.effectiveCost
+    const threshold = currentEval.candidate.effectiveCost * (hysteresis / 100)
+    if (best.model !== currentEval.model && savings < threshold) {
+      chosen = currentEval
+      keptForAffinity = true
+    }
+  }
+
+  const chosenRef = toRef(chosen.model)
+  const sameAsCurrent = currentKey === modelKey(chosen.model.providerID, chosen.model.modelID)
+  const wouldSwitch = !sameAsCurrent
+  const needsPremiumApproval =
+    premiumDecision.requiresApproval &&
+    (input.task.tier === 3 || input.task.constraints.requestPremium) &&
+    input.settings.premium.mode !== "off" &&
+    input.mode !== "efficiency"
+
+  if (input.task.tier === 3 && !premiumDecision.allowed && input.mode !== "efficiency" && input.settings.premium.mode !== "off") {
+    const bestPremium = input.models
+      .filter((model) => model.premium && model.approved)
+      .map((model) => {
+        const provider = providerFor(input.quota, model.providerID)
+        const modelQuota = modelQuotaFor(provider, model)
+        const eligibility = evaluateEligibility({
+          model,
+          task: input.task,
+          settings: input.settings,
+          mode: input.mode,
+          contextTokens: input.contextTokens,
+          providerQuota: provider,
+          modelQuota,
+          premium: { allowed: true, requiresApproval: true, reason: "Premium suggestion" },
+          currentModelKey: currentKey,
+          allowDesignRelaxation: false,
+        })
+        if (!eligibility.eligible) return undefined
+        const estimate = estimateTaskCost({ model, task: input.task, contextTokens: input.contextTokens, currentModelKey: currentKey })
+        return { model, estimate }
+      })
+      .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry))
+      .sort((a, b) => {
+        if (input.task.designIntensive || input.task.sophisticatedDesign) {
+          if (b.model.design !== a.model.design) return b.model.design - a.model.design
+        } else if (b.model.intelligence !== a.model.intelligence) {
+          return b.model.intelligence - a.model.intelligence
+        }
+        return a.estimate.usd - b.estimate.usd
+      })[0]
+    if (bestPremium) {
+      warnings.push(
+        `Premium route suggested: ${bestPremium.model.name} (${usd(bestPremium.estimate.usd)} estimated). Approve once with /router-approve or set a premium budget.`,
+      )
+    }
+  }
+
+  if (premiumFallback) {
+    warnings.push("This task is premium-tier, but automatic premium escalation is unavailable.")
+  }
+  if (largeContext && wouldSwitch) {
+    warnings.push("Large context detected; switching increases fresh-input cost because prompt cache is model-specific.")
+  }
+  if (chosen.model.premium) {
+    reasons.push(`Premium route approved: ${chosen.model.name}.`)
+  }
+  if (keptForAffinity) {
+    reasons.push(`Kept ${currentEval!.model.name} for cache affinity; the estimated savings were below the ${hysteresis}% switch threshold.`)
+  } else if (wouldSwitch) {
+    reasons.push(
+      `Selected ${chosen.model.name} as the least-cost qualified route after expected retries and quota pressure (${usd(chosen.candidate.estimatedUsd)} estimated raw cost, ${usd(chosen.candidate.effectiveCost)} expected).`,
+    )
+  } else {
+    reasons.push(`Already on ${chosen.model.name}, the least-cost qualified route.`)
+  }
+
+  const quotaNotes = input.quota
+    .filter((snapshot) => snapshot.source === "provider")
+    .map(
+      (snapshot) =>
+        `${snapshot.label}: ${snapshot.rolling.usedPct.toFixed(0)}% 5h, ${snapshot.weekly.usedPct.toFixed(0)}% weekly, ${snapshot.monthly.usedPct.toFixed(0)}% monthly`,
+    )
+  reasons.push(...quotaNotes)
+
+  const candidates = evaluated
+    .slice(0, 12)
+    .map((entry) => ({
+      ...entry.candidate,
+      retained: keptForAffinity ? entry.model === currentEval?.model : entry.model === chosen.model,
+    }))
+  if (currentEval && !candidates.some((candidate) => candidate.model.providerID === currentEval.model.providerID && candidate.model.modelID === currentEval.model.modelID)) {
+    candidates.push({ ...currentEval.candidate, retained: keptForAffinity })
+  }
+
+  const switchReason = !wouldSwitch
+    ? keptForAffinity
+      ? "Kept the current model for cache affinity."
+      : "The current model already is the least-cost qualified route."
+    : input.dryRun
+      ? `Dry run: would switch to ${chosen.model.name}.`
+      : `Switch to ${chosen.model.name}.`
+
+  const decision: RoutingDecision = {
+    id: nowId("dec"),
+    at: now,
+    sessionID: input.session?.sessionID ?? "unknown",
+    mode: input.mode,
+    dryRun: input.dryRun,
+    runtime: input.runtime,
+    task: input.task,
+    current: input.current,
+    chosen: chosenRef,
+    switched: wouldSwitch && !input.dryRun,
+    switchReason,
+    reasons: [...input.task.reasons, ...reasons],
+    warnings,
+    candidates,
+    premium: premiumState(input),
+    quota: input.quota,
+    contextTokens: input.contextTokens,
+    cachedTokens: input.cachedTokens,
+    estimatedUsd: chosen.candidate.estimatedUsd,
+    needsPremiumApproval,
+    manualOverride: false,
+    ...(input.lastError ? { error: safeError(input.lastError) } : {}),
+  }
+  return { decision, chosenModel: chosen.model, premiumDecision }
+}
