@@ -41,7 +41,7 @@ Implemented the approved Option C (repair and simplify) plan:
 
 ```text
 npm run typecheck  → clean
-npm test           → 9 files, 95 tests passed
+npm test           → 9 files, 98 tests passed (after Stage A fixes)
 ```
 
 New tests cover:

@@ -1,6 +1,6 @@
 # Controlled canary plan — DO NOT EXECUTE YET
 
-> **Stage A result (2026-10-28): FAIL.** The isolated canary was executed and found two release blockers. See [STAGE-A-CANARY-REPORT-2026-10-28.md](STAGE-A-CANARY-REPORT-2026-10-28.md). Do not run Stage B.
+> **Stage A result (2026-10-28): FAIL on `f2e76af…`; blockers fixed in `e65326c9…`.** A targeted re-canary passes. The fix build still needs a fresh 30-minute soak and full Stage A matrix. See [STAGE-A-CANARY-REPORT-2026-10-28.md](STAGE-A-CANARY-REPORT-2026-10-28.md) and [STAGE-A-RECANARY-2026-10-28.md](STAGE-A-RECANARY-2026-10-28.md). Do not run Stage B.
 
 **Status:** prepared only; nothing in this document has been run against the live environment.
 **Artifact:** `dist-release/index.js`

@@ -1,5 +1,7 @@
 # Stage A isolated canary — report
 
+> **Superseded (2026-10-28):** both blockers below are fixed in `e65326c9…` (commit `6099a3d`) and the targeted re-canary passes. See [STAGE-A-RECANARY-2026-10-28.md](STAGE-A-RECANARY-2026-10-28.md). This report remains the historical failure record.
+
 **Date:** 2026-10-28
 **Artifact:** `dist-release/index.js`
 **SHA-256 verified before start:** `f2e76af0fc6c889e5693308309128067d99f551b272538492836049a5e4dbe74`
