@@ -50,6 +50,7 @@ export const makeCtx = (directory: string) => {
   const switched: Array<{ sessionID: string; model: any }> = []
   const notices: string[] = []
   const syntheticCalls: any[] = []
+  const compactions: any[] = []
   const sessions = new Map<string, any>()
   const titles = new Map<string, string>()
   let rpcImpl: any
@@ -97,6 +98,11 @@ export const makeCtx = (directory: string) => {
         session.model = model
         switched.push({ sessionID, model })
       },
+      compact: async (input: any) => {
+        compactions.push(input)
+        const session = await ctx.session.get({ sessionID: input.sessionID })
+        session.tokens = { input: 100, output: 10, cache: { read: 0, write: 0 } }
+      },
       list: async () => ({ data: [] }),
       synthetic: async (input: any) => {
         syntheticCalls.push(input)
@@ -137,6 +143,7 @@ export const makeCtx = (directory: string) => {
     switched,
     notices,
     syntheticCalls,
+    compactions,
     sessions,
     titles,
     rpc: () => rpcImpl,

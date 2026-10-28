@@ -71,6 +71,20 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const FAULT_DEDUPE_WINDOW_MS = 30_000
 
 /**
+ * How long the router waits after triggering a compaction before it may
+ * trigger another for the same session. Compaction is cheap, but it must
+ * never loop: one pass either makes the session fit again or it does not.
+ */
+const ROUTER_COMPACT_COOLDOWN_MS = 10 * 60_000
+
+/**
+ * The eligibility margin the router grants a model before its context
+ * disqualifies it. Mirrors the check in the eligibility policy.
+ */
+const CONTEXT_ELIGIBILITY_MARGIN_TOKENS = 20_000
+const CONTEXT_SAFE_WINDOW_FRACTION = 0.95
+
+/**
  * How many attempts a provider-scoped failure may have before the router
  * stops retrying. Each attempt is refused before a model runs, so it costs
  * no allowance — the delay is the only price, and it is far cheaper than a
@@ -187,6 +201,8 @@ export class RouterController {
    * what distinguishes it from the owner picking a model they have not used.
    */
   private readonly modelsSeen = new Map<string, Set<string>>()
+  /** When the router last triggered a compaction, per session. */
+  private readonly routerCompactAt = new Map<string, number>()
   private readonly inflight = new Set<string>()
   private readonly promptSeen = new Set<string>()
   private readonly created = new Map<string, number>()
@@ -1127,6 +1143,82 @@ export class RouterController {
   }
 
   /**
+   * The context window of the cheapest variant of a model, across providers.
+   *
+   * The same model id is often served by more than one provider at different
+   * prices. The variant the router wants to keep a session on is the cheapest
+   * one, so that variant's window is the size the session needs to fit.
+   * Ties prefer the larger window.
+   */
+  private cheapestVariantContext(modelID: string): number {
+    let best: { multiplier: number; context: number } | undefined
+    for (const model of this.registry.approved()) {
+      if (model.modelID !== modelID) continue
+      const multiplier = model.creditMultiplier && model.creditMultiplier > 0 ? model.creditMultiplier : 1
+      if (
+        !best ||
+        multiplier < best.multiplier ||
+        (multiplier === best.multiplier && model.context > best.context)
+      ) {
+        best = { multiplier, context: model.context }
+      }
+    }
+    return best?.context ?? 0
+  }
+
+  /**
+   * Compact an idle session before it outgrows the cheapest provider that can
+   * serve it.
+   *
+   * The router already prefers the cheapest qualified route on every prompt.
+   * The only thing that pushes a session off it is size: once the context
+   * crosses the model's safe window the cheap route becomes ineligible and
+   * the work moves to a costlier provider for no reason other than the
+   * conversation's length. Compaction is the one lever that fixes that, and
+   * on the cheapest provider it costs a fraction of a cent.
+   */
+  private maybeCompactForCost(sessionID: string) {
+    const settings = this.settings
+    if (!settings.enabled || this.runtime.paused === true) return
+    const session = this.ledger.getSession(sessionID)
+    const model = session?.lastModel
+    if (!model) return
+    if (session?.status !== "idle") return
+    const record = this.registry.get(model.providerID, model.id)
+    if (!record || record.context <= 0) return
+    const contextTokens = session?.contextTokens ?? 0
+    if (contextTokens <= 0) return
+    const now = Date.now()
+    const last = this.routerCompactAt.get(sessionID)
+    if (typeof last === "number" && now - last < ROUTER_COMPACT_COOLDOWN_MS) return
+
+    const target = this.cheapestVariantContext(record.modelID) || record.context
+    const required = contextTokens + CONTEXT_ELIGIBILITY_MARGIN_TOKENS
+    if (required <= target * CONTEXT_SAFE_WINDOW_FRACTION) return
+
+    if (typeof this.ctx.session.compact !== "function") return
+    this.routerCompactAt.set(sessionID, now)
+    this.ledger.patchSession(sessionID, { status: "busy" })
+    this.persistLedgerSoon()
+    void Promise.resolve(
+      this.ctx.session.compact({ sessionID }),
+    )
+      .then(() => {
+        this.ledger.patchSession(sessionID, { status: "idle" })
+        void this.emit("status", {
+          sessionID,
+          summary: {
+            note: `Auto-compacted at ${(contextTokens / 1000).toFixed(0)}k tokens to keep the session inside ${(target / 1000).toFixed(0)}k cheap window`,
+          },
+        })
+      })
+      .catch((error: unknown) => {
+        this.ledger.patchSession(sessionID, { status: "idle" })
+        this.settingsWarnings.push(`Auto-compact failed: ${safeError(error)}`)
+      })
+  }
+
+  /**
    * True when this exact failure was already recorded for the session.
    *
    * `attemptKey` identifies the failed attempt. When the host provides one
@@ -1289,6 +1381,13 @@ export class RouterController {
           await this.recordProviderFault(sessionID, "failed", data.error, attemptKey)
         } else if (type === "session.execution.interrupted" || outcome === "interrupted") {
           await this.recordProviderFault(sessionID, "interrupted", data.error, attemptKey)
+        }
+        // Idle is the only safe moment to compact: a running turn cannot be
+        // interrupted. Compacting here keeps the session inside the cheapest
+        // provider's window, so the next prompt does not get pushed onto a
+        // costlier provider purely because the conversation grew.
+        if (type === "session.idle" && outcome === "succeeded") {
+          this.maybeCompactForCost(sessionID)
         }
         this.persistLedgerSoon()
       }
