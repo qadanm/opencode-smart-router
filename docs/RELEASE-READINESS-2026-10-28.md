@@ -179,7 +179,7 @@ cmp with the lab plugin       = byte-identical
 - Quota service: one owner; `quotaRefreshes` 2 → 4 after one 5-minute interval for two providers; provider source for allowances; local model quotas `estimate`.
 - Dry-run proof: 3 live previews with no model change and zero session cost/tokens; 5 actual isolated prompts → 5 mock requests, models unchanged.
 - Backup/rollback tested on the actual deployed state: restore to `83872b2d…` and removal of router config/plugin verified.
-- Promotion criteria and current gaps (24h window, ≥20 decisions, car-spotter duplicate bridge, Command Code weekly 81.05% > 80% target) are in [DESKTOP-DRY-RUN-2026-10-28.md](DESKTOP-DRY-RUN-2026-10-28.md). Automatic routing remains off.
+- Promotion criteria and current gaps (24h window, ≥20 decisions, car-spotter duplicate bridge, Command Code weekly 81.19% > 80% target) are in [DESKTOP-DRY-RUN-2026-10-28.md](DESKTOP-DRY-RUN-2026-10-28.md). Automatic routing remains off.
 
 ## 8. Remaining risks
 
@@ -191,7 +191,7 @@ cmp with the lab plugin       = byte-identical
 | Monthly summary vs credit balance unexplained | Low | The adapter now treats remaining credits as authoritative and keeps the summary diagnostic only |
 | Peak pricing only where documented | Low | Command Code DeepSeek V4.1 Flash is covered; other providers may have undocumented time-of-day rules |
 | Host-retained duplicate bridge (car-spotter) | Low | One extra bridge record from a pre-reload active session; commands/core/event stream/quota polling remain singular. Monitor; reload after the session advances. |
-| Command Code weekly headroom | Medium | Live weekly is 81.05% against an 80% promotion target and an 85% reserve; wait for reset/decay before automatic routing. |
+| Command Code weekly headroom | Medium | Live weekly is 81.19% against an 80% promotion target and an 85% reserve; wait for reset/decay before automatic routing. |
 | Dry-run has not been promoted | — | Automatic routing is intentionally off; promotion criteria are explicit in the dry-run report. |
 | Titles remain prefixed after emergency removal | Low | Cosmetic; conversations are intact; manual rename possible |
 | 20-project memory footprint | Medium | Host baseline 398 MB; plugin adds ~120 MB steady, transient reload spikes |

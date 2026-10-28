@@ -76,7 +76,7 @@ Code path: `classifyTask` is deterministic and makes no model call. The engine s
 | Provider | Source | 5h | Weekly | Monthly | Remaining | Purchased |
 |---|---|---:|---:|---:|---:|---:|
 | OpenCode Go Plus | provider | 5% | 63% | 81% | n/a | n/a |
-| Command Code GOAT | provider | 12.36% | 81.05% | 40.53% | `$41.6324086263` | `$0` |
+| Command Code GOAT | provider | 12.71% | 81.19% | 40.59% | `$41.5839432091` | `$0` |
 
 - Command Code plan grant: `$70`; monthly usage is `$70 − remaining`, derived from provider-reported remaining credits.
 - Model-level quotas are labeled `source: "estimate"`; provider-level allowances are `source: "provider"`.
@@ -95,10 +95,10 @@ The plugin is active in four queried live projects:
 Observed:
 
 - one core `eimkk4hz`, one PID `90727`, **one event stream**
-- 10 bridges across the active locations
+- 10 bridges across the active locations; `setups` 25 / `disposes` 15 reflect the one-time reload and per-location probes, not repeated core creation
 - **16 router commands per location** (not duplicated)
 - plugin diagnostics errors: **0**
-- one quota refresh cycle for both providers: `quotaRefreshes` 2 → 4 after one interval, `quotaSnapshots` 2
+- one quota service: `quotaRefreshes` 2 → 4 after one interval for two providers, `quotaSnapshots` 2 — one refresh per provider per interval, not per bridge
 - no true log-level `ERROR` in the deployment window; 187 pre-existing MCP/worktree warnings; no plugin warnings or thrash
 
 **Watch item:** `Documents/dev/car-spotter-game` has two bridge records (one created before the reload, one after). It does not duplicate commands (16), the event stream (one), the core (one), or quota polling (one service). It appears to be a pre-reload location retained around an active session. It should clear when that session next advances or is closed; if it persists without an active session, reload again or investigate the host’s workspace/location retention before promotion.
@@ -112,7 +112,7 @@ Do not change `dryRun` to `false` until all criteria pass and the user explicitl
 | 1 | Stability window | 24 hours continuous with the plugin loaded; one core/PID, one event stream; no plugin errors/thrash | **Not met** — deployment is minutes old |
 | 2 | Dry-run coverage | ≥20 live decisions across trivial, feature, and design tasks; 100% no model change; no premium/purchased routes | **Not met** — 3 live previews + 5 lab prompts |
 | 3 | Multi-project cleanliness | 16 commands per location; no persistent duplicate bridge for a location after reload grace | **Watch** — 16 commands and one core, but one car-spotter duplicate bridge persists |
-| 4 | Provider headroom | Go: monthly <85%, weekly <80%, 5h <80%. Command Code: weekly <80%, monthly <70%, remaining ≥$20, purchased $0 | **Partly** — Go passes 81/63/5; Command Code monthly/remaining/purchased pass, but weekly **81.05% > 80%** |
+| 4 | Provider headroom | Go: monthly <85%, weekly <80%, 5h <80%. Command Code: weekly <80%, monthly <70%, remaining ≥$20, purchased $0 | **Partly** — Go passes 81/63/5; Command Code monthly/remaining/purchased pass, but weekly **81.19% > 80%** |
 | 5 | Fresh provider data | Provider source, no auth/rate-limit errors, snapshots refreshed at least every 10 minutes | **Pass** |
 | 6 | Premium and extras | Premium off, spend $0, purchased $0, `allowExtraUsage:false` | **Pass** |
 | 7 | Cost labeling | Provider allowances authoritative; local model/session costs explicitly `estimate` | **Pass** |
