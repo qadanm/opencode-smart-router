@@ -1,0 +1,52 @@
+Provider outage backoff - live deployment
+==========================================
+Deployed at : 2026-10-28T18:22:07Z
+Approved by : owner, in session ("it works just fine when it retries ... wire that in, but only if opendesign is truly completely down and not responding")
+Artifact    : 67f3e9a772c3a81e5477b4a44dc5d6582003aac3fe7f54074e417e0770c5eb3e
+Code commit : 4386c45
+Previous    : aba0a07763d8a377d557e76db12cdee8f068e790d7e53a76ee3963a01f5b53fe
+Rollback    : ~/20261028-111910-provider-backoff/rollback.sh
+
+What was added
+--------------
+OpenDesign's gateway runs pre-request checks (billing scope, then plan
+entitlement) that were failing every few minutes during a sustained gateway
+problem. Each failure had been charged to the serving model, which sidelined
+healthy models and depressed their routing probability, while the router kept
+sending the next prompt into the same broken path and the same wall.
+
+Now: a provider-scoped fault counts toward a per-provider run of consecutive
+failures with nothing succeeding in between.
+  - Any successful request resets the run to zero. Blips that ride over on a
+    retry never arm anything.
+  - At five consecutive failures the whole provider is held back for three
+    minutes, so routing can pick another provider instead of hammering a
+    dead gateway.
+  - If no other provider has allowance, the routing engine finds no eligible
+    route and fails closed keeping the current model - the backoff can never
+    block a prompt outright. This matters because the owner reported Go Plus
+    and GOAT exhausted.
+
+The membership-entitlement failure ("[code=internal_error] failed to evaluate
+membership entitlement") is classified provider-scoped alongside the
+billing-scope failure; it appeared live at 11:03:31 and was the last fault
+still being charged to a model.
+
+Verified after restart
+----------------------
+  - Running artifact sha256 matches the deployed artifact
+  - Router: enabled, balanced, automatic, dry-run off, premium off
+  - Three providers registered; approved models: commandcode 9, opencode-go
+    13, opendesign 7
+  - Shared core: one coreID, one event stream, 7 bridges, 0 errors
+
+Separate environmental finding (not caused by this change)
+----------------------------------------------------------
+Command Code's billing probe now returns HTTP 401, so GOAT quota is reported
+as unknown rather than provider-verified. It was provider-sourced at every
+earlier check including 10:44 with no deployments between that and this
+restart, so it flipped while the previous artifact was running. There is no
+Command Code entry in the credential store, so the probe has nothing
+authorized to present. Unrelated to the router changes; flagged for follow-up.
+
+Tests: 199 passing (192 before, 7 new), typecheck clean.
