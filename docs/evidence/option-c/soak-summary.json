@@ -1,0 +1,17 @@
+{
+  "samples": 29,
+  "minutes": 30,
+  "rssMinKb": 328368,
+  "rssMaxKb": 727440,
+  "rssLastKb": 570112,
+  "mockRequests": 1528,
+  "requestsPerMin": 50,
+  "bridges": 21,
+  "setups": 63,
+  "disposes": 42,
+  "handled": 17255,
+  "ignored": 3321,
+  "ledgerEvents": 2000,
+  "eventStreams": 1,
+  "errors": 0
+}

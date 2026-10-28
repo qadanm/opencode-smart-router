@@ -1,0 +1,4 @@
+artifact=dist/index.js
+sha256=6e793e1fbc9a28fe484a3ac4a30afb479a5281d2320aab1ef7c863ca162139aa
+bytes=  217980
+built=2026-10-27T17:40:14Z

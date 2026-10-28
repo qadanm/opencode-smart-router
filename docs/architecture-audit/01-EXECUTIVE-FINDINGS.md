@@ -1,5 +1,7 @@
 # 01 — Executive findings
 
+> **Post-audit implementation update (2026-10-28):** Option C was approved and implemented on branch `option-c`. The audit scores in this packet are the pre-implementation assessment. Current verification: [QA-OPTION-C-2026-10-27.md](../QA-OPTION-C-2026-10-27.md). The live plugin remains disabled.
+
 ## Bottom line
 
 No existing project is a drop-in replacement for this router.

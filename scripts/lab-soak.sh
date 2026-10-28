@@ -13,6 +13,11 @@ diag_file() { curl -s -u "$AUTH" -X POST "$BASE/api/rpc/smart-router/diagnostics
 mock_count() { awk '/chat\/completions/ { n++ } END { print n + 0 }' "$MOCK_LOG" 2>/dev/null || echo 0; }
 record() {
   local now=$(date +%s) r=$(rss) m=$(mock_count)
+  if ! curl -s -o /dev/null -u "$AUTH" "$BASE/api/info"; then
+    echo "server-unreachable $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$LAB/soak-events.txt"
+    echo "soak aborted: server unreachable at $(date -u +%Y-%m-%dT%H:%M:%SZ)" >&2
+    exit 1
+  fi
   diag_file
   jq -c --argjson ts "$now" --argjson rss "${r:-0}" --argjson mock "$m" \
     '{ts:$ts,rssKb:$rss,mockRequests:$mock,core:.coreID,pid:.pid,bridges:.bridgeCount,setups:.setups,disposes:.disposes,decisions:.decisions,ledgerEvents:.ledgerEvents,handled:.eventsHandled,ignored:.eventsIgnored,ledgerWrites:.ledgerWrites,quotaWrites:.quotaWrites,eventStreams:.eventStreams,errors:(.errors|length)}' "$LAB/soak-diag.json" >> "$MET"
@@ -58,7 +63,10 @@ while [ "$(date +%s)" -lt "$END" ]; do
   fi
   if [ $((ELAPSED - LAST_OUTAGE)) -ge 900 ] && [ "$LAST_OUTAGE" -eq 0 ]; then
     LAST_OUTAGE=$ELAPSED
-    lsof -ti tcp:4200 | xargs kill 2>/dev/null || true
+    # Kill only the mock listener. `lsof -ti tcp:4200` also matches the
+    # OpenCode server's outbound connection to the mock and would kill the
+    # server under test.
+    lsof -ti tcp:4200 -sTCP:LISTEN 2>/dev/null | xargs kill 2>/dev/null || true
     sleep 2
     outage_sid=$(shuf -n1 "$SIDS" | awk '{print $2}')
     prompt "$outage_sid" "Implement a feature in src/outage.ts. Do not use any tools. Reply with exactly: ok."

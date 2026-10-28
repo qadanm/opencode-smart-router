@@ -1,5 +1,7 @@
 # QA evidence
 
+> **Post-audit update:** the Option C repair is implemented on branch `option-c`. The current verification record is [QA-OPTION-C-2026-10-27.md](QA-OPTION-C-2026-10-27.md): 9 files / 92 tests, a 30-minute 20-project soak, three cold starts, and a fail-closed probe. The pre-audit results below are retained for history; the live plugin remains disabled.
+
 All checks below were run on this machine against the installed desktop server, not only against isolated functions. **The live plugin was disabled after the stability incident documented in [STATUS-2026-10-27.md](STATUS-2026-10-27.md). The live routing results below were captured before that rollback.**
 
 ## Automated checks

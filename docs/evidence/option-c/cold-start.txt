@@ -1,0 +1,5 @@
+cold-start 2026-10-28T01:45:38Z
+round=1 oldPid=96191 newPid=96347 core=mjx830ef bridges=1 setups=1 disposes=0 commandsP1=16 title=AUTO · lab-cc · Lab DeepSeek V4.1 Flash — final10 p1
+round=2 oldPid=96347 newPid=96423 core=g3511p56 bridges=1 setups=1 disposes=0 commandsP1=16 title=AUTO · lab-cc · Lab DeepSeek V4.1 Flash — final10 p1
+round=3 oldPid=96423 newPid=96486 core=wqfvzrl9 bridges=1 setups=1 disposes=0 commandsP1=16 title=AUTO · lab-cc · Lab DeepSeek V4.1 Flash — final10 p1
+cold-start complete 2026-10-28T01:45:46Z
