@@ -1,0 +1,40 @@
+Idle-compaction trigger fix - live deployment
+==============================================
+Deployed at : 2026-10-28T22:16:02Z
+Artifact    : 1dbbb39a232743aa386bb7867265996f5960935f68a64fd93ae8d119df907fd8
+Code commit : 8c96814
+Previous    : f48801c58b45729180f3f1eb5f9ff9f3945b5b09c1c6fd055ebccba483f26709
+Rollback    : ~/Documents/opencode-smart-router-backups/20261028-151513-compact-trigger-fix/rollback.sh
+
+What was wrong
+--------------
+The idle compaction deployed an hour earlier never fired. The host's
+session.idle BUS EVENT carries sessionID, metadata and location - but no
+outcome field. The outcome only exists on the persisted message record,
+which the router never sees. The trigger required outcome === "succeeded",
+which could never be true from the event.
+
+Confirmed from the protocol schema: both session.idle event definitions list
+sessionID/metadata/directory/workspaceID only. Zero occurrences of "outcome".
+
+The fix
+-------
+Trigger on session.execution.succeeded (a turn finished cleanly) and on
+session.idle (covers the rest). The ten-minute cooldown keeps them from both
+firing. Compacting after a failed turn is still correct: the context is just
+as large, and a smaller context makes the retry cheaper.
+
+Interim relief
+--------------
+The compaction was also triggered manually via the server's own endpoint
+(POST /api/session/:id/compact), and it completed:
+  context 401,473 -> 104,209 tokens (a 74% reduction)
+The session now fits OpenDesign's 328k window again, so the next prompt
+should route back to OpenDesign under the existing least-cost ranking.
+
+Verified after restart
+----------------------
+  - Running artifact sha256 matches the deployed artifact
+  - Shared core: one coreID, one event stream, 7 bridges, 0 errors
+
+Tests: 210 passing (209 before, 1 changed), typecheck clean.
