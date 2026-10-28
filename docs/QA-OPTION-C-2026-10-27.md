@@ -1,5 +1,7 @@
 # QA — Option C implementation
 
+> **Stage B limited real-provider verification:** [STAGE-B-REPORT-2026-10-28.md](STAGE-B-REPORT-2026-10-28.md).
+
 > **Final Stage A:** [STAGE-A-FINAL-REPORT-2026-10-28.md](STAGE-A-FINAL-REPORT-2026-10-28.md) — PASS on `e65326c9…` / `6099a3d`; 98 tests and full 30-minute soak.
 
 > **Release gate:** the final 30-minute soak and release-readiness results are in [RELEASE-READINESS-2026-10-28.md](RELEASE-READINESS-2026-10-28.md). The proposed canary is in [CANARY-PLAN.md](CANARY-PLAN.md).

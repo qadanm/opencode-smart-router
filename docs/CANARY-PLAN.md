@@ -1,6 +1,6 @@
 # Controlled canary plan — DO NOT EXECUTE YET
 
-> **Stage A result (2026-10-28): PASS on `e65326c9…` (commit `6099a3d`).** The full 30-minute soak and Stage A matrix passed, including command-token, premium, large-context, concurrency, outage, fail-closed, reload, restart, and rollback checks. See [STAGE-A-FINAL-REPORT-2026-10-28.md](STAGE-A-FINAL-REPORT-2026-10-28.md). Stage B remains unauthorized.
+> **Stage A result (2026-10-28): PASS on `e65326c9…` (commit `6099a3d`).** The full 30-minute soak and Stage A matrix passed. **Stage B limited verification is also complete** with 2 Go and 2 Command Code requests; a Command Code accounting discrepancy remains. See [STAGE-A-FINAL-REPORT-2026-10-28.md](STAGE-A-FINAL-REPORT-2026-10-28.md) and [STAGE-B-REPORT-2026-10-28.md](STAGE-B-REPORT-2026-10-28.md). No broader deployment is authorized.
 
 **Status:** prepared only; nothing in this document has been run against the live environment.
 **Artifact:** `dist-release/index.js`
@@ -209,7 +209,7 @@ Expected: `AUTO · ...` title, `lab-cc` model, `succeeded`.
 Only after Stage A is stable. This stage can spend real credits and requires real credentials.
 
 - Use a separate isolated config/HOME. **Do not copy** `~/.local/share/opencode/auth.json`, API keys, or the desktop config.
-- Authenticate inside the isolated HOME using the normal OpenCode auth flow, or provide dedicated canary credentials. Do not paste credentials into this document or the repository.
+- Authenticate inside the isolated HOME with `opencode auth login --standalone` (not the normal background-service flow), or provide dedicated canary credentials. `--standalone` avoids the live service port. Do not paste credentials into this document or the repository.
 - Use the reviewed production `smart-router.json` settings (providers, approved models, floors, premium policy). If unavailable, start from `config.example.json` and `docs/MODELS.md`.
 - Keep `routing.failClosed: true`, premium `ask`, and `allowExtraUsage: false`.
 - Use one canary project copy. Do not point at the live project.

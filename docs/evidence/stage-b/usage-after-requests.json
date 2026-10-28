@@ -1,0 +1,19 @@
+{
+  "fetchedAt": 1793162132966,
+  "opencode-go": {
+    "rolling": 4,
+    "weekly": 63,
+    "monthly": 81
+  },
+  "commandcode": {
+    "rolling": 7.352454462142857,
+    "weekly": 79.04753748057144,
+    "monthly": 39.879262005979946,
+    "used5h": 1.0293436247,
+    "usedWeek": 27.6666381182,
+    "usedMonth": 28.08054735200001,
+    "remainingMonth": 42.3333618818,
+    "purchased": 0,
+    "free": 0
+  }
+}

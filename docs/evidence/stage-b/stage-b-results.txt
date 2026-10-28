@@ -1,0 +1,59 @@
+--- toggle Go only ---
+reload=204
+commands=16
+{"coreID":"to83mx8o","pid":93820,"bridgeCount":1,"setups":2,"eventStreams":1,"errors":0}
+--- pre Go quota ---
+[{"providerID":"opencode-go","source":"provider","error":null,"rolling":{"usedPct":3,"remainingPct":97,"resetsAt":1793173991000,"exceeded":false,"source":"provider"},"weekly":{"usedPct":63,"remainingPct":37,"resetsAt":1793577600000,"exceeded":false,"source":"provider"},"monthly":{"usedPct":81,"remainingPct":19,"resetsAt":1795174634000,"exceeded":false,"source":"provider"}},{"providerID":"commandcode","source":"provider","error":null,"rolling":{"usedPct":6.917547384285714,"remainingPct":93.08245261571429,"usedUsd":0.9684566338,"capUsd":14,"resetsAt":1793174522490,"exceeded":false,"source":"provider"},"weekly":{"usedPct":78.87357464942856,"remainingPct":21.126425350571438,"usedUsd":27.6057511273,"capUsd":35,"resetsAt":1793428863795,"exceeded":false,"source":"provider"},"monthly":{"usedPct":39.711534729524764,"remainingPct":60.288465270475236,"usedUsd":27.924756068800004,"capUsd":70.3190049415,"resetsAt":1795501544000,"exceeded":false,"source":"provider"}}]
+go_text_sid=ses_e7f3b8855ffewD2bGpmA7T6mX4
+go_text_before=0
+go_text_http=200
+{"title":"AUTO · Go · Claude Haiku 5.5 — stage-b go text","model":{"id":"claude-haiku-5-5","providerID":"opencode-go","variant":"default"},"outcome":"succeeded","tokens":{"input":4,"output":14,"reasoning":0,"cache":{"read":5331,"write":10089}},"cost":0.001321835}
+{"last":{"chosen":{"providerID":"opencode-go","id":"claude-haiku-5-5"},"current":{"providerID":"opencode-go","id":"claude-haiku-5-5","variant":"default"},"switched":false,"switchReason":"The current model already is the least-cost qualified route.","warnings":[]},"premium":{"mode":"ask","monthlyBudgetUsd":0,"spentUsd":0,"remainingUsd":0,"oneShotGranted":false}}
+--- response body ---
+{"data":{"id":"msg_180c477c7001kxMoEygQJjakLq","sessionID":"ses_e7f3b8855ffewD2bGpmA7T6mX4","time":{"created":1793161721809},"type":"user","payload":{"text":"Reply exactly: STAGE-B-GO-OK. Do not use tools."},"delivery":"steer"}}
+--- go text response context ---
+[{"text":"[{\"type\":\"text\",\"text\":\"STAGE-B-GO-OK\"}]","tokens":{"input":4,"output":14,"reasoning":0,"cache":{"read":5331,"write":10089}},"cost":0.001321835,"model":{"id":"claude-haiku-5-5","providerID":"opencode-go","variant":"default"}}]
+--- process/start check ---
+listener_pid=93820
+listening_lines=1
+cli_starting_lines=0
+--- go quota after text ---
+[{"source":"provider","rolling":{"usedPct":3,"remainingPct":97,"resetsAt":1793173991000,"exceeded":false,"source":"provider"},"weekly":{"usedPct":63,"remainingPct":37,"resetsAt":1793577600000,"exceeded":false,"source":"provider"},"monthly":{"usedPct":81,"remainingPct":19,"resetsAt":1795174634000,"exceeded":false,"source":"provider"}}]
+--- create vision image ---
+c61cfa2fc1e91ccc901d668a204c0842f24d4d71875530d957f18693e0883bfc  /Users/muhammedqadan/Documents/opencode-router-stage-b-project/vision-blue-square.png
+go_vision_sid=ses_e7f3b3007ffeFAn7LQqU3iqL02
+vision_http=200
+{"title":"AUTO · Go · Claude Haiku 5.5 — stage-b go vision","model":{"id":"claude-haiku-5-5","providerID":"opencode-go","variant":"default"},"outcome":"succeeded","tokens":{"input":16,"output":5,"reasoning":0,"cache":{"read":15321,"write":142}},"cost":0.00017506}
+[{"text":"[{\"type\":\"text\",\"text\":\"Blue\"}]","model":{"id":"claude-haiku-5-5","providerID":"opencode-go","variant":"default"},"tokens":{"input":16,"output":5,"reasoning":0,"cache":{"read":15321,"write":142}}}]
+{"last":{"chosen":{"providerID":"opencode-go","id":"claude-haiku-5-5"},"current":{"providerID":"opencode-go","id":"claude-haiku-5-5","variant":"default"},"switched":false,"switchReason":"The current model already is the least-cost qualified route.","warnings":[]},"premium":{"mode":"ask","monthlyBudgetUsd":0,"spentUsd":0,"remainingUsd":0,"oneShotGranted":false}}
+--- vision response body ---
+{"data":{"id":"msg_180c4d0270010bvWpw5SDis9NA","sessionID":"ses_e7f3b3007ffeFAn7LQqU3iqL02","time":{"created":1793161744482},"type":"user","payload":{"text":"What is the color of the square in the attached image? Reply with one word. Do not use tools.","files":[{"data":"iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAaklEQVR42u3bsQ0AAAgCME/z/6d09gUpCQtjd2rCUwAAALhD/y4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACQBOA5CgBAVBZHimr3/qVL5AAAAABJRU5ErkJggg==","mime":
+--- toggle Command Code only ---
+reload=204
+commands=16
+{"coreID":"to83mx8o","pid":93820,"bridgeCount":1,"setups":3,"eventStreams":1,"errors":0}
+--- pre CC quota ---
+[{"source":"provider","rolling":{"usedPct":6.917547384285714,"remainingPct":93.08245261571429,"usedUsd":0.9684566338,"capUsd":14,"resetsAt":1793174522490,"exceeded":false,"source":"provider"},"weekly":{"usedPct":78.87357464942856,"remainingPct":21.126425350571438,"usedUsd":27.6057511273,"capUsd":35,"resetsAt":1793428863795,"exceeded":false,"source":"provider"},"monthly":{"usedPct":39.711534729524764,"remainingPct":60.288465270475236,"usedUsd":27.924756068800004,"capUsd":70.3190049415,"resetsAt":1795501544000,"exceeded":false,"source":"provider"},"monthlyRemainingUsd":42.3942488727,"extraCredits":{"purchasedUsd":0,"freeUsd":0,"totalUsd":0}}]
+cc_text_sid=ses_e7f3ac63effegSIS5nk48qMwEY
+cc_text_http=200
+{"title":"AUTO · CC · DeepSeek V4.1 Flash (GOAT) — stage-b cc text","model":{"id":"deepseek-v4.1-flash","providerID":"commandcode","variant":"default"},"outcome":"succeeded","tokens":{"input":10117,"output":8,"reasoning":0,"cache":{"read":256,"write":0}},"cost":0.001523118}
+[{"text":"[{\"type\":\"text\",\"text\":\"STAGE-B-CC-OK\"}]","model":{"id":"deepseek-v4.1-flash","providerID":"commandcode","variant":"default"},"tokens":{"input":10117,"output":8,"reasoning":0,"cache":{"read":256,"write":0}},"cost":0.001523118}]
+{"last":{"chosen":{"providerID":"commandcode","id":"deepseek-v4.1-flash"},"current":{"providerID":"commandcode","id":"deepseek-v4.1-flash","variant":"default"},"switched":false,"switchReason":"Kept the current model for cache affinity.","warnings":[]},"premium":{"mode":"ask","monthlyBudgetUsd":0,"spentUsd":0,"remainingUsd":0,"oneShotGranted":false}}
+--- restore/restart both providers ---
+new_pid=94859
+commands=0
+{"coreID":"nhb6od1d","pid":94859,"bridgeCount":1,"setups":1,"eventStreams":1,"errors":0}
+--- post quota ---
+[{"providerID":"opencode-go","source":"provider","error":null,"rolling":{"usedPct":3,"remainingPct":97,"resetsAt":1793173991000,"exceeded":false,"source":"provider"},"weekly":{"usedPct":63,"remainingPct":37,"resetsAt":1793577600000,"exceeded":false,"source":"provider"},"monthly":{"usedPct":81,"remainingPct":19,"resetsAt":1795174634000,"exceeded":false,"source":"provider"},"monthlyRemainingUsd":null,"extraCredits":null,"plan":"go-plus","planStatus":null},{"providerID":"commandcode","source":"provider","error":null,"rolling":{"usedPct":6.917547384285714,"remainingPct":93.08245261571429,"usedUsd":0.9684566338,"capUsd":14,"resetsAt":1793174522490,"exceeded":false,"source":"provider"},"weekly":{"usedPct":78.87357464942856,"remainingPct":21.126425350571438,"usedUsd":27.6057511273,"capUsd":35,"resetsAt":1793428863795,"exceeded":false,"source":"provider"},"monthly":{"usedPct":39.711534729524764,"remainingPct":60.288465270475236,"usedUsd":27.924756068800004,"capUsd":70.3190049415,"resetsAt":1795501544000,"exceeded":false,"source":"provider"},"monthlyRemainingUsd":42.3942488727,"extraCredits":{"purchasedUsd":0,"freeUsd":0,"totalUsd":0},"plan":"GOAT","planStatus":"active"}]
+--- premium ---
+{"mode":"ask","monthlyBudgetUsd":0,"spentUsd":0,"remainingUsd":0,"oneShotGranted":false}
+--- errors ---
+thrash=0 errors=0
+--- post-restart CC request ---
+commands=16
+{"coreID":"nhb6od1d","pid":94859,"bridgeCount":1,"setups":1,"eventStreams":1,"errors":0}
+cc_restart_sid=ses_e7f36f647ffejIGS8qZ8mMfnYY
+cc_restart_http=200
+{"title":"AUTO · CC · DeepSeek V4.1 Flash (GOAT) — stage-b cc after restart","model":{"id":"deepseek-v4.1-flash","providerID":"commandcode","variant":"default"},"outcome":"succeeded","tokens":{"input":136,"output":11,"reasoning":0,"cache":{"read":10240,"write":0}},"cost":0.000057719999999999996}
+[{"text":"[{\"type\":\"text\",\"text\":\"STAGE-B-CC-RESTART-OK\"}]","model":{"id":"deepseek-v4.1-flash","providerID":"commandcode","variant":"default"},"tokens":{"input":136,"output":11,"reasoning":0,"cache":{"read":10240,"write":0}},"cost":0.000057719999999999996}]
+{"last":{"chosen":{"providerID":"commandcode","id":"deepseek-v4.1-flash"},"current":{"providerID":"commandcode","id":"deepseek-v4.1-flash","variant":"default"},"switched":false,"switchReason":"Kept the current model for cache affinity.","warnings":[]},"premium":{"mode":"ask","monthlyBudgetUsd":0,"spentUsd":0,"remainingUsd":0,"oneShotGranted":false}}

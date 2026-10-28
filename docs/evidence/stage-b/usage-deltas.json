@@ -1,0 +1,20 @@
+{
+  "go_rolling_pp": 1,
+  "go_weekly_pp": 0,
+  "go_monthly_pp": 0,
+  "cc_rolling_pp": 0.4349070778571429,
+  "cc_weekly_pp": 0.17396283114287314,
+  "cc_monthly_pp": 0.1677272764551816,
+  "cc_used5h_usd": 0.06088699090000005,
+  "cc_usedWeek_usd": 0.06088699090000205,
+  "cc_usedMonth_usd": 0.15579128320000635,
+  "cc_remainingMonth_usd": -0.06088699089999494,
+  "cc_purchased_before": 0,
+  "cc_purchased_after": 0,
+  "session_cost_go_text_usd": 0.001321835,
+  "session_cost_go_vision_usd": 0.00017506,
+  "session_cost_cc_text_usd": 0.001523118,
+  "session_cost_cc_restart_usd": 5.772e-05,
+  "session_cost_total_usd": 0.0030777329999999996,
+  "cc_provider_vs_session_ratio": 38.51564227327535
+}

@@ -1,5 +1,7 @@
 # Release readiness — Option C
 
+> **Stage B limited (2026-10-28): COMPLETE.** Real Go/Command Code auth, quota, 2+2 bounded requests, vision, premium, and post-restart safety passed. A Command Code provider-vs-session cost discrepancy remains. See [STAGE-B-REPORT-2026-10-28.md](STAGE-B-REPORT-2026-10-28.md). No broader deployment is authorized.
+>
 > **Stage A final (2026-10-28): PASS on `e65326c9…` (commit `6099a3d`).** A fresh 30-minute soak and the complete Stage A matrix passed: 98 tests, all 16 commands zero-token, premium protection, large context, concurrency, outage, fail-closed recovery, reloads, restart, rollback. See [STAGE-A-FINAL-REPORT-2026-10-28.md](STAGE-A-FINAL-REPORT-2026-10-28.md). Stage B and live installation remain unauthorized. The earlier `f2e76af…` report is historical and must not be deployed.
 
 **Date:** 2026-10-28

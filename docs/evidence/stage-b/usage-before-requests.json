@@ -1,0 +1,19 @@
+{
+  "source": "Transcribed from stage-b-results.txt pre-Go quota (fresh after Console auth, before any request)",
+  "opencode-go": {
+    "rolling": 3,
+    "weekly": 63,
+    "monthly": 81
+  },
+  "commandcode": {
+    "rolling": 6.917547384285714,
+    "weekly": 78.87357464942856,
+    "monthly": 39.711534729524764,
+    "used5h": 0.9684566338,
+    "usedWeek": 27.6057511273,
+    "usedMonth": 27.924756068800004,
+    "remainingMonth": 42.3942488727,
+    "purchased": 0,
+    "free": 0
+  }
+}
