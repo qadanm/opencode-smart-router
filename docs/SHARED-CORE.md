@@ -56,6 +56,8 @@ The prompt hook checks `projectID` before claiming a session. Title writes are f
 
 The installed server was probed with a throwing prompt hook: the prompt returned HTTP 500 and was not admitted; the session had no model and no request was sent. OpenCode does not expose a typed rejection API. The HTTP error is generic, so the title and notification are the user-facing explanation. This is a documented limitation, not a silent execution path. Manual selections and paused routing are outside the strict block.
 
+Every unexpected routing exception is now converted into a blocked decision, a `BLOCKED` title, and a `RouterBlockedError` before admission. A malformed model definition or an engine bug can no longer fall through to an unqualified model. The opt-out is explicit: `routing.failClosed: false`.
+
 ## Quota and persistence
 
 - One `QuotaService` uses the first bridge's global integration credentials; quota snapshots are shared.
