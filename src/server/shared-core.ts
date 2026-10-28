@@ -1,3 +1,4 @@
+import type { LiveModel } from "../core/models/registry.js"
 import { LedgerStore } from "../core/quota/ledger.js"
 import { QuotaService } from "../core/quota/service.js"
 import type { ProviderQuotaSnapshot, RouterSettings } from "../core/types.js"
@@ -60,6 +61,9 @@ export interface InitInput {
 
 const KEY = Symbol.for("opencode-smart-router.shared-core.v1")
 const BRIDGE_GRACE_MS = 10_000
+const MODEL_TTL_MS = 5 * 60_000
+const UNOWNED_TTL_MS = 30_000
+const UNOWNED_MAX = 2_000
 const STORAGE_LEDGER = "ledger-v1"
 const STORAGE_RUNTIME = "runtime-v1"
 const STORAGE_QUOTA = "quota-cache-v1"
@@ -80,6 +84,10 @@ class SharedCore {
   private eventAbort?: AbortController
   private eventsStarted = false
   private readonly owners = new Map<string, string>()
+  private readonly unowned = new Map<string, number>()
+  private liveModels: LiveModel[] = []
+  private modelsLoadedAt = 0
+  private modelsLoading?: Promise<LiveModel[]>
   private eventsHandled = 0
   private eventsIgnored = 0
   private ownerCtx?: any
@@ -235,6 +243,7 @@ class SharedCore {
 
   claimSession(sessionID: string, bridgeID: string) {
     if (!bridgeID) return
+    this.unowned.delete(sessionID)
     if (!this.owners.has(sessionID) && this.owners.size >= 2_000) {
       const oldest = this.owners.keys().next().value
       if (oldest) this.owners.delete(oldest)
@@ -244,6 +253,42 @@ class SharedCore {
 
   releaseSession(sessionID: string) {
     this.owners.delete(sessionID)
+    this.unowned.delete(sessionID)
+  }
+
+  recordError(message: string) {
+    this.pushError(message)
+  }
+
+  private noteUnowned(sessionID: string) {
+    if (this.unowned.size >= UNOWNED_MAX) {
+      const oldest = this.unowned.keys().next().value
+      if (oldest) this.unowned.delete(oldest)
+    }
+    this.unowned.set(sessionID, Date.now())
+  }
+
+  /** One catalog fetch per process; bridges rebuild their own registries from it. */
+  async getLiveModels(force = false): Promise<LiveModel[]> {
+    const fresh = this.modelsLoadedAt > 0 && Date.now() - this.modelsLoadedAt < MODEL_TTL_MS
+    if (!force && fresh) return this.liveModels
+    if (this.modelsLoading) return this.modelsLoading
+    if (!this.ownerCtx?.model?.list) return this.liveModels
+    this.modelsLoading = Promise.resolve(this.ownerCtx.model.list())
+      .then((result: any) => {
+        const data = Array.isArray(result) ? result : (result?.data ?? [])
+        this.liveModels = Array.isArray(data) ? (data as LiveModel[]) : []
+        this.modelsLoadedAt = Date.now()
+        return this.liveModels
+      })
+      .catch((error) => {
+        this.pushError(`models: ${safeError(error)}`)
+        return this.liveModels
+      })
+      .finally(() => {
+        this.modelsLoading = undefined
+      })
+    return this.modelsLoading
   }
 
   ownerOf(sessionID: string): string | undefined {
@@ -256,6 +301,8 @@ class SharedCore {
   }
 
   addBridge(directory: string, controller?: any): string {
+    // A newly loaded location may own sessions previously seen without an owner.
+    this.unowned.clear()
     const id = `bridge-${this.pid}-${++this.sequence}`
     this.bridges.set(id, { id, directory, createdAt: Date.now(), controller })
     if (this.shutdownTimer) {
@@ -306,6 +353,11 @@ class SharedCore {
         if (targetID) this.claimSession(sessionID, targetID)
       }
       if (!target && this.ownerCtx?.session) {
+        const seen = this.unowned.get(sessionID)
+        if (seen !== undefined && Date.now() - seen < UNOWNED_TTL_MS) {
+          this.noteEvent(false)
+          return
+        }
         try {
           const info = await this.ownerCtx.session.get({ sessionID })
           if (info?.projectID) {
@@ -321,6 +373,7 @@ class SharedCore {
         } catch {
           // Leave unowned events ignored rather than crossing projects.
         }
+        if (!target) this.noteUnowned(sessionID)
       }
     }
     if (!target) {
@@ -432,6 +485,10 @@ class SharedCore {
     this.bootstrapped = false
     this.bridges.clear()
     this.owners.clear()
+    this.unowned.clear()
+    this.liveModels = []
+    this.modelsLoadedAt = 0
+    this.modelsLoading = undefined
     this.errors.length = 0
     this.eventsHandled = 0
     this.eventsIgnored = 0

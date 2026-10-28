@@ -427,4 +427,80 @@ describe("plugin controller integration", () => {
     expect(status.runtime).toBe("paused")
     await controller.dispose()
   })
+
+  it("creates a bridge for every location without disposing the previous entry setup", async () => {
+    const first = makeCtx(mkdtempSync(join(tmpdir(), "router-entry-a-")))
+    const second = makeCtx(mkdtempSync(join(tmpdir(), "router-entry-b-")))
+    const entry = (await import("../src/index.js")).default
+    const cleanupFirst = await entry.setup(first.ctx)
+    const cleanupSecond = await entry.setup(second.ctx)
+    expect(sharedCore.diagnostics().bridgeCount).toBe(2)
+    await cleanupSecond?.()
+    await cleanupFirst?.()
+    expect(sharedCore.diagnostics().bridgeCount).toBe(0)
+  })
+
+  it("does not await storage persistence during dispose", async () => {
+    const fake = makeCtx(mkdtempSync(join(tmpdir(), "router-dispose-")))
+    const controller = new RouterController({ ctx: fake.ctx, pluginOptions: fake.ctx.options })
+    await controller.initialize()
+    let release: (() => void) | undefined
+    fake.ctx.storage.set = () =>
+      new Promise<void>((resolve) => {
+        release = resolve
+      })
+    const outcome = await Promise.race([
+      controller.dispose().then(() => "done"),
+      new Promise<string>((resolve) => setTimeout(() => resolve("timeout"), 100)),
+    ])
+    release?.()
+    expect(outcome).toBe("done")
+  })
+
+  it("fetches the live model catalog once across bridges", async () => {
+    const first = makeCtx(mkdtempSync(join(tmpdir(), "router-catalog-a-")))
+    const second = makeCtx(mkdtempSync(join(tmpdir(), "router-catalog-b-")))
+    let calls = 0
+    const list = async () => {
+      calls += 1
+      return { data: liveModels }
+    }
+    first.ctx.model.list = list
+    second.ctx.model.list = list
+    const a = new RouterController({ ctx: first.ctx, pluginOptions: first.ctx.options })
+    const b = new RouterController({ ctx: second.ctx, pluginOptions: second.ctx.options })
+    await Promise.all([a.initialize(), b.initialize()])
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(calls).toBe(1)
+    await a.dispose()
+    await b.dispose()
+  })
+
+  it("does not re-read an unowned session for every event", async () => {
+    const fake = makeCtx(mkdtempSync(join(tmpdir(), "router-unowned-")))
+    const controller = new RouterController({ ctx: fake.ctx, pluginOptions: fake.ctx.options })
+    await controller.initialize()
+    let gets = 0
+    fake.ctx.session.get = async () => {
+      gets += 1
+      return { projectID: "another-project" }
+    }
+    const core = sharedCore as any
+    await core.dispatchEvent({ type: "session.updated", data: { sessionID: "ses_unknown" } })
+    await core.dispatchEvent({ type: "session.updated", data: { sessionID: "ses_unknown" } })
+    expect(gets).toBe(1)
+    await controller.dispose()
+  })
+
+  it("isolates a bridge setup failure instead of rejecting plugin setup", async () => {
+    const fake = makeCtx(mkdtempSync(join(tmpdir(), "router-setup-fail-")))
+    fake.ctx.command.transform = () => {
+      throw new Error("command registration failed")
+    }
+    const entry = (await import("../src/index.js")).default
+    const cleanup = await entry.setup(fake.ctx)
+    expect(typeof cleanup).toBe("function")
+    expect(sharedCore.diagnostics().errors.some((error) => error.includes("setup"))).toBe(true)
+    await cleanup?.()
+  })
 })

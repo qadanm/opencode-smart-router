@@ -191,7 +191,7 @@ export class RouterController {
 
   private async loadModels() {
     try {
-      this.modelList = await this.ctx.model.list()
+      this.modelList = await sharedCore.getLiveModels()
       this.rebuildRegistry()
     } catch (error) {
       this.settingsWarnings.push(`Could not refresh the live model catalog: ${safeError(error)}`)
@@ -1531,6 +1531,8 @@ export class RouterController {
     this.cleanupDone = true
     if (this.bridgeID) sharedCore.removeBridge(this.bridgeID)
     await Promise.allSettled(this.registrations.map((registration) => registration?.dispose?.()))
-    await sharedCore.persistNow().catch(() => undefined)
+    // Never block a reload on storage. The core flushes on debounce, and the
+    // grace timer performs the final flush when the last bridge leaves.
+    sharedCore.persistSoon()
   }
 }
