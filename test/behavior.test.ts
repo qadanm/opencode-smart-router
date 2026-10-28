@@ -160,6 +160,55 @@ describe("configuration", () => {
     expect(result.settings.models.definitions[0]?.key).toBe("lab/model")
   })
 
+  it("normalizes a user cost tier without cache pricing", () => {
+    const result = validateSettings({
+      models: {
+        definitions: [
+          {
+            key: "lab/no-cache",
+            providerID: "lab",
+            modelID: "no-cache",
+            name: "No Cache",
+            context: 100000,
+            maxOutput: 8192,
+            input: ["text"],
+            cost: [{ input: 0.1, output: 0.2 }],
+            intelligence: 42,
+            design: 65,
+            tier: 2,
+            approved: true,
+          },
+        ],
+      },
+    })
+    expect(result.settings.models.definitions[0]?.cost[0]?.cache).toEqual({ read: 0, write: 0 })
+  })
+
+  it("rejects a user definition with no usable cost tier", () => {
+    const result = validateSettings({
+      models: {
+        definitions: [
+          {
+            key: "lab/broken-cost",
+            providerID: "lab",
+            modelID: "broken-cost",
+            name: "Broken Cost",
+            context: 100000,
+            maxOutput: 8192,
+            input: ["text"],
+            cost: [{ input: "not-a-number", output: 0.2 }],
+            intelligence: 42,
+            design: 65,
+            tier: 2,
+            approved: true,
+          },
+        ],
+      },
+    })
+    expect(result.settings.models.definitions).toHaveLength(0)
+    expect(result.warnings.some((warning) => warning.includes("cost"))).toBe(true)
+  })
+
   it("keeps project settings from loosening global extra-credit policy", () => {
     const global = validateSettings({
       providers: { commandcode: { ...DEFAULT_SETTINGS.providers.commandcode!, allowExtraUsage: false } },

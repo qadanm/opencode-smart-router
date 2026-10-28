@@ -266,6 +266,16 @@ describe("routing engine", () => {
     expect(result.decision.chosen).toBeDefined()
   })
 
+  it("does not throw when a cost tier omits cache pricing", () => {
+    const registry = buildRegistry({ live: [], settings: settings() })
+    const base = registry.get("opencode-go", "deepseek-v4.1-flash")!
+    const model = { ...base, cost: [{ input: 0.15, output: 0.6 }] } as any
+    const task = classifyTask({ text: "Implement a feature in src/app.ts" })
+    expect(() =>
+      estimateTaskCost({ model, task, contextTokens: 1000, currentModelKey: model.key }),
+    ).not.toThrow()
+  })
+
   it("prices cache loss when switching models", () => {
     const registry = buildRegistry({ live: [], settings: settings() })
     const model = registry.get("opencode-go", "deepseek-v4.1-flash")!

@@ -180,6 +180,8 @@ export interface ProviderQuotaSnapshot {
   readonly models: Readonly<Record<string, ModelQuotaSnapshot>>
   readonly notes: ReadonlyArray<string>
   readonly error?: string
+  /** Provider-supplied retry delay on a rate-limited probe. */
+  readonly retryAfterMs?: number
 }
 
 export interface PremiumState {

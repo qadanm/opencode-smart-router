@@ -107,11 +107,18 @@ export const estimateTaskCost = (input: {
   const output = outputPer * steps
   const freshInput = task.scope.promptTokens + context * (sameModel ? 0.15 : 1) + context * 0.05 * (steps - 1)
   const cacheRead = context * (sameModel ? 0.85 : 0) + context * 0.95 * (steps - 1)
+  // A live catalog entry or a hand-written definition can omit cache pricing.
+  // Price it as zero rather than letting the router throw and fail open.
+  const inputPrice = Number.isFinite(tier.input) ? tier.input : 0
+  const outputPrice = Number.isFinite(tier.output) ? tier.output : 0
+  const cacheReadPrice = Number.isFinite(tier.cache?.read) ? (tier.cache?.read ?? 0) : 0
   const cost =
-    (freshInput * tier.input) / 1_000_000 +
-    (output * tier.output) / 1_000_000 +
-    (cacheRead * tier.cache.read) / 1_000_000
-  const switchPenaltyUsd = sameModel ? 0 : Math.max(0, (context * (tier.input - tier.cache.read)) / 1_000_000)
+    (freshInput * inputPrice) / 1_000_000 +
+    (output * outputPrice) / 1_000_000 +
+    (cacheRead * cacheReadPrice) / 1_000_000
+  const switchPenaltyUsd = sameModel
+    ? 0
+    : Math.max(0, (context * (inputPrice - cacheReadPrice)) / 1_000_000)
   return {
     usd: Math.max(0, cost),
     input: freshInput,

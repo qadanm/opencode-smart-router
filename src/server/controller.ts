@@ -606,6 +606,82 @@ export class RouterController {
     }
   }
 
+  private async markBlocked(sessionID: string, reason: string) {
+    const session = this.ledger.ensureSession(sessionID)
+    const ref = session.lastModel
+    const model = ref ? this.registry.get(ref.providerID, ref.id) : undefined
+    const label = model?.name ?? ref?.id ?? "current model"
+    const blockedTitle = buildIndicatorTitle({
+      state: "BLOCKED",
+      provider: ref?.providerID,
+      modelLabel: label,
+      baseTitle: session.baseTitle || session.title,
+    })
+    session.indicatorTitle = blockedTitle
+    session.title = blockedTitle
+    this.ledger.patchSession(sessionID, { indicatorTitle: blockedTitle, title: blockedTitle })
+    try {
+      await this.ctx.session.update({ sessionID, title: blockedTitle })
+    } catch {
+      // The decision still carries the reason.
+    }
+    void this.notifyChange(`${sessionID}:blocked:${reason}`, `BLOCKED · ${label} — ${reason}`)
+  }
+
+  private recordFailedDecision(sessionID: string, text: string, files: unknown, reason: string) {
+    const session = this.ledger.ensureSession(sessionID)
+    const task = classifyTask({
+      text,
+      files: this.classifierFiles(files),
+      contextTokens: session.contextTokens,
+      recentFailures: session.failures.length,
+    })
+    const decision: RoutingDecision = {
+      id: nowId("dec"),
+      at: Date.now(),
+      sessionID,
+      mode: this.settings.mode,
+      dryRun: this.settings.dryRun,
+      runtime: "automatic",
+      task,
+      ...(session.lastModel ? { current: session.lastModel } : {}),
+      switched: false,
+      switchReason: `Routing failed; the current model was kept: ${reason}`,
+      reasons: [`Routing failed: ${reason}`],
+      warnings: [`Routing failed: ${reason}`],
+      candidates: [],
+      premium: this.premiumState(session),
+      quota: this.quotaSnapshots(),
+      contextTokens: session.contextTokens,
+      cachedTokens: session.cacheReadTokens,
+      estimatedUsd: 0,
+      needsPremiumApproval: false,
+      manualOverride: session.manualOverride === true,
+      error: reason,
+    }
+    this.ledger.recordDecision(decision)
+    this.persistLedgerSoon()
+    void this.emit("decision", { decision })
+    return decision
+  }
+
+  /**
+   * A routing exception must never fall through as a silent automatic route.
+   * Record the failure, and when failClosed is on, block admission.
+   */
+  private async handleRoutingFailure(sessionID: string, text: string, files: unknown, error: unknown) {
+    const reason = safeError(error)
+    this.settingsWarnings.push(`Prompt routing failed: ${reason}`)
+    try {
+      this.recordFailedDecision(sessionID, text, files, reason)
+    } catch (recordError) {
+      this.settingsWarnings.push(`Could not record the failed routing decision: ${safeError(recordError)}`)
+    }
+    if (!this.settings.routing.failClosed) return
+    await this.markBlocked(sessionID, reason)
+    throw new RouterBlockedError(`Smart Router blocked this prompt: ${reason}`)
+  }
+
   private async routePrompt(sessionID: string, text: string, files: unknown): Promise<RoutingDecision | undefined> {
     const settings = this.settings
     await this.loadSessionInfo(sessionID)
@@ -738,24 +814,7 @@ export class RouterController {
         : { eligible: false, reason: "No current model is recorded for this session", warnings: [] }
       if (!currentEligibility.eligible) {
         const reason = currentEligibility.reason
-        const blockedTitle = buildIndicatorTitle({
-          state: "BLOCKED",
-          provider: session.lastModel?.providerID,
-          modelLabel: currentRecord?.name ?? session.lastModel?.id,
-          baseTitle: session.baseTitle || session.title,
-        })
-        session.indicatorTitle = blockedTitle
-        session.title = blockedTitle
-        this.ledger.patchSession(sessionID, { indicatorTitle: blockedTitle, title: blockedTitle })
-        try {
-          await this.ctx.session.update({ sessionID, title: blockedTitle })
-        } catch {
-          // The error is still surfaced through the blocked decision.
-        }
-        void this.notifyChange(
-          `${sessionID}:blocked:${task.tier}:${session.lastModel?.providerID}:${session.lastModel?.id}`,
-          `BLOCKED · ${currentRecord?.name ?? session.lastModel?.id ?? "current model"} — ${reason}`,
-        )
+        await this.markBlocked(sessionID, reason)
         const blockedDecision: RoutingDecision = {
           ...finalDecision,
           error: reason,
@@ -808,7 +867,7 @@ export class RouterController {
           await this.routePrompt(sessionID, event.prompt?.text ?? "", event.prompt?.files)
         } catch (error) {
           if (error instanceof RouterBlockedError || (error as any)?.name === "RouterBlockedError") throw error
-          this.settingsWarnings.push(`Prompt routing failed: ${safeError(error)}`)
+          await this.handleRoutingFailure(sessionID, event.prompt?.text ?? "", event.prompt?.files, error)
         } finally {
           this.inflight.delete(sessionID)
         }

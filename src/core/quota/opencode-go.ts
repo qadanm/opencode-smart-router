@@ -42,7 +42,12 @@ const parseMeter = (value: unknown): QuotaWindow | undefined => {
 
 const unknownWindow: QuotaWindow = { usedPct: 0, remainingPct: 100, source: "unknown" }
 
-const baseSnapshot = (input: GoUsageProbeInput, now: number, error?: string): ProviderQuotaSnapshot => ({
+const baseSnapshot = (
+  input: GoUsageProbeInput,
+  now: number,
+  error?: string,
+  retryAfterMs?: number,
+): ProviderQuotaSnapshot => ({
   providerID: "opencode-go",
   label: input.settings.plan === "go-plus" ? "OpenCode Go Plus" : "OpenCode Go",
   plan: input.settings.plan,
@@ -55,6 +60,7 @@ const baseSnapshot = (input: GoUsageProbeInput, now: number, error?: string): Pr
   models: {},
   notes: ["Usage endpoint is read-only and consumes no inference allowance."],
   error,
+  ...(retryAfterMs !== undefined ? { retryAfterMs } : {}),
 })
 
 /**
@@ -84,8 +90,11 @@ export const probeOpenCodeGoQuota = async (input: GoUsageProbeInput): Promise<Go
       signal: controller.signal,
     })
     if (!response.ok) {
+      const retryAfter = Number(response.headers.get("retry-after"))
+      const retryAfterMs =
+        Number.isFinite(retryAfter) && retryAfter >= 0 ? retryAfter * 1000 : undefined
       return {
-        snapshot: baseSnapshot(input, now, `Usage endpoint returned HTTP ${response.status}`),
+        snapshot: baseSnapshot(input, now, `Usage endpoint returned HTTP ${response.status}`, retryAfterMs),
       }
     }
     const text = await response.text()

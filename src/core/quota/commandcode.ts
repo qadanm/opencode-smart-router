@@ -214,7 +214,12 @@ const summaryPath = (orgID: string | undefined, since: number | undefined) => {
   return params.length > 0 ? `/alpha/usage/summary?${params.join("&")}` : "/alpha/usage/summary"
 }
 
-const baseSnapshot = (input: CommandCodeProbeInput, now: number, error?: string): ProviderQuotaSnapshot => ({
+const baseSnapshot = (
+  input: CommandCodeProbeInput,
+  now: number,
+  error?: string,
+  retryAfterMs?: number,
+): ProviderQuotaSnapshot => ({
   providerID: "commandcode",
   label: "Command Code",
   plan: input.settings.plan,
@@ -227,6 +232,7 @@ const baseSnapshot = (input: CommandCodeProbeInput, now: number, error?: string)
   models: {},
   notes: [],
   error,
+  ...(retryAfterMs !== undefined ? { retryAfterMs } : {}),
 })
 
 const credentialCandidates = (input: CommandCodeProbeInput): CredentialCandidate[] => {
@@ -278,7 +284,7 @@ export const probeCommandCodeQuota = async (input: CommandCodeProbeInput): Promi
     }
     if (whoami.status === 429) {
       return {
-        snapshot: baseSnapshot(input, now, "Command Code billing API is rate limited"),
+        snapshot: baseSnapshot(input, now, "Command Code billing API is rate limited", whoami.retryAfterMs),
         triedSources,
       }
     }
@@ -301,6 +307,19 @@ export const probeCommandCodeQuota = async (input: CommandCodeProbeInput): Promi
     fetchJson(fetchImpl, orgPath("/alpha/billing/credits", orgID), authorized.key, timeoutMs),
     fetchJson(fetchImpl, orgPath("/alpha/billing/subscriptions", orgID), authorized.key, timeoutMs),
   ])
+
+  if (creditsResult.status === 429 || subscriptionResult.status === 429) {
+    return {
+      snapshot: baseSnapshot(
+        input,
+        now,
+        "Command Code billing API is rate limited",
+        creditsResult.retryAfterMs ?? subscriptionResult.retryAfterMs,
+      ),
+      credentialSource: authorized.source,
+      triedSources,
+    }
+  }
 
   if (creditsResult.status === 401 || creditsResult.status === 403 || subscriptionResult.status === 401 || subscriptionResult.status === 403) {
     return {

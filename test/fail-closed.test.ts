@@ -1,0 +1,51 @@
+import { mkdtempSync } from "node:fs"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
+import { beforeEach, describe, expect, it, vi } from "vitest"
+
+vi.mock("../src/core/routing/engine.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../src/core/routing/engine.js")>()
+  return {
+    ...actual,
+    routeTask: () => {
+      throw new Error("engine exploded")
+    },
+  }
+})
+
+import { RouterBlockedError, RouterController } from "../src/server/controller.js"
+import { sharedCore } from "../src/server/shared-core.js"
+import { makeCtx } from "./helpers/ctx.js"
+
+describe("routing exception policy", () => {
+  beforeEach(() => sharedCore.resetForTests())
+
+  it("blocks admission when the routing engine throws", async () => {
+    const fake = makeCtx(mkdtempSync(join(tmpdir(), "router-blocked-")))
+    const controller = new RouterController({ ctx: fake.ctx, pluginOptions: fake.ctx.options })
+    await controller.initialize()
+    await expect(
+      fake.hooks.get("prompt")!({ sessionID: "ses_boom", prompt: { text: "Implement a feature in src/app.ts" } }),
+    ).rejects.toBeInstanceOf(RouterBlockedError)
+    const status = await fake.rpc().status({ sessionID: "ses_boom" })
+    expect(status.lastDecision?.error).toContain("engine exploded")
+    expect(fake.switched).toHaveLength(0)
+    const session = await fake.ctx.session.get({ sessionID: "ses_boom" })
+    expect(session.title).toContain("BLOCKED")
+    await controller.dispose()
+  })
+
+  it("records the failure and continues when failClosed is disabled", async () => {
+    const fake = makeCtx(mkdtempSync(join(tmpdir(), "router-open-")))
+    fake.ctx.options = { ...fake.ctx.options, routing: { failClosed: false } }
+    const controller = new RouterController({ ctx: fake.ctx, pluginOptions: fake.ctx.options })
+    await controller.initialize()
+    await expect(
+      fake.hooks.get("prompt")!({ sessionID: "ses_open", prompt: { text: "Implement a feature in src/app.ts" } }),
+    ).resolves.toBeUndefined()
+    const status = await fake.rpc().status({ sessionID: "ses_open" })
+    expect(status.lastDecision?.error).toContain("engine exploded")
+    expect(fake.switched).toHaveLength(0)
+    await controller.dispose()
+  })
+})

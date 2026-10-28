@@ -158,6 +158,20 @@ describe("OpenCode Go quota adapter", () => {
     expect(result.snapshot.error).toMatch(/401/)
   })
 
+  it("carries retry-after from a rate-limited response", async () => {
+    const result = await probeOpenCodeGoQuota({
+      accessToken: "token",
+      settings: DEFAULT_SETTINGS.providers["opencode-go"]!,
+      fetchImpl: async () =>
+        new Response(JSON.stringify({ error: "rate limited" }), {
+          status: 429,
+          headers: { "content-type": "application/json", "retry-after": "120" },
+        }),
+    })
+    expect(result.snapshot.source).toBe("unknown")
+    expect(result.snapshot.retryAfterMs).toBe(120_000)
+  })
+
   it("rejects an unrecognized usage shape", async () => {
     const result = await probeOpenCodeGoQuota({
       accessToken: "token",

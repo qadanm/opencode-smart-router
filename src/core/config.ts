@@ -185,6 +185,41 @@ const validateProvider = (
   }
 }
 
+const finiteNonNegative = (value: unknown): number | undefined =>
+  typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : undefined
+
+const normalizeCostTiers = (value: unknown, index: number, warnings: string[]): CostTier[] => {
+  if (!Array.isArray(value) || value.length === 0) {
+    warnings.push(`models.definitions[${index}].cost must contain at least one tier; definition ignored`)
+    return []
+  }
+  const output: CostTier[] = []
+  value.forEach((item, tierIndex) => {
+    if (!isRecord(item)) {
+      warnings.push(`models.definitions[${index}].cost[${tierIndex}] must be an object; ignored`)
+      return
+    }
+    const input = finiteNonNegative(item.input)
+    const outputCost = finiteNonNegative(item.output)
+    if (input === undefined || outputCost === undefined) {
+      warnings.push(
+        `models.definitions[${index}].cost[${tierIndex}] needs non-negative finite input and output; ignored`,
+      )
+      return
+    }
+    const cache = isRecord(item.cache) ? item.cache : undefined
+    output.push({
+      input,
+      output: outputCost,
+      cache: {
+        read: finiteNonNegative(cache?.read) ?? 0,
+        write: finiteNonNegative(cache?.write) ?? 0,
+      },
+    })
+  })
+  return output
+}
+
 const validateDefinitions = (value: unknown, warnings: string[]): ModelDefinition[] => {
   if (value === undefined) return []
   if (!Array.isArray(value)) {
@@ -207,9 +242,8 @@ const validateDefinitions = (value: unknown, warnings: string[]): ModelDefinitio
       return
     }
     const input = Array.isArray(entry.input) && entry.input.every((item) => typeof item === "string") ? entry.input : ["text"]
-    const cost = Array.isArray(entry.cost)
-      ? (entry.cost as CostTier[]).filter((item) => isRecord(item) && typeof item.input === "number" && typeof item.output === "number")
-      : []
+    const cost = normalizeCostTiers(entry.cost, index, warnings)
+    if (cost.length === 0) return
     output.push({
       key,
       providerID,
@@ -218,7 +252,7 @@ const validateDefinitions = (value: unknown, warnings: string[]): ModelDefinitio
       context: Math.max(1, Number(entry.context) || 0),
       maxOutput: Math.max(1, Number(entry.maxOutput) || 0),
       input,
-      cost: cost.length > 0 ? cost : [{ input: 0, output: 0, cache: { read: 0, write: 0 } }],
+      cost,
       intelligence: Math.max(0, Number(entry.intelligence) || 0),
       design: Math.max(0, Number(entry.design) || 0),
       premium: entry.premium === true,
