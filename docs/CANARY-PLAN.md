@@ -1,5 +1,7 @@
 # Controlled canary plan — DO NOT EXECUTE YET
 
+> **Stage A result (2026-10-28): FAIL.** The isolated canary was executed and found two release blockers. See [STAGE-A-CANARY-REPORT-2026-10-28.md](STAGE-A-CANARY-REPORT-2026-10-28.md). Do not run Stage B.
+
 **Status:** prepared only; nothing in this document has been run against the live environment.
 **Artifact:** `dist-release/index.js`
 **SHA-256:** `f2e76af0fc6c889e5693308309128067d99f551b272538492836049a5e4dbe74`

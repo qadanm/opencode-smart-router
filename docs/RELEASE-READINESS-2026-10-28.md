@@ -1,5 +1,7 @@
 # Release readiness — Option C
 
+> **Stage A update (2026-10-28): FAIL.** The exact artifact was exercised in the isolated canary. Two blockers were found: command notifications resume the model, and the `BLOCKED` title never clears after recovery. Details: [STAGE-A-CANARY-REPORT-2026-10-28.md](STAGE-A-CANARY-REPORT-2026-10-28.md). Do not proceed to Stage B or live installation.
+
 **Date:** 2026-10-28
 **Branch:** `option-c`
 **Code commit:** `9577da3051a01ab69de98ca38bd5ea51cd98604c`

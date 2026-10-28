@@ -1,0 +1,18 @@
+{
+  "samples": 65,
+  "firstTs": 1793156902,
+  "lastTs": 1793157233,
+  "rssMinKb": 65808,
+  "rssMaxKb": 543104,
+  "rssLastKb": 306192,
+  "cpuMax": 27.7,
+  "latMaxS": 0.196950,
+  "coreIDs": [
+    "f4a9jdzu"
+  ],
+  "bridgesMax": 1,
+  "streamsMax": 1,
+  "startsMax": 1,
+  "thrashMax": 0,
+  "serverErrorsMax": 0
+}

@@ -1,0 +1,107 @@
+sid=ses_e7f84c6adffelDjTNLKDlvy53s
+--- baseline prompt ---
+http=200
+{"title":"AUTO · lab-cc · Canary Haiku — canary baseline","model":{"id":"claude-haiku-5-5","providerID":"lab-cc","variant":"default"},"outcome":"succeeded"}
+--- rpc status ---
+{"runtime":"automatic","indicator":"AUTO","last":{"chosen":{"providerID":"lab-cc","id":"claude-haiku-5-5"},"task":{"tier":2,"kind":"unknown"},"switched":false,"switchReason":"The current model already is the least-cost qualified route.","warnings":[]},"approved":["lab-cc/claude-haiku-5-5","lab-cc/deepseek-v4.1-flash","lab-cc/glm-5.3-flash"]}
+--- slash command ---
+slash_http=200
+mock_before=1 mock_after=2
+--- manual override ---
+switch_http=204
+{"title":"MANUAL · lab-cc · Canary DeepSeek — canary baseline","model":{"id":"deepseek-v4.1-flash","providerID":"lab-cc","variant":"default"}}
+{"runtime":"manual","manual":true,"indicator":"MANUAL"}
+--- resume auto ---
+resume_http=200
+{"title":"AUTO · lab-cc · Canary Haiku — canary baseline","model":{"id":"deepseek-v4.1-flash","providerID":"lab-cc","variant":"default"}}
+--- command endpoint router-status ---
+command_http=204
+command_mock_before=2 command_mock_after=3
+command_body_bytes=       0
+--- prompt after resumeAuto ---
+http=200
+{"title":"AUTO · lab-cc · Canary DeepSeek — canary baseline","model":{"id":"deepseek-v4.1-flash","providerID":"lab-cc","variant":"default"},"outcome":"succeeded"}
+{"runtime":"automatic","current":{"providerID":"lab-cc","id":"deepseek-v4.1-flash","variant":"default"},"indicator":{"state":"AUTO","provider":"lab-cc","model":"deepseek-v4.1-flash","modelLabel":"Canary DeepSeek","title":"AUTO · lab-cc · Canary DeepSeek — canary baseline"},"last":{"chosen":{"providerID":"lab-cc","id":"deepseek-v4.1-flash"},"switched":false,"switchReason":"Kept the current model for cache affinity."}}
+--- premium session ses_e7f82d36cffeI53Pm7C67uermI ---
+glm_before=0
+premium_prompt_http=200
+{"title":"AUTO · lab-cc · Canary Haiku — canary premium","model":{"id":"claude-haiku-5-5","providerID":"lab-cc","variant":"default"},"outcome":"succeeded"}
+{"premium":{"mode":"ask","monthlyBudgetUsd":0,"spentUsd":0,"remainingUsd":0,"oneShotGranted":false},"last":{"chosen":{"providerID":"lab-cc","id":"claude-haiku-5-5"},"needsPremiumApproval":true,"error":null},"approved":["lab-cc/claude-haiku-5-5","lab-cc/deepseek-v4.1-flash","lab-cc/glm-5.3-flash"]}
+glm_after_first=0
+approve_http=200
+approved_prompt_http=200
+{"title":"AUTO · lab-cc · Canary GLM Premium — canary premium","model":{"id":"glm-5.3-flash","providerID":"lab-cc","variant":"default"},"outcome":"succeeded"}
+{"premium":{"mode":"ask","monthlyBudgetUsd":0,"spentUsd":0.0000025,"remainingUsd":0,"oneShotGranted":false},"last":{"chosen":{"providerID":"lab-cc","id":"glm-5.3-flash"},"needsPremiumApproval":false,"error":null}}
+glm_after_approval=1
+--- large context ses_e7f826a02ffezN5672amHsWDvv ---
+prompt_bytes= 1320064
+rss_before=134736
+large_http=200
+rss_after=165664
+{"title":"AUTO · lab-cc · Canary Haiku — canary large context","model":{"id":"claude-haiku-5-5","providerID":"lab-cc","variant":"default"},"outcome":"succeeded","tokens":{"input":10,"output":2,"reasoning":0,"cache":{"read":0,"write":0}},"cost":0.000002}
+{"context":{"tokens":10,"cacheRead":0,"cacheSharePct":0,"state":"healthy","message":"10 context tokens; 0% arrived as cache reads. Cache reads are cheaper than fresh input but are not free."},"last":{"task":{"tier":2,"contextTokens":null},"chosen":{"providerID":"lab-cc","id":"claude-haiku-5-5"},"switched":false,"switchReason":"The current model already is the least-cost qualified route.","warnings":[]}}
+--- large context 2 ses_e7f81c348ffeMhMhHfL3lZGEoj ---
+large_http=200
+{"title":"AUTO · lab-cc · Canary Haiku — canary large context 2","model":{"id":"claude-haiku-5-5","providerID":"lab-cc","variant":"default"},"outcome":"succeeded","tokens":{"input":340574,"output":2,"reasoning":0,"cache":{"read":0,"write":0}},"cost":0.0340584}
+--- follow-up small prompt ---
+followup_http=200
+{"context":{"tokens":340611,"cacheRead":0,"cacheSharePct":0,"state":"healthy","message":"340,611 context tokens; 0% arrived as cache reads. Cache reads are cheaper than fresh input but are not free."},"last":{"task":{"tier":2,"contextTokens":null},"chosen":{"providerID":"lab-cc","id":"claude-haiku-5-5"},"switched":false,"switchReason":"The current model already is the least-cost qualified route.","warnings":[]}}
+--- concurrent 10 ---
+created=      10 mock_before=10 mock_after=20
+AUTO · lab-cc · Canary Haiku — canary concurrent 1	claude-haiku-5-5	succeeded
+AUTO · lab-cc · Canary Haiku — canary concurrent 4	claude-haiku-5-5	succeeded
+AUTO · lab-cc · Canary Haiku — canary concurrent 10	claude-haiku-5-5	succeeded
+AUTO · lab-cc · Canary Haiku — canary concurrent 3	claude-haiku-5-5	succeeded
+AUTO · lab-cc · Canary Haiku — canary concurrent 6	claude-haiku-5-5	succeeded
+AUTO · lab-cc · Canary Haiku — canary concurrent 2	claude-haiku-5-5	succeeded
+AUTO · lab-cc · Canary Haiku — canary concurrent 9	claude-haiku-5-5	succeeded
+AUTO · lab-cc · Canary Haiku — canary concurrent 5	claude-haiku-5-5	succeeded
+AUTO · lab-cc · Canary Haiku — canary concurrent 7	claude-haiku-5-5	succeeded
+AUTO · lab-cc · Canary Haiku — canary concurrent 8	claude-haiku-5-5	succeeded
+{"coreID":"f4a9jdzu","pid":41493,"bridgeCount":1,"setups":1,"disposes":0,"eventStreams":1,"eventsHandled":274,"eventsIgnored":38,"errors":1}
+rss_after=242368 cpu=2.8
+--- fail-closed disable provider ---
+reload_disable=204
+blocked_sid=ses_e7f80bb47ffeHOsYqmmgBf8Dx3
+blocked_http=500
+blocked_mock_before=20 blocked_mock_after=20
+blocked_title=BLOCKED · lab-cc · Canary Haiku — canary blocked
+blocked_decision={"indicator":"BLOCKED","error":"Provider is disabled in router settings","switched":false}
+--- restore provider ---
+reload_restore=204
+recovered_http=200
+{"title":"BLOCKED · lab-cc · Canary Haiku — canary blocked","outcome":"succeeded","model":{"id":"claude-haiku-5-5","providerID":"lab-cc","variant":"default"}}
+{"coreID":"f4a9jdzu","bridgeCount":1,"setups":3,"disposes":2,"eventStreams":1,"errors":1}
+--- 3 location reloads ---
+reload1=204
+{"coreID":"f4a9jdzu","bridgeCount":1,"setups":4,"disposes":3,"eventStreams":1,"errors":1}
+reload2=204
+{"coreID":"f4a9jdzu","bridgeCount":1,"setups":5,"disposes":4,"eventStreams":1,"errors":1}
+reload3=204
+{"coreID":"f4a9jdzu","bridgeCount":1,"setups":6,"disposes":5,"eventStreams":1,"errors":1}
+commands_after_reloads=16
+post_reload_prompt=200
+{"title":"AUTO · lab-cc · Canary Haiku — canary after reloads","outcome":"succeeded"}
+--- process restart ---
+new_pid=45913
+{"coreID":"vkyfu3rw","pid":45913,"bridgeCount":1,"setups":1,"disposes":0,"eventStreams":1,"errors":0}
+commands=16
+premium=ses_e7f82d36cffeI53Pm7C67uermI blocked=ses_e7f80bb47ffeHOsYqmmgBf8Dx3
+{"title":"AUTO · lab-cc · Canary GLM Premium — canary premium","model":{"id":"glm-5.3-flash","providerID":"lab-cc","variant":"default"},"outcome":"succeeded"}
+{"title":"BLOCKED · lab-cc · Canary Haiku — canary blocked","model":{"id":"claude-haiku-5-5","providerID":"lab-cc","variant":"default"},"outcome":"succeeded"}
+post_restart_prompt=200
+{"title":"AUTO · lab-cc · Canary Haiku — canary post restart","outcome":"succeeded","model":{"id":"claude-haiku-5-5","providerID":"lab-cc","variant":"default"}}
+--- premium after restart ---
+premium_restart_prompt=200
+{"title":"AUTO · lab-cc · Canary Haiku — canary premium restart","model":{"id":"claude-haiku-5-5","providerID":"lab-cc","variant":"default"},"outcome":"succeeded"}
+{"premium":{"mode":"ask","monthlyBudgetUsd":0,"spentUsd":0.0000025,"remainingUsd":0,"oneShotGranted":false},"last":{"chosen":{"providerID":"lab-cc","id":"claude-haiku-5-5"},"needsPremiumApproval":true,"error":null}}
+glm_before=1 glm_after=1
+--- RPC preview/pause/dry-run ---
+{"status":null,"task":{"tier":null,"kind":null},"error":null}
+pause_http=200
+{"runtime":"paused","indicator":"PAUSED"}
+resume_http=200
+dry_http=200
+dry_prompt_http=200
+{"dry":true,"indicator":"DRY RUN","last":{"dryRun":true,"switched":false,"chosen":{"providerID":"lab-cc","id":"claude-haiku-5-5"}}}
+dry_off_http=200

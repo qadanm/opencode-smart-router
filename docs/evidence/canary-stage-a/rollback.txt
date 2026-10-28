@@ -1,0 +1,13 @@
+server_pid=45913
+context_before=13
+commands_before=16
+reload_http=204
+commands_after=0
+ordinary_prompt_http=200
+context_after=16
+{"title":"AUTO · lab-cc · Canary DeepSeek — canary baseline","outcome":"succeeded","model":{"id":"deepseek-v4.1-flash","providerID":"lab-cc","variant":"default"}}
+plugin=[]
+--- footprint before stop ---
+    phys_footprint: 284 MB
+    phys_footprint_peak: 345 MB
+
