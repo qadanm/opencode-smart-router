@@ -142,6 +142,12 @@ signal. `session.idle` does carry an `outcome`.
 - The gateway resolves a **billing scope** before answering, even for a
   read-only `/models` call. It returned a transient `503
   workspace_billing_scope_unavailable` during this work and succeeded on retry.
+  The full error is:
+  `[code=workspace_billing_scope_unavailable] resolve Billing Scope: Get
+  "https://amr-api.open-design.ai/api/internal/billing/scope/<id>": context
+  deadline exceeded (Client.Timeout exceeded while awaiting headers)`.
+  Note `amr-api.open-design.ai` — not `auth.open-design.ai`, which is NXDOMAIN
+  and is not the host in the error.
 - Do not use the Anthropic-messages protocol for DeepSeek V4.1 Flash — upstream
   #8687 reports it drops reasoning and stalls tool-calling agents.
 - Go plan caps: **$120 monthly**, **$30 per 7 days**, **$10 per 5 hours**. The
@@ -149,7 +155,59 @@ signal. `session.idle` does carry an `outcome`.
 
 ---
 
-## 7. This machine's constraints
+## 7. One provider fault is reported through four channels
+
+This is the single most expensive lesson from the first live week, and it is
+invisible unless you read the persisted ledger.
+
+The host reports **one** failed attempt through **four** separate channels:
+
+| Channel | Where the router handles it |
+|---|---|
+| the `retry` session hook | `src/server/controller.ts` — `session.hook("retry", …)` |
+| `session.step.failed` event | `handleEvent` |
+| `session.execution.failed` event | `handleEvent` |
+| `session.idle` with `outcome: "failed"` | `handleEvent` |
+
+Each one used to call `recordFailure` independently, so **one logical fault
+counted three times**. The live ledger recorded the real 10:11:22 incident as
+three identical `provider_outage` entries in the *same second* — that
+same-second burst is the signature of a multi-path record, not of three
+separate failures.
+
+Two consequences that made it look like a model problem:
+
+- `metrics.byModel[...].failures` climbed fast (15 faults on one model), and
+  the strike multiplier `min(4, (failures % 4) + 1)` turned that into a
+  20-minute model cooldown for a model that had done nothing wrong.
+- The retry hook dropped `cooldownMs` entirely, so the hold-out it recorded
+  never actually engaged. The counter rose while the protection did not.
+
+**How to read the ledger** — it is persisted in OpenCode's storage, not a
+file of its own:
+
+```bash
+sqlite3 -readonly "$HOME/.local/share/opencode/opencode.db" \
+  "SELECT value FROM kv WHERE key LIKE '%ledger-v1'"
+```
+
+Same-second duplicate bursts in `sessions[*].failures` mean double-recording,
+not two real faults.
+
+**How to fix it** — key on the identity of the *attempt*, not on the error
+text. `session.step.failed` carries `assistantMessageID`, which is exact: the
+same attempt is described once however many channels report it, and a later,
+genuinely separate attempt still counts separately. Text matching alone
+collapses distinct failures, which is worse than the original bug.
+
+Also: a fault that happens **before a model is selected** is provider-scoped,
+not model-scoped. `countAgainstModel` must be false for it, or the provider's
+outage is charged to whichever model happened to be serving. The classifier
+now special-cases `workspace_billing_scope_unavailable` for this reason.
+
+---
+
+## 8. This machine's constraints
 
 16 GB unified memory, frequently tight on disk. Keep it in mind:
 

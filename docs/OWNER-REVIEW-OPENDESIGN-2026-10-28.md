@@ -283,15 +283,85 @@ because it is a real, paid request.
 
 ---
 
+## The billing-scope errors you saw (investigated 2026-10-28, ~10:05–10:18)
+
+You reported a temporary error on an auto-switch to OpenDesign that had to
+retry twice, and a billing error. This is what it was.
+
+**The error came from OpenDesign, not from the router:**
+
+```
+[code=workspace_billing_scope_unavailable] resolve Billing Scope:
+Get "https://amr-api.open-design.ai/api/internal/billing/scope/<id>":
+context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+```
+
+OpenDesign's gateway resolves which billing workspace your key belongs to
+*before* it serves any request, and that internal call was timing out. It is
+a transient fault on their side, and it hit whichever model happened to be
+serving — so it appeared on DeepSeek V4.1 Flash in one session and on MiniMax
+M3.1 Flash in another.
+
+The router's behaviour was correct: classify it as a provider outage, retry,
+cap the retries at 3 attempts, and carry on. It recovered every time.
+
+**Two genuine router bugs did make it look worse than it was.**
+
+1. **One fault was counted three times.** The host reports a single failed
+   attempt through four channels — the `retry` hook, `session.step.failed`,
+   `session.execution.failed`, and `session.idle`. Each recorded its own
+   strike independently. The live ledger shows the signature plainly: three
+   identical `provider_outage` entries in the same second.
+
+   The effect was that `opendesign/deepseek-v4.1-flash` accumulated **15
+   faults** and, through the strike multiplier, picked up a **20-minute
+   cooldown** — for a fault that was never the model's fault.
+
+2. **The provider's outage was charged to a model.** A billing-scope failure
+   happens before a model is even selected, so it would hit every OpenDesign
+   model equally. It was still counted against whichever model was serving,
+   so a healthy model was penalised for the provider's problem.
+
+There was also a third, quieter defect: the `retry` hook dropped `cooldownMs`,
+so the hold-out it recorded never actually engaged. The counter rose while
+the protection did not.
+
+**The fix** (`365f07a`, on `feature/opendesign-provider`, not deployed):
+
+- Failures are now keyed on the identity of the attempt, which the host
+  provides as `assistantMessageID`. One attempt counts once however many
+  channels describe it; a genuinely separate later failure still counts
+  separately.
+- Billing-scope failures are classified as provider-scoped, so they no longer
+  count against a model or arm a model cooldown.
+- The retry hook now carries `cooldownMs` through, so a model that really is
+  failing does get held back.
+
+**Evidence that the fix works** — the live incident replays as one fault with
+no model penalty, and a genuine model-specific stream fault still counts and
+still arms a cooldown:
+
+```
+live replay: provider_outage=1 modelFaults=0
+live replay: model cooldown set = false
+```
+
+Tests: 191 passing (185 before, 6 new), typecheck clean.
+
+**Still not deployed.** This needs your approval, exactly like the OpenDesign
+deployment did.
+
+---
+
 | | |
 |---|---|
 | Branch | `feature/opendesign-provider` |
-| Code commit | `1e46f6a` |
+| Code commit | `365f07a` (billing-scope fix; `322cd1e` was the deployed build) |
 | Baseline | `e8fa5ac` (preserved) |
-| Tests | 185 passing |
+| Tests | 191 passing (185 before, 6 new) |
 | Typecheck | clean |
-| Soak | 30 minutes, PASS |
-| Live deployment | **untouched** — still running `8c71c46c` |
+| Soak | 30 minutes, PASS (against `33401a1f`, the deployed build) |
+| Live deployment | running `33401a1f`; the billing-scope fix is **not** deployed |
 
 Exact artifact SHA-256:
 
