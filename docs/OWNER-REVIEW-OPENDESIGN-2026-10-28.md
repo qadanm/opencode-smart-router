@@ -353,15 +353,65 @@ deployment did.
 
 ---
 
+## Provider outage backoff (added after you saw the errors continue)
+
+You reported the billing-scope error happening again after the first fix.
+Inspecting the live ledger showed the fix had worked for the errors it knew
+about — nine billing-scope faults, zero charged to a model — and that
+OpenDesign's gateway had produced a *second* pre-request failure:
+
+```
+[code=internal_error] failed to evaluate membership entitlement
+```
+
+Pre-request checks failing is now the recurring pattern: billing scope, then
+plan entitlement, roughly every few minutes for about an hour. Each failure is
+a fault of the gateway's account path, not of the model serving the request.
+
+Your instruction: it works fine when it retries or when you say continue, and
+Go Plus and GOAT are exhausted — so only back off when OpenDesign is *truly*
+down, not for transient blips.
+
+**What was wired in:**
+
+- A provider-scoped fault now counts toward a per-provider **run of
+  consecutive failures with nothing succeeding in between** — not against any
+  model.
+- **Any successful request proves the gateway is serving again** and resets
+  the run to zero. Blips that ride over on a retry never arm anything.
+- At **five** consecutive failures the whole provider is held back for
+  **three minutes**, so routing picks another provider instead of hammering a
+  dead gateway.
+- If no other provider has allowance, the routing engine finds no eligible
+  route and **fails closed keeping the current model** — the backoff can
+  never block a prompt outright. That is the property that mattered given
+  your Go and GOAT exhaustion.
+
+The membership-entitlement failure is classified provider-scoped alongside
+the billing-scope failure, so no pre-request gateway fault charges a model
+any more.
+
+Tests: 199 passing (192 before, 7 new), typecheck clean. Deployed at
+`67f3e9a7` (`4386c45`); the previous artifact `aba0a077` is backed up.
+
+**Separate environmental finding:** Command Code's billing probe now returns
+HTTP 401, so GOAT quota is reported as unknown instead of provider-verified.
+It was provider-sourced at every earlier check — including 10:44, with no
+deployments between that and this restart — so it flipped while the previous
+artifact was running. There is no Command Code entry in the credential store,
+so the probe has nothing authorized to present. Unrelated to these router
+changes; flagged here because it affects the visibility you rely on for GOAT.
+
+---
+
 | | |
 |---|---|
 | Branch | `feature/opendesign-provider` |
-| Code commit | `365f07a` (billing-scope fix; `322cd1e` was the deployed build) |
+| Code commit | `4386c45` |
 | Baseline | `e8fa5ac` (preserved) |
-| Tests | 191 passing (185 before, 6 new) |
+| Tests | 199 passing (185 before, 14 new) |
 | Typecheck | clean |
-| Soak | 30 minutes, PASS (against `33401a1f`, the deployed build) |
-| Live deployment | running `33401a1f`; the billing-scope fix is **not** deployed |
+| Live deployment | running `67f3e9a7` — billing-scope classification + provider outage backoff |
 
 Exact artifact SHA-256:
 
