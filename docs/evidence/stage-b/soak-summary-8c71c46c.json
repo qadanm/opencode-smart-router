@@ -1,0 +1,55 @@
+{
+  "artifact": "8c71c46c5f7616f950c6a3fcf5c42be2198407848cf9ffac15d01504496f8920",
+  "codeCommit": "e8fa5ac",
+  "startedAt": "2026-10-28T05:00:33Z",
+  "endedAt": "2026-10-28T05:30:33Z",
+  "durationMinutes": 30.0,
+  "samples": 29,
+  "mockInferenceRequests": 1491,
+  "uniquePids": [
+    10144
+  ],
+  "uniqueCores": [
+    "4izygtvw"
+  ],
+  "maxBridges": 21,
+  "maxEventStreams": 1,
+  "pluginErrors": 0,
+  "thrashWarnings": 0,
+  "serverErrors": [
+    {
+      "at": "2026-10-28T05:15:38.725Z",
+      "cause": "ECONNREFUSED",
+      "expected": true,
+      "reason": "intentional mock outage; mock PID changed 10132 -> 23994"
+    }
+  ],
+  "rssKb": {
+    "min": 184736,
+    "max": 635264,
+    "last": 403936
+  },
+  "setups": 63,
+  "disposes": 42,
+  "decisions": 120,
+  "ledgerEvents": 2000,
+  "eventsHandled": 16792,
+  "eventsIgnored": 3499,
+  "commands": {
+    "sampledLines": 25,
+    "locationsMax": 21,
+    "commandsPerLocation": 16,
+    "allMatched": true,
+    "last": "commands 21 336"
+  },
+  "events": {
+    "outageRecovery": "exercised; both outage and recovery prompts succeeded",
+    "largeContext": "exercised; session ses_e800bc840ffeAjbetwqGLgZ7GJ succeeded"
+  },
+  "outcome": "PASS",
+  "notes": [
+    "Mock-only; no real provider inference or credits.",
+    "One expected server ECONNREFUSED during the intentional 15-minute mock outage; plugin diagnostics errors were zero throughout.",
+    "The command sampler observed 16 router commands per active location."
+  ]
+}

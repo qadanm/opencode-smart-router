@@ -7,6 +7,8 @@
 **Live environment:** untouched — config hash unchanged, desktop service on 49374 not restarted
 **Requests:** 2 Go Plus, 2 Command Code — at the approved per-provider limit
 
+> **Accounting addendum (2026-10-28):** The 38.5× provider/session comparison in this report is **invalid as a pricing-error measure**. The live desktop was using the same Command Code account during the canary window (74 assistant messages in 04:20–04:40 UTC; 11 in the 04:27 minute alone), so the account-level delta is not attributable to the two canary requests. A separate monthly-accounting defect was confirmed and fixed in artifact `8c71c46c…` (commit `e8fa5ac`): monthly usage is now derived from the provider's remaining-credit balance, not the billing-period usage summary. See [ACCOUNTING-INVESTIGATION-2026-10-28.md](ACCOUNTING-INVESTIGATION-2026-10-28.md). No live changes were made.
+
 ## Verdict
 
 **Stage B limited verification passes for authentication, quota retrieval, routing, vision, premium protection, purchased-credit safety, and command/safety initialization.**
@@ -96,3 +98,7 @@ Session estimates for the two Command Code requests: `$0.001523118` and `$0.0000
 ## Decision
 
 Stage B is complete and stopped. Do not install globally or modify the desktop. Any broader deployment requires a separate decision, and should address the Command Code accounting discrepancy before relying on local cost estimates.
+
+## Follow-up
+
+The accounting investigation is complete. The 38.5× comparison was invalidated by concurrent live-desktop usage; the local token arithmetic matches published off-peak rates. A separate monthly-summary accounting defect was fixed, documented peak pricing was added, and the sophisticated-design fallback is now explicit. The exact new artifact is `8c71c46c5f7616f950c6a3fcf5c42be2198407848cf9ffac15d01504496f8920` (commit `e8fa5ac`, 106 tests) and passed a fresh 30-minute mock-only soak on the exact bundle. See [ACCOUNTING-INVESTIGATION-2026-10-28.md](ACCOUNTING-INVESTIGATION-2026-10-28.md) and [RELEASE-READINESS-2026-10-28.md](RELEASE-READINESS-2026-10-28.md). No global installation or live desktop modification was performed.

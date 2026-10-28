@@ -1,11 +1,13 @@
 # Controlled canary plan — DO NOT EXECUTE YET
 
-> **Stage A result (2026-10-28): PASS on `e65326c9…` (commit `6099a3d`).** The full 30-minute soak and Stage A matrix passed. **Stage B limited verification is also complete** with 2 Go and 2 Command Code requests; a Command Code accounting discrepancy remains. See [STAGE-A-FINAL-REPORT-2026-10-28.md](STAGE-A-FINAL-REPORT-2026-10-28.md) and [STAGE-B-REPORT-2026-10-28.md](STAGE-B-REPORT-2026-10-28.md). No broader deployment is authorized.
+> **Accounting follow-up (2026-10-28):** Stage B's 38.5× comparison was invalidated by concurrent live-desktop usage. A separate monthly-accounting defect was fixed, documented peak pricing was added, and design fallback is now explicit. The exact new artifact is `8c71c46c…` (commit `e8fa5ac`, 106 tests) and passed a fresh 30-minute mock-only soak with zero plugin errors. See [ACCOUNTING-INVESTIGATION-2026-10-28.md](ACCOUNTING-INVESTIGATION-2026-10-28.md) and [RELEASE-READINESS-2026-10-28.md](RELEASE-READINESS-2026-10-28.md).
+>
+> **Stage A result (2026-10-28): PASS on the prior artifact `e65326c9…` (commit `6099a3d`).** The full 30-minute soak and Stage A matrix passed. **Stage B limited verification is also complete** with 2 Go and 2 Command Code requests. No broader deployment is authorized.
 
 **Status:** prepared only; nothing in this document has been run against the live environment.
 **Artifact:** `dist-release/index.js`
-**SHA-256:** `e65326c9bc7b36a4470bab2d631253d233e918fc76b4b93d5cf1bab8020a5fa4`
-**Code commit:** `6099a3dae7807a31058ae3396ba8cd1f128f13aa`
+**SHA-256:** `8c71c46c5f7616f950c6a3fcf5c42be2198407848cf9ffac15d01504496f8920`
+**Code commit:** `e8fa5ac`
 
 > **Do not install `f2e76af0fc6c889e5693308309128067d99f551b272538492836049a5e4dbe74`.** That build failed Stage A (command inference and sticky `BLOCKED` title). It is retained only as the historical failure artifact.
 
@@ -53,7 +55,7 @@ rsync -a --exclude '.git' --exclude 'node_modules' --exclude '.next' "$SOURCE_PR
 ```bash
 cp ~/Documents/opencode-smart-router/dist-release/index.js "$CANARY_ROOT/plugin/index.js"
 shasum -a 256 "$CANARY_ROOT/plugin/index.js"
-# Must equal e65326c9bc7b36a4470bab2d631253d233e918fc76b4b93d5cf1bab8020a5fa4
+# Must equal 8c71c46c5f7616f950c6a3fcf5c42be2198407848cf9ffac15d01504496f8920
 ```
 
 ### A3. Isolated config

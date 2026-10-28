@@ -1,22 +1,24 @@
 # Release readiness — Option C
 
-> **Stage B limited (2026-10-28): COMPLETE.** Real Go/Command Code auth, quota, 2+2 bounded requests, vision, premium, and post-restart safety passed. A Command Code provider-vs-session cost discrepancy remains. See [STAGE-B-REPORT-2026-10-28.md](STAGE-B-REPORT-2026-10-28.md). No broader deployment is authorized.
+> **Accounting follow-up (2026-10-28): COMPLETE.** New artifact `8c71c46c…` (commit `e8fa5ac`, 106 tests) passed a fresh 30-minute mock-only soak on the exact artifact. The Stage B 38.5× comparison was invalidated by concurrent live-desktop usage; a separate monthly-accounting defect was fixed, documented peak pricing was added, and the sophisticated-design fallback is now explicit. See [ACCOUNTING-INVESTIGATION-2026-10-28.md](ACCOUNTING-INVESTIGATION-2026-10-28.md). No live desktop changes were made.
 >
-> **Stage A final (2026-10-28): PASS on `e65326c9…` (commit `6099a3d`).** A fresh 30-minute soak and the complete Stage A matrix passed: 98 tests, all 16 commands zero-token, premium protection, large context, concurrency, outage, fail-closed recovery, reloads, restart, rollback. See [STAGE-A-FINAL-REPORT-2026-10-28.md](STAGE-A-FINAL-REPORT-2026-10-28.md). Stage B and live installation remain unauthorized. The earlier `f2e76af…` report is historical and must not be deployed.
+> **Stage B limited (2026-10-28): COMPLETE.** Real Go/Command Code auth, quota, 2+2 bounded requests, vision, premium, and post-restart safety passed. See [STAGE-B-REPORT-2026-10-28.md](STAGE-B-REPORT-2026-10-28.md). No broader deployment is authorized.
+>
+> **Stage A final (2026-10-28): PASS on `e65326c9…` (commit `6099a3d`).** A fresh 30-minute soak and the complete Stage A matrix passed: 98 tests, all 16 commands zero-token, premium protection, large context, concurrency, outage, fail-closed recovery, reloads, restart, rollback. See [STAGE-A-FINAL-REPORT-2026-10-28.md](STAGE-A-FINAL-REPORT-2026-10-28.md). The earlier `f2e76af…` report is historical and must not be deployed.
 
 **Date:** 2026-10-28
 **Branch:** `option-c`
-**Current fix build:** `6099a3dae7807a31058ae3396ba8cd1f128f13aa`
+**Current accounting build:** `e8fa5ac`
 **Final artifact:** `dist-release/index.js`
-**SHA-256:** `e65326c9bc7b36a4470bab2d631253d233e918fc76b4b93d5cf1bab8020a5fa4`
+**SHA-256:** `8c71c46c5f7616f950c6a3fcf5c42be2198407848cf9ffac15d01504496f8920`
 
-> `f2e76af0…` (commit `9577da3`) is the historical pre-fix build and **must not be installed**. It failed Stage A. The gate results below were measured on `f2e76af…`; the full 30-minute soak and Stage A matrix for the fix build `e65326c9…` have now passed. Use `e65326c9…` for any canary.
-**Size:** 219,760 bytes
+> `f2e76af0…` (commit `9577da3`) is the historical pre-fix build and **must not be installed**. It failed Stage A. The Stage A gate results below were measured on `e65326c9…`; the accounting follow-up build `8c71c46c…` is validated separately in section 7. Use `8c71c46c…` for any canary.
+**Size:** 223,075 bytes
 **Live installation:** **not performed**
 
 ## Verdict
 
-The final artifact passes the release gates for an **isolated-server canary**.
+The accounting follow-up artifact `8c71c46c…` passes the release gates for an **isolated-server canary** and is suitable for a **controlled, reversible desktop canary** subject to explicit authorization. The full Stage A lifecycle matrix remains measured on `e65326c9…`; the new artifact passed 106 tests and a fresh 30-minute mock-only soak on the exact bundle. Global or unattended deployment remains unauthorized.
 
 The one unresolved scope issue is that a **full single-project canary inside the desktop app is not supported by the installed host**:
 
@@ -36,11 +38,14 @@ Therefore the proposed canary is a **separate isolated OpenCode server process**
 | 5 | Recovery independent of plugin commands | **PASS** | `fault-rollback.txt` |
 | 6 | Premium / unapproved model protection | **PASS** | `premium-gate.txt`, `premium-restart.txt` |
 | 7 | Purchased-credit protection | **PASS (unit)** | `test/engine.test.ts` exhausted-provider case |
-| 8 | Final tests and byte-identical artifact | **PASS** | 95 tests; `artifact.txt`; `cmp` against lab plugin |
+| 8 | Final tests and byte-identical artifact | **PASS** | 98 tests on `e65326c9…`; 106 tests on `8c71c46c…`; deterministic rebuild; `cmp` against lab plugin |
 | 9 | Memory peak audit | **PASS with monitoring caveat** | `memory-reload.txt`, `control-memory.txt` |
 | 10 | Canary instructions prepared, not executed | **PASS** | `docs/CANARY-PLAN.md` |
+| 11 | Accounting follow-up exact-artifact soak | **PASS** | `docs/evidence/stage-b/soak-summary-8c71c46c.json` |
 
-## 1. Final-build soak (exact artifact)
+## 1. Final-build soak (historical `e65326c9…` artifact)
+
+> This section is the Stage A soak on `e65326c9…`. The accounting-follow-up artifact `8c71c46c…` has its own fresh soak result in section 7.
 
 - 30 minutes, 29 samples, **1,502 mock inference requests** (~50/min)
 - **One PID**, one core id, **no server restarts**
@@ -133,7 +138,27 @@ The `smart-router-single` lab is exactly this shape: isolated HOME/data/config, 
 
 ## 7. Final tests and artifact
 
-> Current fix build is `e65326c9…` / `6099a3d`; the `f2e76af…` numbers below are historical.
+### Accounting follow-up build — `8c71c46c…` / `e8fa5ac`
+
+```text
+npm run typecheck  → clean
+npm test           → 9 files, 106 tests passed
+sha256(dist-release/index.js) = 8c71c46c5f7616f950c6a3fcf5c42be2198407848cf9ffac15d01504496f8920
+size               = 223,075 bytes
+node --check       = syntax ok
+```
+
+- Exact artifact loaded in the isolated mock lab: **16 router commands**, **2 mock inference requests**, **0 plugin errors**.
+- The design-fallback decision reported: `Standard design route: design 70 is below the sophisticated 75 threshold`.
+- Fresh 30-minute mock-only soak on the exact artifact: **PASS**.
+  - 29 samples, **1,491 mock inference requests**, one PID/core, one event stream, 21 bridges, **63 setups / 42 disposes**.
+  - **0 plugin errors**, **0 thrash warnings**; one expected `ECONNREFUSED` at the intentional 15-minute mock outage.
+  - Outage and recovery prompts succeeded; the large-context session succeeded.
+  - **16 router commands per active location** (21 locations, 336 total); RSS min ~180 MB, peak ~620 MB, last ~394 MB.
+  - Evidence: `docs/evidence/stage-b/soak-summary-8c71c46c.json`.
+- Live config hash remained `83872b2d7dafd907ff620bdef0117ba80edb931504d888e5c0547628f9e820d7`; live service PID `90727` on port `49374` was not restarted. Isolated lab processes were stopped.
+
+### Historical Stage A build — `e65326c9…` / `6099a3d`
 
 ```text
 npm run typecheck  → clean
@@ -149,7 +174,9 @@ cmp with the lab plugin       = byte-identical
 |---|---|---|
 | Desktop single-project canary unsupported with full controls | **Scope** | Project-scoped plugin has no commands/RPC; global entry loads everywhere |
 | Real providers not exercised in the soak | Medium | All soak traffic was to a local mock; real latency/quota/auth behavior is not covered |
-| Purchased-credit protection is unit-tested only | Medium | No live purchased-credit balance was injected |
+| Purchased-credit protection is unit-tested only | Medium | No live purchased-credit balance was injected; the client blocks automatic extra-credit use, but provider-side enforcement is the final guarantee |
+| Monthly summary vs credit balance unexplained | Low | The adapter now treats remaining credits as authoritative and keeps the summary diagnostic only |
+| Peak pricing only where documented | Low | Command Code DeepSeek V4.1 Flash is covered; other providers may have undocumented time-of-day rules |
 | Titles remain prefixed after emergency removal | Low | Cosmetic; conversations are intact; manual rename possible |
 | 20-project memory footprint | Medium | Host baseline 398 MB; plugin adds ~120 MB steady, transient reload spikes |
 | Quota endpoints are undocumented | Medium | Read-only, bounded, stale-aware, but provider changes possible |

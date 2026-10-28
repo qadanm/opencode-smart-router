@@ -100,7 +100,7 @@ GET https://api.commandcode.ai/alpha/usage/summary
 
 It discovers an authorized key from `COMMAND_CODE_API_KEY`, `~/.commandcode/auth.json`, OpenCode's connected provider, or the user's owner-only OpenCode key file. Files with group or world permissions are ignored. The key is never logged, stored by the router, or sent to any host other than `api.commandcode.ai`.
 
-The billing routes return monthly included credits remaining, purchased and free extra credits, five-hour and weekly used/cap values, reset times, plan, and billing-period usage. They are treated as unstable: on failure the plugin keeps the last good snapshot as stale and falls back to a clearly labeled local estimate. It never assumes unlimited usage.
+The billing routes return monthly included credits remaining, purchased and free extra credits, five-hour and weekly used/cap values, reset times, plan, and billing-period usage. The provider's remaining-credit balance is authoritative for monthly usage and allowance protection; the billing-period usage summary is a separate accounting pool and is kept only as a diagnostic. The routes are treated as unstable: on failure the plugin keeps the last good snapshot as stale and falls back to a clearly labeled local estimate. It never assumes unlimited usage.
 
 ## Model policy
 
@@ -126,13 +126,13 @@ No model is called to make the routing decision.
 
 ## Installation and verification
 
-See [docs/INSTALL.md](docs/INSTALL.md). The current installation is already active. The backup of the global config is:
+See [docs/INSTALL.md](docs/INSTALL.md). The plugin is **not installed in the live desktop**; the live config and service have not been modified. A previous config backup, if present, is:
 
 ```text
 ~/.config/opencode/opencode.json.bak-smart-router-20261027-150549
 ```
 
-To remove the plugin, see [docs/INSTALL.md](docs/INSTALL.md#uninstall).
+To install or remove the plugin, see [docs/INSTALL.md](docs/INSTALL.md).
 
 ## Known limitations
 
@@ -141,7 +141,7 @@ See [docs/LIMITATIONS.md](docs/LIMITATIONS.md). The most important ones:
 - The installed desktop 2.1.4 has no GUI plugin SDK, so the interface is slash commands plus RPC, not a side panel.
 - Command Code's billing routes are alpha and undocumented; they can change without notice.
 - Per-model Command Code usage is estimated locally; the provider reports account-level balances and windows only.
-- The router cannot reject a prompt through the admission hook. If no qualified route exists, it leaves the current model unchanged and records a visible warning.
+- If no qualified route exists, the router fails closed by rejecting the prompt through the admission hook (HTTP 500 in the installed 2.1.4 host) and records a visible reason. Manual selections and paused routing are outside the strict block.
 - A CLI `--model` selection at session creation is indistinguishable from the session default. Manual selections made after the session exists are detected.
 
 ## Tests
@@ -152,4 +152,4 @@ npm run typecheck
 npm test
 ```
 
-69 tests cover classification, eligibility, quota parsing, provider credential discovery, ledger accounting, cache-aware routing, premium protection, manual overrides, failure classification, configuration guardrails, and controller integration. See [docs/QA.md](docs/QA.md) for live evidence.
+106 tests cover classification, eligibility, quota parsing, provider credential discovery, ledger accounting, monthly pool reconciliation, documented peak pricing, cache-aware routing, premium protection, purchased-credit blocking, manual overrides, failure classification, configuration guardrails, and controller integration. See [docs/QA.md](docs/QA.md) for live evidence.

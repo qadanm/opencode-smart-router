@@ -5,14 +5,14 @@
 ```text
 Plugin source:  ~/Documents/opencode-smart-router
 Artifact:      ~/Documents/opencode-smart-router/dist-release/index.js
-SHA-256:       e65326c9bc7b36a4470bab2d631253d233e918fc76b4b93d5cf1bab8020a5fa4
+SHA-256:       8c71c46c5f7616f950c6a3fcf5c42be2198407848cf9ffac15d01504496f8920
                Do not install f2e76af0… (failed Stage A).
-Installed at:   ~/.config/opencode/plugins/opencode-smart-router
-Config entry:   ~/.config/opencode/opencode.json → plugins[]
-Config backup:  ~/.config/opencode/opencode.json.bak-smart-router-20261027-150549
+Live status:    not installed in the live desktop
+Config hash:    83872b2d7dafd907ff620bdef0117ba80edb931504d888e5c0547628f9e820d7
+Target path:    ~/.config/opencode/plugins/opencode-smart-router
 ```
 
-The plugin is loaded by the running desktop server and is reported as active in `/api/plugin`.
+The plugin has only been loaded by isolated lab servers. The live desktop config does not contain the plugin entry, and the live server has not been restarted.
 
 ## Install from this source tree
 

@@ -9,6 +9,7 @@ The router starts from a curated seed and merges live metadata from OpenCode. A 
 - **Vision** means the model accepts native image input in the live catalog.
 - **Premium** is a policy label for high-cost models. A premium model is never selected for economy or ordinary standard work.
 - **Monthly allowance** is public-rate usage included by the subscription. OpenCode Go values are from the Go Plus table. Command Code values are the GOAT per-model allowances. Provider-reported totals override these numbers for the plan-level balance.
+- **Time-of-day pricing** is applied only where documented. Command Code DeepSeek V4.1 Flash is listed at off-peak rates and charges 2× from 01:00–04:00 and 06:00–10:00 UTC, Monday–Friday; the router applies that multiplier to input, output, cache-read, and cache-loss estimates. Models without documented peak metadata use flat catalog rates.
 
 These scores are planning inputs, not marketing claims. Models marked **unverified** or **unscored** are not approved for automatic substantive work.
 
@@ -42,6 +43,12 @@ The default for substantive software engineering. Every model here meets or exce
 | `commandcode/claude-haiku-5-5` | 43.4 | 70 | text, image, PDF | $20 |
 
 Design-intensive work requires at least a 60 design score. Sophisticated design work requires at least 75. A standard model below 75 still requires premium approval for sophisticated design.
+
+Claude Haiku 5.5 (**43.4** intelligence, **70** design) is a concrete example of why intelligence and design are separate gates. It clears the 39.5 intelligence floor, so it is valid for ordinary feature work and standard design. It does **not** clear the 75 sophisticated-design floor. When no sophisticated-qualified model is available, the router may use it only as an explicitly labeled standard-design fallback:
+
+> `Standard design route: design 70 is below the sophisticated 75 threshold`
+
+It is never reported as meeting every hard requirement for sophisticated design, and a premium design route still requires approval.
 
 ## Premium (Tier 3)
 

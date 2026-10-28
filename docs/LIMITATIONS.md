@@ -45,6 +45,8 @@ The key is read only from owner-only files, is never logged or persisted by the 
 
 Provider-reported values are account-level: remaining included credits, purchased/free extras, five-hour and weekly used/cap/reset, plan, and billing-period spend. There is no per-model provider breakdown. Per-model usage and remaining model allowance are local estimates from observed step costs.
 
+The billing-period usage summary and the remaining-credit balance are **separate accounting pools** and do not reconcile exactly. The adapter treats the remaining-credit balance as authoritative for monthly usage and allowance protection; the summary is kept only as a diagnostic cross-check. The exact reason for the difference is not documented by the provider.
+
 ## 3. OpenCode Go usage endpoint
 
 The Go meter endpoint is a read-only, best-effort integration:
@@ -79,14 +81,19 @@ Client-side quota estimates are not a mathematically guaranteed billing cap. Pro
 - never enables top-ups;
 - never changes billing settings;
 - blocks automatic routing when provider-reported windows are at the configured reserve;
+- treats a reported zero remaining balance as exhausted even if the provider has not set its `exceeded` flag, so it blocks before knowingly entering purchased credits;
 - blocks when purchased credits would be consumed unless `allowExtraUsage` is explicitly enabled;
 - cannot guarantee that an undocumented provider endpoint or a provider-side fallback will never charge an extra balance.
 
 If Command Code's billing routes fail and the local ledger is incomplete, the router labels the data estimated and fails conservatively rather than assuming capacity.
 
+The purchased-credit guard is unit-tested, including the explicitly-allowed case. It is a client-side policy guarantee, not a provider-side billing lock.
+
 ## 8. Cache and context accounting
 
 Prompt caches are provider- and model-specific. A model switch is priced as a cache loss in the router's estimate. The router keeps the current model when the estimated savings are below the hysteresis threshold, and uses a wider threshold above 300K context tokens. It never truncates, summarizes, or deletes conversation history to make a model eligible.
+
+Command Code DeepSeek V4.1 Flash has documented time-of-day pricing: off-peak rates for 17 hours per day and 2× rates from 01:00–04:00 and 06:00–10:00 UTC, Monday–Friday. The router applies that multiplier to input, output, cache-read, and cache-loss estimates. Models without documented peak metadata use flat catalog rates; their time-of-day pricing is not assumed.
 
 Context-health recommendations are non-destructive. The router never compacts or replaces a conversation automatically.
 

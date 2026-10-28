@@ -1,6 +1,8 @@
 # QA evidence
 
-> **Post-audit update:** the Option C repair is implemented on branch `option-c`. The current verification record is [QA-OPTION-C-2026-10-27.md](QA-OPTION-C-2026-10-27.md): 9 files / 92 tests, a 30-minute 20-project soak, three cold starts, and a fail-closed probe. The pre-audit results below are retained for history; the live plugin remains disabled.
+> **Current accounting follow-up (2026-10-28):** artifact `8c71c46c5f7616f950c6a3fcf5c42be2198407848cf9ffac15d01504496f8920` / commit `e8fa5ac`; **106 tests**. The Command Code monthly cap figures in the historical evidence below (for example `capUsd: 70.38`) were derived from the usage summary and are superseded. The authoritative plan grant is **$70**, derived from the provider's `$14` five-hour / `$35` weekly caps; monthly usage is now `$70 − remaining`. See [ACCOUNTING-INVESTIGATION-2026-10-28.md](ACCOUNTING-INVESTIGATION-2026-10-28.md). The live plugin is **not installed**; statements below about a global installation are historical.
+>
+> **Post-audit update:** the Option C repair is implemented on branch `option-c`. The current verification record is [QA-OPTION-C-2026-10-27.md](QA-OPTION-C-2026-10-27.md). The pre-audit results below are retained for history; the live plugin remains disabled.
 
 All checks below were run on this machine against the installed desktop server, not only against isolated functions. **The live plugin was disabled after the stability incident documented in [STATUS-2026-10-27.md](STATUS-2026-10-27.md). The live routing results below were captured before that rollback.**
 
