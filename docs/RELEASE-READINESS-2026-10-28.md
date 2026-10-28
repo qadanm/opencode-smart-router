@@ -44,7 +44,9 @@ Therefore the proposed canary is a **separate isolated OpenCode server process**
 - **Zero plugin errors, zero thrash warnings**
 - **One expected server error**: `ECONNREFUSED` during the intentional 15-minute mock outage; recovery followed
 - Large-context prompt succeeded on `lab-cc/deepseek-v4.1-flash`
-- 16 commands in sampled p1, p10, p20 after the soak
+- 16 commands in sampled p1, p10, p20 after the soak; no duplicate command registration observed
+- One quota owner and one event stream (unit + diagnostics); no duplicate core
+- Three cold starts on the same artifact: 3/3 fresh PID/core, one bridge, 16 commands, restored title, zero errors
 - RSS: min 352 MB, peak **603 MB**, last 356 MB, post-run **153 MB**
 - Physical footprint: 520 MB current, 713 MB peak
 
