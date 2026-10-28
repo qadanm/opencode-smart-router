@@ -982,7 +982,14 @@ export class RouterController {
         // The retry hook and the step/execution/idle events can all report
         // the same fault. Record it once, and carry the cooldown through so
         // the model is actually held back when it keeps failing.
-        const attemptKey = typeof event.attemptID === "string" ? event.attemptID : undefined
+        // The host identifies a scheduled retry by its assistant message id,
+        // which is the same identity the step/execution events carry.
+        const attemptKey =
+          typeof event.assistantMessageID === "string"
+            ? event.assistantMessageID
+            : typeof event.attemptID === "string"
+              ? event.attemptID
+              : undefined
         if (!this.alreadyRecorded(event.sessionID, assessment.class, event.error?.message ?? "", attemptKey)) {
           this.ledger.recordFailure(event.sessionID, event.model, assessment.class, event.error?.message ?? "", {
             countAgainstModel: assessment.countAgainstModel,
@@ -1261,6 +1268,9 @@ export class RouterController {
     if (type === "session.retry.scheduled") {
       const sessionID = data.sessionID
       if (typeof sessionID === "string") {
+        // This event only schedules a retry; the failure itself is recorded
+        // by the retry hook or the step/execution events, so it must not
+        // add a strike of its own.
         this.ledger.recordRetry(sessionID)
         this.persistLedgerSoon()
       }

@@ -142,4 +142,33 @@ describe("one logical failure is counted once", () => {
 
     await controller.dispose()
   })
+
+  it("collapses the retry hook and the step event when they share an attempt", async () => {
+    const fake = makeCtx(mkdtempSync(join(tmpdir(), "router-billing-retry-")))
+    const controller = new RouterController({ ctx: fake.ctx, pluginOptions: fake.ctx.options })
+    await controller.initialize()
+    const sessionID = "ses_billing_retry"
+    const session = await fake.ctx.session.get({ sessionID })
+    session.model = { providerID: "opendesign", id: "deepseek-v4.1-flash" }
+
+    const ledger = (controller as any).ledger as LedgerStore
+    const before = ledger.snapshotMetrics()
+    const KEY = "opendesign/deepseek-v4.1-flash"
+
+    // The host's retry hook and the step failure describe the same attempt.
+    await controller.handleEvent({
+      type: "session.step.failed",
+      data: { sessionID, error: BILLING_SCOPE_ERROR, assistantMessageID: "msg_retry_one" },
+    })
+    await controller.handleEvent({
+      type: "session.retry.scheduled",
+      data: { sessionID, assistantMessageID: "msg_retry_one", attempt: 1 },
+    })
+
+    const after = ledger.snapshotMetrics()
+    expect((after.failures.provider_outage ?? 0) - (before.failures.provider_outage ?? 0)).toBe(1)
+    expect((after.byModel[KEY]?.failures ?? 0) - (before.byModel[KEY]?.failures ?? 0)).toBe(0)
+
+    await controller.dispose()
+  })
 })
