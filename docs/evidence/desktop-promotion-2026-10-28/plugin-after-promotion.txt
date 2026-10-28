@@ -1,0 +1,8 @@
+dir=/Users/muhammedqadan/Documents/Default Project
+[{"id":"opencode-smart-router","status":"active"}]
+dir=/Users/muhammedqadan/Documents/dev/car-spotter-game
+[{"id":"opencode-smart-router","status":"active"}]
+dir=/Users/muhammedqadan/Code/vinly
+[{"id":"opencode-smart-router","status":"active"}]
+dir=/Users/muhammedqadan/Artwork/qadantravels-studio/carousel-studio
+[{"id":"opencode-smart-router","status":"active"}]

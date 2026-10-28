@@ -7,15 +7,15 @@ Plugin source:  ~/Documents/opencode-smart-router
 Artifact:      ~/Documents/opencode-smart-router/dist-release/index.js
 SHA-256:       8c71c46c5f7616f950c6a3fcf5c42be2198407848cf9ffac15d01504496f8920
                Do not install f2e76af0… (failed Stage A).
-Live status:    installed in dry-run on 2026-10-28; automatic routing off
+Live status:    automatic routing active (promoted 2026-10-28 by explicit approval)
 Live config:    d6cab84f1cd1899057486da35b1da09b63bcf7bf7983c440bb7f4ea888b7268b
-Router config:  d7bebb5941896623f59a42d71bf13980d66394ac086ca284815c622201757d6e
+Router config:  ca7476d3caa71b27948d20e91e96ce70ff6709df1e9b9c0968622009be488263
 Install path:   ~/.config/opencode/plugins/opencode-smart-router
-Backup:         ~/Documents/opencode-smart-router-backups/20261027-223912
-Rollback:       ~/Documents/opencode-smart-router-backups/20261027-223912/rollback.sh
+Rollback-to-dry-run: ~/Documents/opencode-smart-router-backups/20261027-225615-promotion/rollback-to-dryrun.sh
+Full rollback:  ~/Documents/opencode-smart-router-backups/20261027-223912/rollback.sh
 ```
 
-The live desktop has loaded the plugin in dry-run mode; automatic routing is not enabled. See [DESKTOP-DRY-RUN-2026-10-28.md](DESKTOP-DRY-RUN-2026-10-28.md) for verification and promotion criteria. The pre-deployment backup and rollback were tested against a copy of the deployed state.
+The live desktop has loaded the plugin with automatic routing active. Premium is off and purchased-credit use is blocked. See [DESKTOP-PROMOTION-2026-10-28.md](DESKTOP-PROMOTION-2026-10-28.md) for the promotion record and monitoring guidance; the earlier verification is in [DESKTOP-DRY-RUN-2026-10-28.md](DESKTOP-DRY-RUN-2026-10-28.md). The promotion and full rollback were tested against disposable copies of the deployed state.
 
 ## Install from this source tree
 

@@ -1,6 +1,8 @@
 # Desktop dry-run deployment — 2026-10-28
 
-**Status:** **DEPLOYED IN DRY-RUN; automatic routing is NOT enabled.**
+> **Promoted on 2026-10-28:** the user explicitly approved promotion to automatic routing, overriding the unmet criteria below. See [DESKTOP-PROMOTION-2026-10-28.md](DESKTOP-PROMOTION-2026-10-28.md). The car-spotter duplicate bridge cleared after promotion (live bridge count 9). This document remains the pre-promotion dry-run record.
+
+**Status at verification:** **DRY-RUN; automatic routing was NOT enabled.**
 **Artifact:** `8c71c46c5f7616f950c6a3fcf5c42be2198407848cf9ffac15d01504496f8920`
 **Code commit:** `e8fa5ac` · **Docs commit before this report:** `4519dd9`
 **Tests:** 106 passed; typecheck clean; fresh 30-minute mock soak **PASS**

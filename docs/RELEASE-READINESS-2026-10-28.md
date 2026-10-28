@@ -1,8 +1,8 @@
 # Release readiness — Option C
 
-> **Desktop dry-run (2026-10-28): DEPLOYED; automatic routing NOT enabled.** The verified `8c71c46c…` artifact is installed in the live desktop in dry-run mode, with premium off and purchased credits blocked. Backup and independent rollback are at `~/Documents/opencode-smart-router-backups/20261027-223912`. See [DESKTOP-DRY-RUN-2026-10-28.md](DESKTOP-DRY-RUN-2026-10-28.md).
+> **Desktop automatic routing (2026-10-28): ACTIVE by explicit approval.** The verified `8c71c46c…` artifact is installed in the live desktop. Premium is off and purchased credits are blocked. The promotion overrode the dry-run headroom/watch criteria; monitor the first decisions. Immediate rollback to dry-run: `~/Documents/opencode-smart-router-backups/20261027-225615-promotion/rollback-to-dryrun.sh`. Full rollback: `~/Documents/opencode-smart-router-backups/20261027-223912/rollback.sh`. See [DESKTOP-PROMOTION-2026-10-28.md](DESKTOP-PROMOTION-2026-10-28.md).
 >
-> **Accounting follow-up (2026-10-28): COMPLETE.** New artifact `8c71c46c…` (commit `e8fa5ac`, 106 tests) passed a fresh 30-minute mock-only soak on the exact artifact. The Stage B 38.5× comparison was invalidated by concurrent live-desktop usage; a separate monthly-accounting defect was fixed, documented peak pricing was added, and the sophisticated-design fallback is now explicit. See [ACCOUNTING-INVESTIGATION-2026-10-28.md](ACCOUNTING-INVESTIGATION-2026-10-28.md). A desktop dry-run deployment followed; automatic routing remains off.
+> **Accounting follow-up (2026-10-28): COMPLETE.** New artifact `8c71c46c…` (commit `e8fa5ac`, 106 tests) passed a fresh 30-minute mock-only soak on the exact artifact. The Stage B 38.5× comparison was invalidated by concurrent live-desktop usage; a separate monthly-accounting defect was fixed, documented peak pricing was added, and the sophisticated-design fallback is now explicit. See [ACCOUNTING-INVESTIGATION-2026-10-28.md](ACCOUNTING-INVESTIGATION-2026-10-28.md). A desktop dry-run deployment followed, then promotion to automatic routing by explicit user approval.
 >
 > **Stage B limited (2026-10-28): COMPLETE.** Real Go/Command Code auth, quota, 2+2 bounded requests, vision, premium, and post-restart safety passed. See [STAGE-B-REPORT-2026-10-28.md](STAGE-B-REPORT-2026-10-28.md). No broader deployment is authorized.
 >
@@ -16,7 +16,7 @@
 
 > `f2e76af0…` (commit `9577da3`) is the historical pre-fix build and **must not be installed**. It failed Stage A. The Stage A gate results below were measured on `e65326c9…`; the accounting follow-up build `8c71c46c…` is validated separately in section 7. Use `8c71c46c…` for any canary.
 **Size:** 223,075 bytes
-**Live installation:** **dry-run only** (installed 2026-10-28; automatic routing off)
+**Live installation:** **automatic routing active** (promoted 2026-10-28; premium off, extras blocked)
 
 ## Verdict
 
@@ -170,16 +170,18 @@ npm test                     = 9 files, 98 tests passed
 cmp with the lab plugin       = byte-identical
 ```
 
-## 7a. Desktop dry-run deployment (2026-10-28)
+## 7a. Desktop dry-run deployment and promotion (2026-10-28)
+
+> **Promoted to automatic routing on 2026-10-28 by explicit user approval**, overriding the dry-run headroom/watch criteria. See [DESKTOP-PROMOTION-2026-10-28.md](DESKTOP-PROMOTION-2026-10-28.md). The dry-run verification below remains the pre-promotion record.
 
 - Installed the exact `8c71c46c…` artifact in the live desktop; no application restart (PID `90727` unchanged).
 - Live config hash `d6cab84f…`; router config hash `d7bebb59…`; pre-deployment config hash `83872b2d…`.
 - Dry-run, premium off, `allowExtraUsage:false`, Go Plus and Command Code GOAT only.
-- Plugin active in four queried projects; one core/PID, one event stream, 16 commands per location, 10 bridges, 0 plugin errors. One car-spotter duplicate bridge is retained from a pre-reload active session; it does not duplicate commands, the core, the event stream, or quota polling.
+- Plugin active in four queried projects; one core/PID, one event stream, 16 commands per location, 9 bridges, 0 plugin errors. The earlier car-spotter duplicate bridge cleared after promotion; commands, core, event stream, and quota polling remain singular.
 - Quota service: one owner; `quotaRefreshes` 2 → 4 after one 5-minute interval for two providers; provider source for allowances; local model quotas `estimate`.
 - Dry-run proof: 3 live previews with no model change and zero session cost/tokens; 5 actual isolated prompts → 5 mock requests, models unchanged.
 - Backup/rollback tested on the actual deployed state: restore to `83872b2d…` and removal of router config/plugin verified.
-- Promotion criteria and current gaps (24h window, ≥20 decisions, car-spotter duplicate bridge, Command Code weekly 81.19% > 80% target) are in [DESKTOP-DRY-RUN-2026-10-28.md](DESKTOP-DRY-RUN-2026-10-28.md). Automatic routing remains off.
+- Promotion criteria and current gaps (24h window, ≥20 decisions, Command Code weekly 81.58% > 80% target) are in [DESKTOP-DRY-RUN-2026-10-28.md](DESKTOP-DRY-RUN-2026-10-28.md). Automatic routing is active by explicit approval; monitor the first decisions.
 
 ## 8. Remaining risks
 
@@ -190,9 +192,9 @@ cmp with the lab plugin       = byte-identical
 | Purchased-credit protection is unit-tested only | Medium | No live purchased-credit balance was injected; the client blocks automatic extra-credit use, but provider-side enforcement is the final guarantee |
 | Monthly summary vs credit balance unexplained | Low | The adapter now treats remaining credits as authoritative and keeps the summary diagnostic only |
 | Peak pricing only where documented | Low | Command Code DeepSeek V4.1 Flash is covered; other providers may have undocumented time-of-day rules |
-| Host-retained duplicate bridge (car-spotter) | Low | One extra bridge record from a pre-reload active session; commands/core/event stream/quota polling remain singular. Monitor; reload after the session advances. |
-| Command Code weekly headroom | Medium | Live weekly is 81.19% against an 80% promotion target and an 85% reserve; wait for reset/decay before automatic routing. |
-| Dry-run has not been promoted | — | Automatic routing is intentionally off; promotion criteria are explicit in the dry-run report. |
+| Host-retained duplicate bridge (car-spotter) | Resolved | Cleared after promotion; live bridge count is 9, with commands/core/event stream/quota polling singular. |
+| Command Code weekly headroom | Medium | Live weekly is 81.58% against an 80% promotion target and an 85% reserve; monitor and wait for reset/decay. |
+| Promotion overrode headroom/watch criteria | Medium | Command Code weekly was above the 80% target and the car-spotter duplicate bridge was present at approval; the bridge has cleared. Monitor the first automatic decisions and revert to dry-run if needed. |
 | Titles remain prefixed after emergency removal | Low | Cosmetic; conversations are intact; manual rename possible |
 | 20-project memory footprint | Medium | Host baseline 398 MB; plugin adds ~120 MB steady, transient reload spikes |
 | Quota endpoints are undocumented | Medium | Read-only, bounded, stale-aware, but provider changes possible |

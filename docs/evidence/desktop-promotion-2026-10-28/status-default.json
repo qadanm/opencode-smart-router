@@ -1,0 +1,4439 @@
+{
+  "enabled": true,
+  "mode": "balanced",
+  "runtime": "automatic",
+  "dryRun": false,
+  "manualOverride": false,
+  "premium": {
+    "mode": "off",
+    "monthlyBudgetUsd": 0,
+    "spentUsd": 0,
+    "remainingUsd": 0,
+    "oneShotGranted": false
+  },
+  "quota": [
+    {
+      "providerID": "opencode-go",
+      "label": "OpenCode Go Plus",
+      "plan": "go-plus",
+      "source": "provider",
+      "fetchedAt": 1793166744112,
+      "stale": false,
+      "rolling": {
+        "usedPct": 5,
+        "remainingPct": 95,
+        "resetsAt": 1793173991000,
+        "exceeded": false,
+        "source": "provider"
+      },
+      "weekly": {
+        "usedPct": 63,
+        "remainingPct": 37,
+        "resetsAt": 1793577600000,
+        "exceeded": false,
+        "source": "provider"
+      },
+      "monthly": {
+        "usedPct": 81,
+        "remainingPct": 19,
+        "resetsAt": 1795174634000,
+        "exceeded": false,
+        "source": "provider"
+      },
+      "models": {
+        "opencode-go/gpt-6-luna": {
+          "model": {
+            "providerID": "opencode-go",
+            "modelID": "gpt-6-luna"
+          },
+          "monthlyAllowanceUsd": 60,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 60,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 12,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 30,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "opencode-go/mimo-v2.6-flash": {
+          "model": {
+            "providerID": "opencode-go",
+            "modelID": "mimo-v2.6-flash"
+          },
+          "monthlyAllowanceUsd": 120,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 120,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 24,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 60,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "opencode-go/hy3": {
+          "model": {
+            "providerID": "opencode-go",
+            "modelID": "hy3"
+          },
+          "monthlyAllowanceUsd": 240,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 240,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 48,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 120,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "opencode-go/longcat-2.0": {
+          "model": {
+            "providerID": "opencode-go",
+            "modelID": "longcat-2.0"
+          },
+          "monthlyAllowanceUsd": 240,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 240,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 48,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 120,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "opencode-go/deepseek-v4.1-flash": {
+          "model": {
+            "providerID": "opencode-go",
+            "modelID": "deepseek-v4.1-flash"
+          },
+          "monthlyAllowanceUsd": 160,
+          "monthlyUsedUsd": 28.194079355000035,
+          "monthlyRemainingUsd": 131.80592064499996,
+          "monthlyUsedPct": 17.621299596875023,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 32,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 28.194079355000035,
+          "weeklyCapUsd": 80,
+          "weeklyUsedPct": 35.242599193750046,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "opencode-go/glm-5.3-flash": {
+          "model": {
+            "providerID": "opencode-go",
+            "modelID": "glm-5.3-flash"
+          },
+          "monthlyAllowanceUsd": 180,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 180,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 36,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 90,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "opencode-go/minimax-m3.1-flash": {
+          "model": {
+            "providerID": "opencode-go",
+            "modelID": "minimax-m3.1-flash"
+          },
+          "monthlyAllowanceUsd": 80,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 80,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 16,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 40,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "opencode-go/claude-haiku-5-5": {
+          "model": {
+            "providerID": "opencode-go",
+            "modelID": "claude-haiku-5-5"
+          },
+          "monthlyAllowanceUsd": 60,
+          "monthlyUsedUsd": 0.44144700500000006,
+          "monthlyRemainingUsd": 59.558552995,
+          "monthlyUsedPct": 0.7357450083333333,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 12,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0.44144700500000006,
+          "weeklyCapUsd": 30,
+          "weeklyUsedPct": 1.4714900166666667,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "opencode-go/mimo-v2.6-pro": {
+          "model": {
+            "providerID": "opencode-go",
+            "modelID": "mimo-v2.6-pro"
+          },
+          "monthlyAllowanceUsd": 60,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 60,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 12,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 30,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "opencode-go/glm-5.3": {
+          "model": {
+            "providerID": "opencode-go",
+            "modelID": "glm-5.3"
+          },
+          "monthlyAllowanceUsd": 120,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 120,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 24,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 60,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "opencode-go/kimi-k3": {
+          "model": {
+            "providerID": "opencode-go",
+            "modelID": "kimi-k3"
+          },
+          "monthlyAllowanceUsd": 60,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 60,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 12,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 30,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "opencode-go/grok-4.7": {
+          "model": {
+            "providerID": "opencode-go",
+            "modelID": "grok-4.7"
+          },
+          "monthlyAllowanceUsd": 60,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 60,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 12,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 30,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "opencode-go/qwen3.8-max": {
+          "model": {
+            "providerID": "opencode-go",
+            "modelID": "qwen3.8-max"
+          },
+          "monthlyAllowanceUsd": 60,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 60,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 12,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 30,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "opencode-go/step-5-preview": {
+          "model": {
+            "providerID": "opencode-go",
+            "modelID": "step-5-preview"
+          },
+          "monthlyAllowanceUsd": 60,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 60,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 12,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 30,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "opencode-go/gemini-4-argon": {
+          "model": {
+            "providerID": "opencode-go",
+            "modelID": "gemini-4-argon"
+          },
+          "monthlyAllowanceUsd": 120,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 120,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 24,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 60,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "opencode-go/kimi-k3.1-pro": {
+          "model": {
+            "providerID": "opencode-go",
+            "modelID": "kimi-k3.1-pro"
+          },
+          "monthlyAllowanceUsd": 60,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 60,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 12,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 30,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "opencode-go/muse-spark-1.3-contributor": {
+          "model": {
+            "providerID": "opencode-go",
+            "modelID": "muse-spark-1.3-contributor"
+          },
+          "monthlyAllowanceUsd": 120,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 120,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 24,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 60,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "opencode-go/iceman-contributor-free": {
+          "model": {
+            "providerID": "opencode-go",
+            "modelID": "iceman-contributor-free"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "opencode-go/beam-free": {
+          "model": {
+            "providerID": "opencode-go",
+            "modelID": "beam-free"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0.00033060000000000007,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0.00033060000000000007,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "opencode-go/deepseek-v4-pro": {
+          "model": {
+            "providerID": "opencode-go",
+            "modelID": "deepseek-v4-pro"
+          },
+          "monthlyAllowanceUsd": 60,
+          "monthlyUsedUsd": 0.555442624,
+          "monthlyRemainingUsd": 59.444557376,
+          "monthlyUsedPct": 0.9257377066666665,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 12,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0.555442624,
+          "weeklyCapUsd": 30,
+          "weeklyUsedPct": 1.851475413333333,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "opencode-go/hy4-preview": {
+          "model": {
+            "providerID": "opencode-go",
+            "modelID": "hy4-preview"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "opencode-go/qwen3.8-flash": {
+          "model": {
+            "providerID": "opencode-go",
+            "modelID": "qwen3.8-flash"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0.13941132799999997,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0.13941132799999997,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "opencode-go/muse-spark-1.2-contributor": {
+          "model": {
+            "providerID": "opencode-go",
+            "modelID": "muse-spark-1.2-contributor"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "opencode-go/gpt-5.6-luna": {
+          "model": {
+            "providerID": "opencode-go",
+            "modelID": "gpt-5.6-luna"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "opencode-go/glm-5.2": {
+          "model": {
+            "providerID": "opencode-go",
+            "modelID": "glm-5.2"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "opencode-go/kimi-k2.7-code": {
+          "model": {
+            "providerID": "opencode-go",
+            "modelID": "kimi-k2.7-code"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "opencode-go/qwen3.7-plus": {
+          "model": {
+            "providerID": "opencode-go",
+            "modelID": "qwen3.7-plus"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "opencode-go/minimax-m3": {
+          "model": {
+            "providerID": "opencode-go",
+            "modelID": "minimax-m3"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "opencode-go/mimo-v2.5": {
+          "model": {
+            "providerID": "opencode-go",
+            "modelID": "mimo-v2.5"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "opencode-go/mimo-v2.5-pro": {
+          "model": {
+            "providerID": "opencode-go",
+            "modelID": "mimo-v2.5-pro"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        }
+      },
+      "notes": [
+        "Provider-reported OpenCode Go usage.",
+        "Read-only probe; no inference request is made."
+      ]
+    },
+    {
+      "providerID": "commandcode",
+      "label": "Command Code GOAT",
+      "plan": "GOAT",
+      "source": "provider",
+      "fetchedAt": 1793166744112,
+      "stale": false,
+      "rolling": {
+        "usedPct": 12.70544498142857,
+        "remainingPct": 87.29455501857143,
+        "usedUsd": 1.7787622974,
+        "capUsd": 14,
+        "resetsAt": 1793174522490,
+        "exceeded": false,
+        "source": "provider"
+      },
+      "weekly": {
+        "usedPct": 81.18873368828572,
+        "remainingPct": 18.811266311714277,
+        "usedUsd": 28.4160567909,
+        "capUsd": 35,
+        "resetsAt": 1793428863795,
+        "exceeded": false,
+        "source": "provider"
+      },
+      "monthly": {
+        "usedPct": 40.59436684414286,
+        "remainingPct": 59.40563315585714,
+        "usedUsd": 28.4160567909,
+        "capUsd": 70,
+        "resetsAt": 1795501544000,
+        "exceeded": false,
+        "source": "provider"
+      },
+      "monthlyGrantUsd": 70,
+      "monthlyRemainingUsd": 41.5839432091,
+      "extraCredits": {
+        "purchasedUsd": 0,
+        "freeUsd": 0,
+        "totalUsd": 0
+      },
+      "planStatus": "active",
+      "periodStart": 1792823144000,
+      "periodEnd": 1795501544000,
+      "models": {
+        "commandcode/deepseek-v4.1-flash": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "deepseek-v4.1-flash"
+          },
+          "monthlyAllowanceUsd": 80,
+          "monthlyUsedUsd": 7.515593821999986,
+          "monthlyRemainingUsd": 72.48440617800001,
+          "monthlyUsedPct": 9.394492277499984,
+          "fiveHourUsedUsd": 0.013640418,
+          "fiveHourCapUsd": 16,
+          "fiveHourUsedPct": 0.08525261249999999,
+          "weeklyUsedUsd": 7.515593821999986,
+          "weeklyCapUsd": 40,
+          "weeklyUsedPct": 18.788984554999967,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/z-ai/glm-5.3-flash": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "z-ai/glm-5.3-flash"
+          },
+          "monthlyAllowanceUsd": 80,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 80,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 16,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 40,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/claude-haiku-5-5": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "claude-haiku-5-5"
+          },
+          "monthlyAllowanceUsd": 20,
+          "monthlyUsedUsd": 0.005112899999999999,
+          "monthlyRemainingUsd": 19.9948871,
+          "monthlyUsedPct": 0.025564499999999997,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 4,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0.005112899999999999,
+          "weeklyCapUsd": 10,
+          "weeklyUsedPct": 0.051128999999999994,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/gpt-6-luna": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "gpt-6-luna"
+          },
+          "monthlyAllowanceUsd": 20,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 20,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 4,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 10,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/claude-sonnet-5-5": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "claude-sonnet-5-5"
+          },
+          "monthlyAllowanceUsd": 10,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 10,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 2,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 5,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/meta/muse-spark-1.3": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "meta/muse-spark-1.3"
+          },
+          "monthlyAllowanceUsd": 20,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 20,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 4,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 10,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/google/gemini-4-argon": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "google/gemini-4-argon"
+          },
+          "monthlyAllowanceUsd": 40,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 40,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 8,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 20,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/xai/grok-4.7": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "xai/grok-4.7"
+          },
+          "monthlyAllowanceUsd": 20,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 20,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 4,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 10,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/Qwen/Qwen3.8-Max": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "Qwen/Qwen3.8-Max"
+          },
+          "monthlyAllowanceUsd": 20,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 20,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 4,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 10,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/stepfun/Step-5-Preview": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "stepfun/Step-5-Preview"
+          },
+          "monthlyAllowanceUsd": 20,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 20,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 4,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 10,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/claude-opus-5-5": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "claude-opus-5-5"
+          },
+          "monthlyAllowanceUsd": 10,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 10,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 2,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 5,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/gpt-6.1-sol": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "gpt-6.1-sol"
+          },
+          "monthlyAllowanceUsd": 20,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 20,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 4,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 10,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/gpt-6-astra": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "gpt-6-astra"
+          },
+          "monthlyAllowanceUsd": 10,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 10,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 2,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 5,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/claude-fable-5-1": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "claude-fable-5-1"
+          },
+          "monthlyAllowanceUsd": 10,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 10,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 2,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 5,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/meta/muse-spark-1.3-contributor": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "meta/muse-spark-1.3-contributor"
+          },
+          "monthlyAllowanceUsd": 20,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 20,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 4,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 10,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/deepseek/deepseek-v4.1-flash": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "deepseek/deepseek-v4.1-flash"
+          },
+          "monthlyAllowanceUsd": 80,
+          "monthlyUsedUsd": 7.155647004999997,
+          "monthlyRemainingUsd": 72.84435299500001,
+          "monthlyUsedPct": 8.944558756249995,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 16,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 7.155647004999997,
+          "weeklyCapUsd": 40,
+          "weeklyUsedPct": 17.88911751249999,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/gpt-6.1-terra": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "gpt-6.1-terra"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/meta/muse-wonder-1.0": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "meta/muse-wonder-1.0"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/mistral/mistral-large-4": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "mistral/mistral-large-4"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/gpt-6-sol": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "gpt-6-sol"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/Qwen/Qwen3.8-Omni-Flash": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "Qwen/Qwen3.8-Omni-Flash"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/deepseek/deepseek-v4.1-flash-fast": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "deepseek/deepseek-v4.1-flash-fast"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/google/gemini-3.8-flash": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "google/gemini-3.8-flash"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/Qwen/Qwen3.8-Max-0902": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "Qwen/Qwen3.8-Max-0902"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/tencent/hy4-preview": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "tencent/hy4-preview"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/z-ai/glm-5.3-flashx": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "z-ai/glm-5.3-flashx"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/Qwen/Qwen3.8-Flash": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "Qwen/Qwen3.8-Flash"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/deepseek/deepseek-v4-flash-vision-exp": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "deepseek/deepseek-v4-flash-vision-exp"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/zai-org/GLM-5.3": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "zai-org/GLM-5.3"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/Qwen/Qwen3.8-27B": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "Qwen/Qwen3.8-27B"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/google/gemini-3.7-flash": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "google/gemini-3.7-flash"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/xai/grok-4.6": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "xai/grok-4.6"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/meta/muse-spark-1.2": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "meta/muse-spark-1.2"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/meta/muse-spark-1.2-contributor": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "meta/muse-spark-1.2-contributor"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/thinkingmachines/inkling-small": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "thinkingmachines/inkling-small"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/claude-opus-5": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "claude-opus-5"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/google/gemini-3.6-flash": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "google/gemini-3.6-flash"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/google/gemini-3.5-flash-lite": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "google/gemini-3.5-flash-lite"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/moonshotai/Kimi-K3": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "moonshotai/Kimi-K3"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/thinkingmachines/inkling": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "thinkingmachines/inkling"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/gpt-5.6-luna": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "gpt-5.6-luna"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/gpt-5.6-sol": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "gpt-5.6-sol"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/gpt-5.6-terra": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "gpt-5.6-terra"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/xai/grok-4.5": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "xai/grok-4.5"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/tencent/hy3-paid": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "tencent/hy3-paid"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/claude-sonnet-5": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "claude-sonnet-5"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/sakana/fugu-ultra": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "sakana/fugu-ultra"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/zai-org/GLM-5.2": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "zai-org/GLM-5.2"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/zai-org/GLM-5.2-Fast": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "zai-org/GLM-5.2-Fast"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/moonshotai/Kimi-K2.7-Code": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "moonshotai/Kimi-K2.7-Code"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/moonshotai/Kimi-K2.7-Code-Highspeed": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "moonshotai/Kimi-K2.7-Code-Highspeed"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/claude-fable-5": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "claude-fable-5"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/nvidia/nemotron-3-ultra-550b-a55b": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "nvidia/nemotron-3-ultra-550b-a55b"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/MiniMaxAI/MiniMax-M3": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "MiniMaxAI/MiniMax-M3"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/stepfun/Step-3.7-Flash": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "stepfun/Step-3.7-Flash"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/claude-opus-4-8": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "claude-opus-4-8"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/google/gemini-3.5-flash": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "google/gemini-3.5-flash"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/google/gemini-3.1-flash-lite": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "google/gemini-3.1-flash-lite"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/deepseek/deepseek-v4-pro": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "deepseek/deepseek-v4-pro"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/deepseek/deepseek-v4-flash": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "deepseek/deepseek-v4-flash"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/deepseek/deepseek-v4-flash-fast": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "deepseek/deepseek-v4-flash-fast"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/gpt-5.5": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "gpt-5.5"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/claude-opus-4-7": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "claude-opus-4-7"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/meta/muse-spark-1.1": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "meta/muse-spark-1.1"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/MiniMaxAI/MiniMax-M2.7": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "MiniMaxAI/MiniMax-M2.7"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/gpt-5.4-mini": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "gpt-5.4-mini"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/gpt-5.4": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "gpt-5.4"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/claude-sonnet-4-6": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "claude-sonnet-4-6"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/MiniMaxAI/MiniMax-M2.5": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "MiniMaxAI/MiniMax-M2.5"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/gpt-5.3-codex": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "gpt-5.3-codex"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/stepfun/Step-3.5-Flash": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "stepfun/Step-3.5-Flash"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        },
+        "commandcode/claude-haiku-4-5-20251001": {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "claude-haiku-4-5-20251001"
+          },
+          "monthlyAllowanceUsd": 0,
+          "monthlyUsedUsd": 0,
+          "monthlyRemainingUsd": 0,
+          "monthlyUsedPct": 0,
+          "fiveHourUsedUsd": 0,
+          "fiveHourCapUsd": 0,
+          "fiveHourUsedPct": 0,
+          "weeklyUsedUsd": 0,
+          "weeklyCapUsd": 0,
+          "weeklyUsedPct": 0,
+          "blocked": false,
+          "source": "estimate"
+        }
+      },
+      "notes": [
+        "Provider-reported from Command Code's read-only alpha billing endpoints; polling consumes no credits.",
+        "Monthly allowance is derived from the provider's 5-hour/weekly window caps; provider-reported remaining credits are authoritative.",
+        "Billing-period usage summary differs from the credit balance by $0.4103; remaining credits are authoritative.",
+        "Credential source: /Users/muhammedqadan/.config/opencode/commandcode.key"
+      ]
+    }
+  ],
+  "context": {
+    "tokens": 0,
+    "cacheRead": 0,
+    "cacheSharePct": 0,
+    "state": "healthy",
+    "message": "0 context tokens; 0% arrived as cache reads. Cache reads are cheaper than fresh input but are not free."
+  },
+  "indicator": {
+    "state": "AUTO"
+  },
+  "lastDecision": {
+    "id": "dec_mvrp9p5d_90m4i3",
+    "at": 1793166892177,
+    "sessionID": "ses_e80c6cab9ffew0jaB6tjLD2fyG",
+    "mode": "balanced",
+    "dryRun": true,
+    "runtime": "automatic",
+    "task": {
+      "tier": 2,
+      "kind": "unknown",
+      "requiresVision": false,
+      "designIntensive": false,
+      "sophisticatedDesign": false,
+      "needsLongContext": true,
+      "confidence": "medium",
+      "signals": [
+        "narrow_scope",
+        "long_context"
+      ],
+      "reasons": [
+        "Substantive engineering work stays at or above the DeepSeek V4.1 Flash intelligence floor."
+      ],
+      "constraints": {
+        "avoidPremium": false,
+        "requestPremium": false,
+        "requestEconomy": false
+      },
+      "scope": {
+        "files": 0,
+        "codeBlocks": 0,
+        "longestCodeBlockLines": 0,
+        "hasStackTrace": false,
+        "hasImage": false,
+        "hasScreenshot": false,
+        "promptChars": 8,
+        "promptTokens": 2
+      }
+    },
+    "current": {
+      "providerID": "commandcode",
+      "id": "deepseek-v4.1-flash",
+      "variant": "max"
+    },
+    "chosen": {
+      "providerID": "commandcode",
+      "id": "deepseek-v4.1-flash"
+    },
+    "switched": false,
+    "switchReason": "The current model already is the least-cost qualified route.",
+    "reasons": [
+      "Substantive engineering work stays at or above the DeepSeek V4.1 Flash intelligence floor.",
+      "Already on DeepSeek V4.1 Flash (GOAT), the least-cost qualified route.",
+      "OpenCode Go Plus: 5% 5h, 63% weekly, 81% monthly",
+      "Command Code GOAT: 13% 5h, 81% weekly, 41% monthly"
+    ],
+    "warnings": [],
+    "candidates": [
+      {
+        "model": {
+          "providerID": "commandcode",
+          "modelID": "deepseek-v4.1-flash"
+        },
+        "name": "DeepSeek V4.1 Flash (GOAT)",
+        "tier": 2,
+        "eligible": true,
+        "reason": "Meets every hard requirement",
+        "estimatedUsd": 0.015360299999999999,
+        "effectiveCost": 0.05294247098159744,
+        "successProbability": 0.94,
+        "switchPenaltyUsd": 0,
+        "quotaPressure": 3.0774179785828593,
+        "retained": true
+      },
+      {
+        "model": {
+          "providerID": "opencode-go",
+          "modelID": "minimax-m3.1-flash"
+        },
+        "name": "MiniMax M3.1 Flash",
+        "tier": 2,
+        "eligible": true,
+        "reason": "Meets every hard requirement",
+        "estimatedUsd": 0.0699003,
+        "effectiveCost": 0.2335067053704,
+        "successProbability": 0.94,
+        "switchPenaltyUsd": 0.054,
+        "quotaPressure": 2.98265,
+        "retained": false
+      },
+      {
+        "model": {
+          "providerID": "commandcode",
+          "modelID": "z-ai/glm-5.3-flash"
+        },
+        "name": "GLM-5.3-Flash",
+        "tier": 2,
+        "eligible": true,
+        "reason": "Meets every hard requirement",
+        "estimatedUsd": 0.0754003,
+        "effectiveCost": 0.2478934537294718,
+        "successProbability": 0.94,
+        "switchPenaltyUsd": 0.048,
+        "quotaPressure": 2.935445095442399,
+        "retained": false
+      },
+      {
+        "model": {
+          "providerID": "opencode-go",
+          "modelID": "glm-5.3-flash"
+        },
+        "name": "GLM-5.3-Flash",
+        "tier": 2,
+        "eligible": true,
+        "reason": "Meets every hard requirement",
+        "estimatedUsd": 0.0754003,
+        "effectiveCost": 0.25187982937040004,
+        "successProbability": 0.94,
+        "switchPenaltyUsd": 0.048,
+        "quotaPressure": 2.98265,
+        "retained": false
+      },
+      {
+        "model": {
+          "providerID": "opencode-go",
+          "modelID": "deepseek-v4.1-flash"
+        },
+        "name": "DeepSeek V4.1 Flash",
+        "tier": 2,
+        "eligible": true,
+        "reason": "Meets every hard requirement",
+        "estimatedUsd": 0.0653403,
+        "effectiveCost": 0.25555063347257406,
+        "successProbability": 0.94,
+        "switchPenaltyUsd": 0.0588,
+        "quotaPressure": 3.492028785568101,
+        "retained": false
+      },
+      {
+        "model": {
+          "providerID": "opencode-go",
+          "modelID": "mimo-v2.6-pro"
+        },
+        "name": "MiMo-V2.6-Pro",
+        "tier": 2,
+        "eligible": true,
+        "reason": "Meets every hard requirement",
+        "estimatedUsd": 0.18581836999999998,
+        "effectiveCost": 0.62073890063416,
+        "successProbability": 0.94,
+        "switchPenaltyUsd": 0.17255,
+        "quotaPressure": 2.98265,
+        "retained": false
+      },
+      {
+        "model": {
+          "providerID": "commandcode",
+          "modelID": "claude-haiku-5-5"
+        },
+        "name": "Claude Haiku 5.5",
+        "tier": 2,
+        "eligible": true,
+        "reason": "Meets every hard requirement",
+        "estimatedUsd": 0.234001,
+        "effectiveCost": 0.7693250148450689,
+        "successProbability": 0.94,
+        "switchPenaltyUsd": 0.18,
+        "quotaPressure": 2.935446150585242,
+        "retained": false
+      },
+      {
+        "model": {
+          "providerID": "opencode-go",
+          "modelID": "claude-haiku-5-5"
+        },
+        "name": "Claude Haiku 5.5",
+        "tier": 2,
+        "eligible": true,
+        "reason": "Meets every hard requirement",
+        "estimatedUsd": 0.234001,
+        "effectiveCost": 0.7819289841748776,
+        "successProbability": 0.94,
+        "switchPenaltyUsd": 0.18,
+        "quotaPressure": 2.9835380136305796,
+        "retained": false
+      }
+    ],
+    "premium": {
+      "mode": "off",
+      "monthlyBudgetUsd": 0,
+      "spentUsd": 0,
+      "remainingUsd": 0,
+      "oneShotGranted": false
+    },
+    "quota": [
+      {
+        "providerID": "opencode-go",
+        "label": "OpenCode Go Plus",
+        "plan": "go-plus",
+        "source": "provider",
+        "fetchedAt": 1793166744112,
+        "stale": false,
+        "rolling": {
+          "usedPct": 5,
+          "remainingPct": 95,
+          "resetsAt": 1793173991000,
+          "exceeded": false,
+          "source": "provider"
+        },
+        "weekly": {
+          "usedPct": 63,
+          "remainingPct": 37,
+          "resetsAt": 1793577600000,
+          "exceeded": false,
+          "source": "provider"
+        },
+        "monthly": {
+          "usedPct": 81,
+          "remainingPct": 19,
+          "resetsAt": 1795174634000,
+          "exceeded": false,
+          "source": "provider"
+        },
+        "models": {
+          "opencode-go/gpt-6-luna": {
+            "model": {
+              "providerID": "opencode-go",
+              "modelID": "gpt-6-luna"
+            },
+            "monthlyAllowanceUsd": 60,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 60,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 12,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 30,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "opencode-go/mimo-v2.6-flash": {
+            "model": {
+              "providerID": "opencode-go",
+              "modelID": "mimo-v2.6-flash"
+            },
+            "monthlyAllowanceUsd": 120,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 120,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 24,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 60,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "opencode-go/hy3": {
+            "model": {
+              "providerID": "opencode-go",
+              "modelID": "hy3"
+            },
+            "monthlyAllowanceUsd": 240,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 240,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 48,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 120,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "opencode-go/longcat-2.0": {
+            "model": {
+              "providerID": "opencode-go",
+              "modelID": "longcat-2.0"
+            },
+            "monthlyAllowanceUsd": 240,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 240,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 48,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 120,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "opencode-go/deepseek-v4.1-flash": {
+            "model": {
+              "providerID": "opencode-go",
+              "modelID": "deepseek-v4.1-flash"
+            },
+            "monthlyAllowanceUsd": 160,
+            "monthlyUsedUsd": 28.194079355000035,
+            "monthlyRemainingUsd": 131.80592064499996,
+            "monthlyUsedPct": 17.621299596875023,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 32,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 28.194079355000035,
+            "weeklyCapUsd": 80,
+            "weeklyUsedPct": 35.242599193750046,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "opencode-go/glm-5.3-flash": {
+            "model": {
+              "providerID": "opencode-go",
+              "modelID": "glm-5.3-flash"
+            },
+            "monthlyAllowanceUsd": 180,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 180,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 36,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 90,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "opencode-go/minimax-m3.1-flash": {
+            "model": {
+              "providerID": "opencode-go",
+              "modelID": "minimax-m3.1-flash"
+            },
+            "monthlyAllowanceUsd": 80,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 80,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 16,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 40,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "opencode-go/claude-haiku-5-5": {
+            "model": {
+              "providerID": "opencode-go",
+              "modelID": "claude-haiku-5-5"
+            },
+            "monthlyAllowanceUsd": 60,
+            "monthlyUsedUsd": 0.44144700500000006,
+            "monthlyRemainingUsd": 59.558552995,
+            "monthlyUsedPct": 0.7357450083333333,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 12,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0.44144700500000006,
+            "weeklyCapUsd": 30,
+            "weeklyUsedPct": 1.4714900166666667,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "opencode-go/mimo-v2.6-pro": {
+            "model": {
+              "providerID": "opencode-go",
+              "modelID": "mimo-v2.6-pro"
+            },
+            "monthlyAllowanceUsd": 60,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 60,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 12,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 30,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "opencode-go/glm-5.3": {
+            "model": {
+              "providerID": "opencode-go",
+              "modelID": "glm-5.3"
+            },
+            "monthlyAllowanceUsd": 120,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 120,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 24,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 60,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "opencode-go/kimi-k3": {
+            "model": {
+              "providerID": "opencode-go",
+              "modelID": "kimi-k3"
+            },
+            "monthlyAllowanceUsd": 60,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 60,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 12,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 30,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "opencode-go/grok-4.7": {
+            "model": {
+              "providerID": "opencode-go",
+              "modelID": "grok-4.7"
+            },
+            "monthlyAllowanceUsd": 60,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 60,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 12,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 30,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "opencode-go/qwen3.8-max": {
+            "model": {
+              "providerID": "opencode-go",
+              "modelID": "qwen3.8-max"
+            },
+            "monthlyAllowanceUsd": 60,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 60,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 12,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 30,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "opencode-go/step-5-preview": {
+            "model": {
+              "providerID": "opencode-go",
+              "modelID": "step-5-preview"
+            },
+            "monthlyAllowanceUsd": 60,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 60,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 12,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 30,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "opencode-go/gemini-4-argon": {
+            "model": {
+              "providerID": "opencode-go",
+              "modelID": "gemini-4-argon"
+            },
+            "monthlyAllowanceUsd": 120,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 120,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 24,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 60,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "opencode-go/kimi-k3.1-pro": {
+            "model": {
+              "providerID": "opencode-go",
+              "modelID": "kimi-k3.1-pro"
+            },
+            "monthlyAllowanceUsd": 60,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 60,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 12,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 30,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "opencode-go/muse-spark-1.3-contributor": {
+            "model": {
+              "providerID": "opencode-go",
+              "modelID": "muse-spark-1.3-contributor"
+            },
+            "monthlyAllowanceUsd": 120,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 120,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 24,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 60,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "opencode-go/iceman-contributor-free": {
+            "model": {
+              "providerID": "opencode-go",
+              "modelID": "iceman-contributor-free"
+            },
+            "monthlyAllowanceUsd": 0,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 0,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 0,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 0,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "opencode-go/beam-free": {
+            "model": {
+              "providerID": "opencode-go",
+              "modelID": "beam-free"
+            },
+            "monthlyAllowanceUsd": 0,
+            "monthlyUsedUsd": 0.00033060000000000007,
+            "monthlyRemainingUsd": 0,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 0,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0.00033060000000000007,
+            "weeklyCapUsd": 0,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "opencode-go/deepseek-v4-pro": {
+            "model": {
+              "providerID": "opencode-go",
+              "modelID": "deepseek-v4-pro"
+            },
+            "monthlyAllowanceUsd": 60,
+            "monthlyUsedUsd": 0.555442624,
+            "monthlyRemainingUsd": 59.444557376,
+            "monthlyUsedPct": 0.9257377066666665,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 12,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0.555442624,
+            "weeklyCapUsd": 30,
+            "weeklyUsedPct": 1.851475413333333,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "opencode-go/hy4-preview": {
+            "model": {
+              "providerID": "opencode-go",
+              "modelID": "hy4-preview"
+            },
+            "monthlyAllowanceUsd": 0,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 0,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 0,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 0,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "opencode-go/qwen3.8-flash": {
+            "model": {
+              "providerID": "opencode-go",
+              "modelID": "qwen3.8-flash"
+            },
+            "monthlyAllowanceUsd": 0,
+            "monthlyUsedUsd": 0.13941132799999997,
+            "monthlyRemainingUsd": 0,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 0,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0.13941132799999997,
+            "weeklyCapUsd": 0,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "opencode-go/muse-spark-1.2-contributor": {
+            "model": {
+              "providerID": "opencode-go",
+              "modelID": "muse-spark-1.2-contributor"
+            },
+            "monthlyAllowanceUsd": 0,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 0,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 0,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 0,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "opencode-go/gpt-5.6-luna": {
+            "model": {
+              "providerID": "opencode-go",
+              "modelID": "gpt-5.6-luna"
+            },
+            "monthlyAllowanceUsd": 0,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 0,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 0,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 0,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "opencode-go/glm-5.2": {
+            "model": {
+              "providerID": "opencode-go",
+              "modelID": "glm-5.2"
+            },
+            "monthlyAllowanceUsd": 0,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 0,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 0,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 0,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "opencode-go/kimi-k2.7-code": {
+            "model": {
+              "providerID": "opencode-go",
+              "modelID": "kimi-k2.7-code"
+            },
+            "monthlyAllowanceUsd": 0,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 0,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 0,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 0,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "opencode-go/qwen3.7-plus": {
+            "model": {
+              "providerID": "opencode-go",
+              "modelID": "qwen3.7-plus"
+            },
+            "monthlyAllowanceUsd": 0,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 0,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 0,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 0,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "opencode-go/minimax-m3": {
+            "model": {
+              "providerID": "opencode-go",
+              "modelID": "minimax-m3"
+            },
+            "monthlyAllowanceUsd": 0,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 0,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 0,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 0,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "opencode-go/mimo-v2.5": {
+            "model": {
+              "providerID": "opencode-go",
+              "modelID": "mimo-v2.5"
+            },
+            "monthlyAllowanceUsd": 0,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 0,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 0,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 0,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "opencode-go/mimo-v2.5-pro": {
+            "model": {
+              "providerID": "opencode-go",
+              "modelID": "mimo-v2.5-pro"
+            },
+            "monthlyAllowanceUsd": 0,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 0,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 0,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 0,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          }
+        },
+        "notes": [
+          "Provider-reported OpenCode Go usage.",
+          "Read-only probe; no inference request is made."
+        ]
+      },
+      {
+        "providerID": "commandcode",
+        "label": "Command Code GOAT",
+        "plan": "GOAT",
+        "source": "provider",
+        "fetchedAt": 1793166744112,
+        "stale": false,
+        "rolling": {
+          "usedPct": 12.70544498142857,
+          "remainingPct": 87.29455501857143,
+          "usedUsd": 1.7787622974,
+          "capUsd": 14,
+          "resetsAt": 1793174522490,
+          "exceeded": false,
+          "source": "provider"
+        },
+        "weekly": {
+          "usedPct": 81.18873368828572,
+          "remainingPct": 18.811266311714277,
+          "usedUsd": 28.4160567909,
+          "capUsd": 35,
+          "resetsAt": 1793428863795,
+          "exceeded": false,
+          "source": "provider"
+        },
+        "monthly": {
+          "usedPct": 40.59436684414286,
+          "remainingPct": 59.40563315585714,
+          "usedUsd": 28.4160567909,
+          "capUsd": 70,
+          "resetsAt": 1795501544000,
+          "exceeded": false,
+          "source": "provider"
+        },
+        "monthlyGrantUsd": 70,
+        "monthlyRemainingUsd": 41.5839432091,
+        "extraCredits": {
+          "purchasedUsd": 0,
+          "freeUsd": 0,
+          "totalUsd": 0
+        },
+        "planStatus": "active",
+        "periodStart": 1792823144000,
+        "periodEnd": 1795501544000,
+        "models": {
+          "commandcode/deepseek-v4.1-flash": {
+            "model": {
+              "providerID": "commandcode",
+              "modelID": "deepseek-v4.1-flash"
+            },
+            "monthlyAllowanceUsd": 80,
+            "monthlyUsedUsd": 7.501953403999986,
+            "monthlyRemainingUsd": 72.49804659600001,
+            "monthlyUsedPct": 9.377441754999982,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 16,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 7.501953403999986,
+            "weeklyCapUsd": 40,
+            "weeklyUsedPct": 18.754883509999964,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "commandcode/z-ai/glm-5.3-flash": {
+            "model": {
+              "providerID": "commandcode",
+              "modelID": "z-ai/glm-5.3-flash"
+            },
+            "monthlyAllowanceUsd": 80,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 80,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 16,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 40,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "commandcode/claude-haiku-5-5": {
+            "model": {
+              "providerID": "commandcode",
+              "modelID": "claude-haiku-5-5"
+            },
+            "monthlyAllowanceUsd": 20,
+            "monthlyUsedUsd": 0.005112899999999999,
+            "monthlyRemainingUsd": 19.9948871,
+            "monthlyUsedPct": 0.025564499999999997,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 4,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0.005112899999999999,
+            "weeklyCapUsd": 10,
+            "weeklyUsedPct": 0.051128999999999994,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "commandcode/gpt-6-luna": {
+            "model": {
+              "providerID": "commandcode",
+              "modelID": "gpt-6-luna"
+            },
+            "monthlyAllowanceUsd": 20,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 20,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 4,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 10,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "commandcode/claude-sonnet-5-5": {
+            "model": {
+              "providerID": "commandcode",
+              "modelID": "claude-sonnet-5-5"
+            },
+            "monthlyAllowanceUsd": 10,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 10,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 2,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 5,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "commandcode/meta/muse-spark-1.3": {
+            "model": {
+              "providerID": "commandcode",
+              "modelID": "meta/muse-spark-1.3"
+            },
+            "monthlyAllowanceUsd": 20,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 20,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 4,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 10,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "commandcode/google/gemini-4-argon": {
+            "model": {
+              "providerID": "commandcode",
+              "modelID": "google/gemini-4-argon"
+            },
+            "monthlyAllowanceUsd": 40,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 40,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 8,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 20,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "commandcode/xai/grok-4.7": {
+            "model": {
+              "providerID": "commandcode",
+              "modelID": "xai/grok-4.7"
+            },
+            "monthlyAllowanceUsd": 20,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 20,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 4,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 10,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "commandcode/Qwen/Qwen3.8-Max": {
+            "model": {
+              "providerID": "commandcode",
+              "modelID": "Qwen/Qwen3.8-Max"
+            },
+            "monthlyAllowanceUsd": 20,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 20,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 4,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 10,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "commandcode/stepfun/Step-5-Preview": {
+            "model": {
+              "providerID": "commandcode",
+              "modelID": "stepfun/Step-5-Preview"
+            },
+            "monthlyAllowanceUsd": 20,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 20,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 4,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 10,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "commandcode/claude-opus-5-5": {
+            "model": {
+              "providerID": "commandcode",
+              "modelID": "claude-opus-5-5"
+            },
+            "monthlyAllowanceUsd": 10,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 10,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 2,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 5,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "commandcode/gpt-6.1-sol": {
+            "model": {
+              "providerID": "commandcode",
+              "modelID": "gpt-6.1-sol"
+            },
+            "monthlyAllowanceUsd": 20,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 20,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 4,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 10,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "commandcode/gpt-6-astra": {
+            "model": {
+              "providerID": "commandcode",
+              "modelID": "gpt-6-astra"
+            },
+            "monthlyAllowanceUsd": 10,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 10,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 2,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 5,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "commandcode/claude-fable-5-1": {
+            "model": {
+              "providerID": "commandcode",
+              "modelID": "claude-fable-5-1"
+            },
+            "monthlyAllowanceUsd": 10,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 10,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 2,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 5,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "commandcode/meta/muse-spark-1.3-contributor": {
+            "model": {
+              "providerID": "commandcode",
+              "modelID": "meta/muse-spark-1.3-contributor"
+            },
+            "monthlyAllowanceUsd": 20,
+            "monthlyUsedUsd": 0,
+            "monthlyRemainingUsd": 20,
+            "monthlyUsedPct": 0,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 4,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 0,
+            "weeklyCapUsd": 10,
+            "weeklyUsedPct": 0,
+            "blocked": false,
+            "source": "estimate"
+          },
+          "commandcode/deepseek/deepseek-v4.1-flash": {
+            "model": {
+              "providerID": "commandcode",
+              "modelID": "deepseek/deepseek-v4.1-flash"
+            },
+            "monthlyAllowanceUsd": 80,
+            "monthlyUsedUsd": 7.155647004999997,
+            "monthlyRemainingUsd": 72.84435299500001,
+            "monthlyUsedPct": 8.944558756249995,
+            "fiveHourUsedUsd": 0,
+            "fiveHourCapUsd": 16,
+            "fiveHourUsedPct": 0,
+            "weeklyUsedUsd": 7.155647004999997,
+            "weeklyCapUsd": 40,
+            "weeklyUsedPct": 17.88911751249999,
+            "blocked": false,
+            "source": "estimate"
+          }
+        },
+        "notes": [
+          "Provider-reported from Command Code's read-only alpha billing endpoints; polling consumes no credits.",
+          "Monthly allowance is derived from the provider's 5-hour/weekly window caps; provider-reported remaining credits are authoritative.",
+          "Billing-period usage summary differs from the credit balance by $0.4103; remaining credits are authoritative.",
+          "Credential source: /Users/muhammedqadan/.config/opencode/commandcode.key"
+        ]
+      }
+    ],
+    "contextTokens": 400000,
+    "cachedTokens": 400000,
+    "estimatedUsd": 0.015360299999999999,
+    "needsPremiumApproval": false,
+    "manualOverride": false
+  },
+  "lastDecisions": [
+    {
+      "id": "dec_mvrp9p5d_90m4i3",
+      "at": 1793166892177,
+      "sessionID": "ses_e80c6cab9ffew0jaB6tjLD2fyG",
+      "mode": "balanced",
+      "dryRun": true,
+      "runtime": "automatic",
+      "task": {
+        "tier": 2,
+        "kind": "unknown",
+        "requiresVision": false,
+        "designIntensive": false,
+        "sophisticatedDesign": false,
+        "needsLongContext": true,
+        "confidence": "medium",
+        "signals": [
+          "narrow_scope",
+          "long_context"
+        ],
+        "reasons": [
+          "Substantive engineering work stays at or above the DeepSeek V4.1 Flash intelligence floor."
+        ],
+        "constraints": {
+          "avoidPremium": false,
+          "requestPremium": false,
+          "requestEconomy": false
+        },
+        "scope": {
+          "files": 0,
+          "codeBlocks": 0,
+          "longestCodeBlockLines": 0,
+          "hasStackTrace": false,
+          "hasImage": false,
+          "hasScreenshot": false,
+          "promptChars": 8,
+          "promptTokens": 2
+        }
+      },
+      "current": {
+        "providerID": "commandcode",
+        "id": "deepseek-v4.1-flash",
+        "variant": "max"
+      },
+      "chosen": {
+        "providerID": "commandcode",
+        "id": "deepseek-v4.1-flash"
+      },
+      "switched": false,
+      "switchReason": "The current model already is the least-cost qualified route.",
+      "reasons": [
+        "Substantive engineering work stays at or above the DeepSeek V4.1 Flash intelligence floor.",
+        "Already on DeepSeek V4.1 Flash (GOAT), the least-cost qualified route.",
+        "OpenCode Go Plus: 5% 5h, 63% weekly, 81% monthly",
+        "Command Code GOAT: 13% 5h, 81% weekly, 41% monthly"
+      ],
+      "warnings": [],
+      "candidates": [
+        {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "deepseek-v4.1-flash"
+          },
+          "name": "DeepSeek V4.1 Flash (GOAT)",
+          "tier": 2,
+          "eligible": true,
+          "reason": "Meets every hard requirement",
+          "estimatedUsd": 0.015360299999999999,
+          "effectiveCost": 0.05294247098159744,
+          "successProbability": 0.94,
+          "switchPenaltyUsd": 0,
+          "quotaPressure": 3.0774179785828593,
+          "retained": true
+        },
+        {
+          "model": {
+            "providerID": "opencode-go",
+            "modelID": "minimax-m3.1-flash"
+          },
+          "name": "MiniMax M3.1 Flash",
+          "tier": 2,
+          "eligible": true,
+          "reason": "Meets every hard requirement",
+          "estimatedUsd": 0.0699003,
+          "effectiveCost": 0.2335067053704,
+          "successProbability": 0.94,
+          "switchPenaltyUsd": 0.054,
+          "quotaPressure": 2.98265,
+          "retained": false
+        },
+        {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "z-ai/glm-5.3-flash"
+          },
+          "name": "GLM-5.3-Flash",
+          "tier": 2,
+          "eligible": true,
+          "reason": "Meets every hard requirement",
+          "estimatedUsd": 0.0754003,
+          "effectiveCost": 0.2478934537294718,
+          "successProbability": 0.94,
+          "switchPenaltyUsd": 0.048,
+          "quotaPressure": 2.935445095442399,
+          "retained": false
+        },
+        {
+          "model": {
+            "providerID": "opencode-go",
+            "modelID": "glm-5.3-flash"
+          },
+          "name": "GLM-5.3-Flash",
+          "tier": 2,
+          "eligible": true,
+          "reason": "Meets every hard requirement",
+          "estimatedUsd": 0.0754003,
+          "effectiveCost": 0.25187982937040004,
+          "successProbability": 0.94,
+          "switchPenaltyUsd": 0.048,
+          "quotaPressure": 2.98265,
+          "retained": false
+        },
+        {
+          "model": {
+            "providerID": "opencode-go",
+            "modelID": "deepseek-v4.1-flash"
+          },
+          "name": "DeepSeek V4.1 Flash",
+          "tier": 2,
+          "eligible": true,
+          "reason": "Meets every hard requirement",
+          "estimatedUsd": 0.0653403,
+          "effectiveCost": 0.25555063347257406,
+          "successProbability": 0.94,
+          "switchPenaltyUsd": 0.0588,
+          "quotaPressure": 3.492028785568101,
+          "retained": false
+        },
+        {
+          "model": {
+            "providerID": "opencode-go",
+            "modelID": "mimo-v2.6-pro"
+          },
+          "name": "MiMo-V2.6-Pro",
+          "tier": 2,
+          "eligible": true,
+          "reason": "Meets every hard requirement",
+          "estimatedUsd": 0.18581836999999998,
+          "effectiveCost": 0.62073890063416,
+          "successProbability": 0.94,
+          "switchPenaltyUsd": 0.17255,
+          "quotaPressure": 2.98265,
+          "retained": false
+        },
+        {
+          "model": {
+            "providerID": "commandcode",
+            "modelID": "claude-haiku-5-5"
+          },
+          "name": "Claude Haiku 5.5",
+          "tier": 2,
+          "eligible": true,
+          "reason": "Meets every hard requirement",
+          "estimatedUsd": 0.234001,
+          "effectiveCost": 0.7693250148450689,
+          "successProbability": 0.94,
+          "switchPenaltyUsd": 0.18,
+          "quotaPressure": 2.935446150585242,
+          "retained": false
+        },
+        {
+          "model": {
+            "providerID": "opencode-go",
+            "modelID": "claude-haiku-5-5"
+          },
+          "name": "Claude Haiku 5.5",
+          "tier": 2,
+          "eligible": true,
+          "reason": "Meets every hard requirement",
+          "estimatedUsd": 0.234001,
+          "effectiveCost": 0.7819289841748776,
+          "successProbability": 0.94,
+          "switchPenaltyUsd": 0.18,
+          "quotaPressure": 2.9835380136305796,
+          "retained": false
+        }
+      ],
+      "premium": {
+        "mode": "off",
+        "monthlyBudgetUsd": 0,
+        "spentUsd": 0,
+        "remainingUsd": 0,
+        "oneShotGranted": false
+      },
+      "quota": [
+        {
+          "providerID": "opencode-go",
+          "label": "OpenCode Go Plus",
+          "plan": "go-plus",
+          "source": "provider",
+          "fetchedAt": 1793166744112,
+          "stale": false,
+          "rolling": {
+            "usedPct": 5,
+            "remainingPct": 95,
+            "resetsAt": 1793173991000,
+            "exceeded": false,
+            "source": "provider"
+          },
+          "weekly": {
+            "usedPct": 63,
+            "remainingPct": 37,
+            "resetsAt": 1793577600000,
+            "exceeded": false,
+            "source": "provider"
+          },
+          "monthly": {
+            "usedPct": 81,
+            "remainingPct": 19,
+            "resetsAt": 1795174634000,
+            "exceeded": false,
+            "source": "provider"
+          },
+          "models": {
+            "opencode-go/gpt-6-luna": {
+              "model": {
+                "providerID": "opencode-go",
+                "modelID": "gpt-6-luna"
+              },
+              "monthlyAllowanceUsd": 60,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 60,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 12,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 30,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "opencode-go/mimo-v2.6-flash": {
+              "model": {
+                "providerID": "opencode-go",
+                "modelID": "mimo-v2.6-flash"
+              },
+              "monthlyAllowanceUsd": 120,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 120,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 24,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 60,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "opencode-go/hy3": {
+              "model": {
+                "providerID": "opencode-go",
+                "modelID": "hy3"
+              },
+              "monthlyAllowanceUsd": 240,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 240,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 48,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 120,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "opencode-go/longcat-2.0": {
+              "model": {
+                "providerID": "opencode-go",
+                "modelID": "longcat-2.0"
+              },
+              "monthlyAllowanceUsd": 240,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 240,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 48,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 120,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "opencode-go/deepseek-v4.1-flash": {
+              "model": {
+                "providerID": "opencode-go",
+                "modelID": "deepseek-v4.1-flash"
+              },
+              "monthlyAllowanceUsd": 160,
+              "monthlyUsedUsd": 28.194079355000035,
+              "monthlyRemainingUsd": 131.80592064499996,
+              "monthlyUsedPct": 17.621299596875023,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 32,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 28.194079355000035,
+              "weeklyCapUsd": 80,
+              "weeklyUsedPct": 35.242599193750046,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "opencode-go/glm-5.3-flash": {
+              "model": {
+                "providerID": "opencode-go",
+                "modelID": "glm-5.3-flash"
+              },
+              "monthlyAllowanceUsd": 180,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 180,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 36,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 90,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "opencode-go/minimax-m3.1-flash": {
+              "model": {
+                "providerID": "opencode-go",
+                "modelID": "minimax-m3.1-flash"
+              },
+              "monthlyAllowanceUsd": 80,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 80,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 16,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 40,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "opencode-go/claude-haiku-5-5": {
+              "model": {
+                "providerID": "opencode-go",
+                "modelID": "claude-haiku-5-5"
+              },
+              "monthlyAllowanceUsd": 60,
+              "monthlyUsedUsd": 0.44144700500000006,
+              "monthlyRemainingUsd": 59.558552995,
+              "monthlyUsedPct": 0.7357450083333333,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 12,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0.44144700500000006,
+              "weeklyCapUsd": 30,
+              "weeklyUsedPct": 1.4714900166666667,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "opencode-go/mimo-v2.6-pro": {
+              "model": {
+                "providerID": "opencode-go",
+                "modelID": "mimo-v2.6-pro"
+              },
+              "monthlyAllowanceUsd": 60,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 60,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 12,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 30,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "opencode-go/glm-5.3": {
+              "model": {
+                "providerID": "opencode-go",
+                "modelID": "glm-5.3"
+              },
+              "monthlyAllowanceUsd": 120,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 120,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 24,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 60,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "opencode-go/kimi-k3": {
+              "model": {
+                "providerID": "opencode-go",
+                "modelID": "kimi-k3"
+              },
+              "monthlyAllowanceUsd": 60,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 60,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 12,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 30,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "opencode-go/grok-4.7": {
+              "model": {
+                "providerID": "opencode-go",
+                "modelID": "grok-4.7"
+              },
+              "monthlyAllowanceUsd": 60,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 60,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 12,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 30,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "opencode-go/qwen3.8-max": {
+              "model": {
+                "providerID": "opencode-go",
+                "modelID": "qwen3.8-max"
+              },
+              "monthlyAllowanceUsd": 60,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 60,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 12,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 30,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "opencode-go/step-5-preview": {
+              "model": {
+                "providerID": "opencode-go",
+                "modelID": "step-5-preview"
+              },
+              "monthlyAllowanceUsd": 60,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 60,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 12,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 30,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "opencode-go/gemini-4-argon": {
+              "model": {
+                "providerID": "opencode-go",
+                "modelID": "gemini-4-argon"
+              },
+              "monthlyAllowanceUsd": 120,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 120,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 24,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 60,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "opencode-go/kimi-k3.1-pro": {
+              "model": {
+                "providerID": "opencode-go",
+                "modelID": "kimi-k3.1-pro"
+              },
+              "monthlyAllowanceUsd": 60,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 60,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 12,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 30,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "opencode-go/muse-spark-1.3-contributor": {
+              "model": {
+                "providerID": "opencode-go",
+                "modelID": "muse-spark-1.3-contributor"
+              },
+              "monthlyAllowanceUsd": 120,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 120,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 24,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 60,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "opencode-go/iceman-contributor-free": {
+              "model": {
+                "providerID": "opencode-go",
+                "modelID": "iceman-contributor-free"
+              },
+              "monthlyAllowanceUsd": 0,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 0,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 0,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 0,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "opencode-go/beam-free": {
+              "model": {
+                "providerID": "opencode-go",
+                "modelID": "beam-free"
+              },
+              "monthlyAllowanceUsd": 0,
+              "monthlyUsedUsd": 0.00033060000000000007,
+              "monthlyRemainingUsd": 0,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 0,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0.00033060000000000007,
+              "weeklyCapUsd": 0,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "opencode-go/deepseek-v4-pro": {
+              "model": {
+                "providerID": "opencode-go",
+                "modelID": "deepseek-v4-pro"
+              },
+              "monthlyAllowanceUsd": 60,
+              "monthlyUsedUsd": 0.555442624,
+              "monthlyRemainingUsd": 59.444557376,
+              "monthlyUsedPct": 0.9257377066666665,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 12,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0.555442624,
+              "weeklyCapUsd": 30,
+              "weeklyUsedPct": 1.851475413333333,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "opencode-go/hy4-preview": {
+              "model": {
+                "providerID": "opencode-go",
+                "modelID": "hy4-preview"
+              },
+              "monthlyAllowanceUsd": 0,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 0,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 0,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 0,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "opencode-go/qwen3.8-flash": {
+              "model": {
+                "providerID": "opencode-go",
+                "modelID": "qwen3.8-flash"
+              },
+              "monthlyAllowanceUsd": 0,
+              "monthlyUsedUsd": 0.13941132799999997,
+              "monthlyRemainingUsd": 0,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 0,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0.13941132799999997,
+              "weeklyCapUsd": 0,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "opencode-go/muse-spark-1.2-contributor": {
+              "model": {
+                "providerID": "opencode-go",
+                "modelID": "muse-spark-1.2-contributor"
+              },
+              "monthlyAllowanceUsd": 0,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 0,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 0,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 0,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "opencode-go/gpt-5.6-luna": {
+              "model": {
+                "providerID": "opencode-go",
+                "modelID": "gpt-5.6-luna"
+              },
+              "monthlyAllowanceUsd": 0,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 0,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 0,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 0,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "opencode-go/glm-5.2": {
+              "model": {
+                "providerID": "opencode-go",
+                "modelID": "glm-5.2"
+              },
+              "monthlyAllowanceUsd": 0,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 0,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 0,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 0,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "opencode-go/kimi-k2.7-code": {
+              "model": {
+                "providerID": "opencode-go",
+                "modelID": "kimi-k2.7-code"
+              },
+              "monthlyAllowanceUsd": 0,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 0,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 0,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 0,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "opencode-go/qwen3.7-plus": {
+              "model": {
+                "providerID": "opencode-go",
+                "modelID": "qwen3.7-plus"
+              },
+              "monthlyAllowanceUsd": 0,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 0,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 0,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 0,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "opencode-go/minimax-m3": {
+              "model": {
+                "providerID": "opencode-go",
+                "modelID": "minimax-m3"
+              },
+              "monthlyAllowanceUsd": 0,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 0,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 0,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 0,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "opencode-go/mimo-v2.5": {
+              "model": {
+                "providerID": "opencode-go",
+                "modelID": "mimo-v2.5"
+              },
+              "monthlyAllowanceUsd": 0,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 0,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 0,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 0,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "opencode-go/mimo-v2.5-pro": {
+              "model": {
+                "providerID": "opencode-go",
+                "modelID": "mimo-v2.5-pro"
+              },
+              "monthlyAllowanceUsd": 0,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 0,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 0,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 0,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            }
+          },
+          "notes": [
+            "Provider-reported OpenCode Go usage.",
+            "Read-only probe; no inference request is made."
+          ]
+        },
+        {
+          "providerID": "commandcode",
+          "label": "Command Code GOAT",
+          "plan": "GOAT",
+          "source": "provider",
+          "fetchedAt": 1793166744112,
+          "stale": false,
+          "rolling": {
+            "usedPct": 12.70544498142857,
+            "remainingPct": 87.29455501857143,
+            "usedUsd": 1.7787622974,
+            "capUsd": 14,
+            "resetsAt": 1793174522490,
+            "exceeded": false,
+            "source": "provider"
+          },
+          "weekly": {
+            "usedPct": 81.18873368828572,
+            "remainingPct": 18.811266311714277,
+            "usedUsd": 28.4160567909,
+            "capUsd": 35,
+            "resetsAt": 1793428863795,
+            "exceeded": false,
+            "source": "provider"
+          },
+          "monthly": {
+            "usedPct": 40.59436684414286,
+            "remainingPct": 59.40563315585714,
+            "usedUsd": 28.4160567909,
+            "capUsd": 70,
+            "resetsAt": 1795501544000,
+            "exceeded": false,
+            "source": "provider"
+          },
+          "monthlyGrantUsd": 70,
+          "monthlyRemainingUsd": 41.5839432091,
+          "extraCredits": {
+            "purchasedUsd": 0,
+            "freeUsd": 0,
+            "totalUsd": 0
+          },
+          "planStatus": "active",
+          "periodStart": 1792823144000,
+          "periodEnd": 1795501544000,
+          "models": {
+            "commandcode/deepseek-v4.1-flash": {
+              "model": {
+                "providerID": "commandcode",
+                "modelID": "deepseek-v4.1-flash"
+              },
+              "monthlyAllowanceUsd": 80,
+              "monthlyUsedUsd": 7.501953403999986,
+              "monthlyRemainingUsd": 72.49804659600001,
+              "monthlyUsedPct": 9.377441754999982,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 16,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 7.501953403999986,
+              "weeklyCapUsd": 40,
+              "weeklyUsedPct": 18.754883509999964,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "commandcode/z-ai/glm-5.3-flash": {
+              "model": {
+                "providerID": "commandcode",
+                "modelID": "z-ai/glm-5.3-flash"
+              },
+              "monthlyAllowanceUsd": 80,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 80,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 16,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 40,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "commandcode/claude-haiku-5-5": {
+              "model": {
+                "providerID": "commandcode",
+                "modelID": "claude-haiku-5-5"
+              },
+              "monthlyAllowanceUsd": 20,
+              "monthlyUsedUsd": 0.005112899999999999,
+              "monthlyRemainingUsd": 19.9948871,
+              "monthlyUsedPct": 0.025564499999999997,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 4,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0.005112899999999999,
+              "weeklyCapUsd": 10,
+              "weeklyUsedPct": 0.051128999999999994,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "commandcode/gpt-6-luna": {
+              "model": {
+                "providerID": "commandcode",
+                "modelID": "gpt-6-luna"
+              },
+              "monthlyAllowanceUsd": 20,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 20,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 4,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 10,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "commandcode/claude-sonnet-5-5": {
+              "model": {
+                "providerID": "commandcode",
+                "modelID": "claude-sonnet-5-5"
+              },
+              "monthlyAllowanceUsd": 10,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 10,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 2,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 5,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "commandcode/meta/muse-spark-1.3": {
+              "model": {
+                "providerID": "commandcode",
+                "modelID": "meta/muse-spark-1.3"
+              },
+              "monthlyAllowanceUsd": 20,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 20,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 4,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 10,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "commandcode/google/gemini-4-argon": {
+              "model": {
+                "providerID": "commandcode",
+                "modelID": "google/gemini-4-argon"
+              },
+              "monthlyAllowanceUsd": 40,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 40,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 8,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 20,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "commandcode/xai/grok-4.7": {
+              "model": {
+                "providerID": "commandcode",
+                "modelID": "xai/grok-4.7"
+              },
+              "monthlyAllowanceUsd": 20,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 20,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 4,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 10,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "commandcode/Qwen/Qwen3.8-Max": {
+              "model": {
+                "providerID": "commandcode",
+                "modelID": "Qwen/Qwen3.8-Max"
+              },
+              "monthlyAllowanceUsd": 20,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 20,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 4,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 10,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "commandcode/stepfun/Step-5-Preview": {
+              "model": {
+                "providerID": "commandcode",
+                "modelID": "stepfun/Step-5-Preview"
+              },
+              "monthlyAllowanceUsd": 20,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 20,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 4,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 10,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "commandcode/claude-opus-5-5": {
+              "model": {
+                "providerID": "commandcode",
+                "modelID": "claude-opus-5-5"
+              },
+              "monthlyAllowanceUsd": 10,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 10,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 2,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 5,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "commandcode/gpt-6.1-sol": {
+              "model": {
+                "providerID": "commandcode",
+                "modelID": "gpt-6.1-sol"
+              },
+              "monthlyAllowanceUsd": 20,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 20,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 4,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 10,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "commandcode/gpt-6-astra": {
+              "model": {
+                "providerID": "commandcode",
+                "modelID": "gpt-6-astra"
+              },
+              "monthlyAllowanceUsd": 10,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 10,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 2,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 5,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "commandcode/claude-fable-5-1": {
+              "model": {
+                "providerID": "commandcode",
+                "modelID": "claude-fable-5-1"
+              },
+              "monthlyAllowanceUsd": 10,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 10,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 2,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 5,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "commandcode/meta/muse-spark-1.3-contributor": {
+              "model": {
+                "providerID": "commandcode",
+                "modelID": "meta/muse-spark-1.3-contributor"
+              },
+              "monthlyAllowanceUsd": 20,
+              "monthlyUsedUsd": 0,
+              "monthlyRemainingUsd": 20,
+              "monthlyUsedPct": 0,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 4,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 0,
+              "weeklyCapUsd": 10,
+              "weeklyUsedPct": 0,
+              "blocked": false,
+              "source": "estimate"
+            },
+            "commandcode/deepseek/deepseek-v4.1-flash": {
+              "model": {
+                "providerID": "commandcode",
+                "modelID": "deepseek/deepseek-v4.1-flash"
+              },
+              "monthlyAllowanceUsd": 80,
+              "monthlyUsedUsd": 7.155647004999997,
+              "monthlyRemainingUsd": 72.84435299500001,
+              "monthlyUsedPct": 8.944558756249995,
+              "fiveHourUsedUsd": 0,
+              "fiveHourCapUsd": 16,
+              "fiveHourUsedPct": 0,
+              "weeklyUsedUsd": 7.155647004999997,
+              "weeklyCapUsd": 40,
+              "weeklyUsedPct": 17.88911751249999,
+              "blocked": false,
+              "source": "estimate"
+            }
+          },
+          "notes": [
+            "Provider-reported from Command Code's read-only alpha billing endpoints; polling consumes no credits.",
+            "Monthly allowance is derived from the provider's 5-hour/weekly window caps; provider-reported remaining credits are authoritative.",
+            "Billing-period usage summary differs from the credit balance by $0.4103; remaining credits are authoritative.",
+            "Credential source: /Users/muhammedqadan/.config/opencode/commandcode.key"
+          ]
+        }
+      ],
+      "contextTokens": 400000,
+      "cachedTokens": 400000,
+      "estimatedUsd": 0.015360299999999999,
+      "needsPremiumApproval": false,
+      "manualOverride": false
+    }
+  ],
+  "metrics": {
+    "startedAt": 1793141282363,
+    "requests": 6,
+    "inputTokens": 9767,
+    "cacheReadTokens": 2784256,
+    "cacheWriteTokens": 0,
+    "outputTokens": 3222,
+    "estimatedUsd": 0.013640418,
+    "switches": 0,
+    "escalations": 0,
+    "retries": 0,
+    "preventedPremium": 0,
+    "manualOverrides": 0,
+    "dryRunDecisions": 1,
+    "premiumRequests": 0,
+    "premiumUsd": 0,
+    "latencyMsTotal": 528116,
+    "latencySamples": 6,
+    "lastLatencyMs": 117100,
+    "failures": {
+      "context_overflow": 0,
+      "rate_limit": 0,
+      "network": 0,
+      "auth": 0,
+      "provider_outage": 0,
+      "invalid_request": 0,
+      "image_rejected": 0,
+      "tool": 0,
+      "capability": 0,
+      "unknown": 2
+    },
+    "byModel": {
+      "commandcode/deepseek-v4.1-flash": {
+        "requests": 6,
+        "input": 9767,
+        "output": 3222,
+        "cacheRead": 2784256,
+        "cacheWrite": 0,
+        "usd": 0.013640418,
+        "failures": 0
+      }
+    }
+  },
+  "approvedModels": [
+    {
+      "key": "opencode-go/gpt-6-luna",
+      "tier": 1,
+      "name": "GPT-6 Luna",
+      "intelligence": 38.1,
+      "design": 55,
+      "vision": true,
+      "premium": false
+    },
+    {
+      "key": "opencode-go/mimo-v2.6-flash",
+      "tier": 1,
+      "name": "MiMo-V2.6-Flash",
+      "intelligence": 37.9,
+      "design": 50,
+      "vision": true,
+      "premium": false
+    },
+    {
+      "key": "opencode-go/hy3",
+      "tier": 1,
+      "name": "Hy3",
+      "intelligence": 25.3,
+      "design": 45,
+      "vision": false,
+      "premium": false
+    },
+    {
+      "key": "opencode-go/longcat-2.0",
+      "tier": 1,
+      "name": "LongCat-2.0",
+      "intelligence": 19.1,
+      "design": 40,
+      "vision": false,
+      "premium": false
+    },
+    {
+      "key": "opencode-go/deepseek-v4.1-flash",
+      "tier": 2,
+      "name": "DeepSeek V4.1 Flash",
+      "intelligence": 39.5,
+      "design": 65,
+      "vision": true,
+      "premium": false
+    },
+    {
+      "key": "opencode-go/glm-5.3-flash",
+      "tier": 2,
+      "name": "GLM-5.3-Flash",
+      "intelligence": 41.8,
+      "design": 65,
+      "vision": true,
+      "premium": false
+    },
+    {
+      "key": "opencode-go/minimax-m3.1-flash",
+      "tier": 2,
+      "name": "MiniMax M3.1 Flash",
+      "intelligence": 42.7,
+      "design": 60,
+      "vision": true,
+      "premium": false
+    },
+    {
+      "key": "opencode-go/claude-haiku-5-5",
+      "tier": 2,
+      "name": "Claude Haiku 5.5",
+      "intelligence": 43.4,
+      "design": 70,
+      "vision": true,
+      "premium": false
+    },
+    {
+      "key": "opencode-go/mimo-v2.6-pro",
+      "tier": 2,
+      "name": "MiMo-V2.6-Pro",
+      "intelligence": 46.3,
+      "design": 62,
+      "vision": true,
+      "premium": false
+    },
+    {
+      "key": "opencode-go/glm-5.3",
+      "tier": 3,
+      "name": "GLM-5.3",
+      "intelligence": 44.8,
+      "design": 80,
+      "vision": false,
+      "premium": true
+    },
+    {
+      "key": "opencode-go/kimi-k3",
+      "tier": 3,
+      "name": "Kimi K3",
+      "intelligence": 43.6,
+      "design": 72,
+      "vision": true,
+      "premium": true
+    },
+    {
+      "key": "opencode-go/grok-4.7",
+      "tier": 3,
+      "name": "Grok 4.7",
+      "intelligence": 46.4,
+      "design": 75,
+      "vision": true,
+      "premium": true
+    },
+    {
+      "key": "opencode-go/qwen3.8-max",
+      "tier": 3,
+      "name": "Qwen3.8 Max",
+      "intelligence": 40.2,
+      "design": 70,
+      "vision": true,
+      "premium": true
+    },
+    {
+      "key": "opencode-go/step-5-preview",
+      "tier": 3,
+      "name": "Step 5 Preview",
+      "intelligence": 43.7,
+      "design": 70,
+      "vision": true,
+      "premium": true
+    },
+    {
+      "key": "commandcode/deepseek-v4.1-flash",
+      "tier": 2,
+      "name": "DeepSeek V4.1 Flash (GOAT)",
+      "intelligence": 39.5,
+      "design": 65,
+      "vision": true,
+      "premium": false
+    },
+    {
+      "key": "commandcode/z-ai/glm-5.3-flash",
+      "tier": 2,
+      "name": "GLM-5.3-Flash",
+      "intelligence": 41.8,
+      "design": 65,
+      "vision": true,
+      "premium": false
+    },
+    {
+      "key": "commandcode/claude-haiku-5-5",
+      "tier": 2,
+      "name": "Claude Haiku 5.5",
+      "intelligence": 43.4,
+      "design": 70,
+      "vision": true,
+      "premium": false
+    },
+    {
+      "key": "commandcode/gpt-6-luna",
+      "tier": 1,
+      "name": "GPT-6 Luna",
+      "intelligence": 38.1,
+      "design": 55,
+      "vision": true,
+      "premium": false
+    },
+    {
+      "key": "commandcode/claude-sonnet-5-5",
+      "tier": 3,
+      "name": "Claude Sonnet 5.5",
+      "intelligence": 56,
+      "design": 90,
+      "vision": true,
+      "premium": true
+    },
+    {
+      "key": "commandcode/meta/muse-spark-1.3",
+      "tier": 3,
+      "name": "Muse Spark 1.3",
+      "intelligence": 48.1,
+      "design": 82,
+      "vision": true,
+      "premium": true
+    },
+    {
+      "key": "commandcode/xai/grok-4.7",
+      "tier": 3,
+      "name": "Grok 4.7",
+      "intelligence": 46.4,
+      "design": 75,
+      "vision": true,
+      "premium": true
+    },
+    {
+      "key": "commandcode/Qwen/Qwen3.8-Max",
+      "tier": 3,
+      "name": "Qwen3.8 Max",
+      "intelligence": 40.2,
+      "design": 70,
+      "vision": true,
+      "premium": true
+    },
+    {
+      "key": "commandcode/stepfun/Step-5-Preview",
+      "tier": 3,
+      "name": "Step 5 Preview",
+      "intelligence": 43.7,
+      "design": 70,
+      "vision": true,
+      "premium": true
+    }
+  ],
+  "warnings": []
+}

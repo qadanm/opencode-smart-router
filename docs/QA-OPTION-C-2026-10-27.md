@@ -19,7 +19,7 @@
 | 30-minute soak build | `6e793e1fbc9a28fe484a3ac4a30afb479a5281d2320aab1ef7c863ca162139aa` | 213 KB | Full 30-minute soak, outage/recovery, large context, reloads |
 | Final review build | `f2e76af0fc6c889e5693308309128067d99f551b272538492836049a5e4dbe74` | 220 KB | 95 tests, 20-project gate, 3 cold starts, fail-closed; **superseded** |
 | Stage A fix build | `e65326c9bc7b36a4470bab2d631253d233e918fc76b4b93d5cf1bab8020a5fa4` | 220 KB | 98 tests, targeted re-canary; full soak passed |
-| Accounting follow-up | `8c71c46c5f7616f950c6a3fcf5c42be2198407848cf9ffac15d01504496f8920` | 223 KB | 106 tests; monthly accounting, peak pricing, design fallback; 30-minute soak PASS; live desktop dry-run deployed 2026-10-28 |
+| Accounting follow-up | `8c71c46c5f7616f950c6a3fcf5c42be2198407848cf9ffac15d01504496f8920` | 223 KB | 106 tests; monthly accounting, peak pricing, design fallback; 30-minute soak PASS; live desktop automatic routing active 2026-10-28 |
 
 The final build adds five review fixes after the soak: teardown barrier, setup-failure fallback hook, retry-after clamp, accurate failed-decision runtime, and immediate fire-and-forget persistence on dispose. Those changes are unit-tested; the full 30-minute soak on `e65326c9…` passed in the Stage A final report.
 

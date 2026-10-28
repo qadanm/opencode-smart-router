@@ -1,11 +1,13 @@
 # OpenCode Smart Router
 
-> **Status 2026-10-28: desktop dry-run deployment active.**
-> The verified artifact is installed in the live desktop in **dry-run mode**. Automatic
-> routing, premium escalation, and purchased-credit use are disabled. See
-> [docs/DESKTOP-DRY-RUN-2026-10-28.md](docs/DESKTOP-DRY-RUN-2026-10-28.md) for the
-> deployment, backup/rollback, verification, and promotion criteria. The 2026-10-27
-> incident remains historical in [docs/STATUS-2026-10-27.md](docs/STATUS-2026-10-27.md).
+> **Status 2026-10-28: automatic routing active by explicit user approval.**
+> The verified artifact is installed in the live desktop. Premium escalation and
+> purchased-credit use remain disabled. See
+> [docs/DESKTOP-PROMOTION-2026-10-28.md](docs/DESKTOP-PROMOTION-2026-10-28.md) for the
+> promotion, rollback, and monitoring record. The earlier dry-run verification is in
+> [docs/DESKTOP-DRY-RUN-2026-10-28.md](docs/DESKTOP-DRY-RUN-2026-10-28.md). The
+> 2026-10-27 incident remains historical in
+> [docs/STATUS-2026-10-27.md](docs/STATUS-2026-10-27.md).
 
 A local, deterministic model router for the OpenCode macOS desktop app. It chooses the least quota-expensive model that can complete the current task to the required standard, then switches the session before the request is dispatched.
 
@@ -15,7 +17,7 @@ The current install path for **OpenCode 2.1.4** is:
 ~/.config/opencode/plugins/opencode-smart-router
 ```
 
-The live installation is dry-run only; automatic routing is not enabled. The routing engine and UX code remain in this source tree. It does not require a separate daemon or dashboard.
+Automatic routing is active by explicit approval; premium and purchased-credit spending remain disabled. The routing engine and UX code remain in this source tree. It does not require a separate daemon or dashboard.
 
 ## What it does
 
@@ -128,11 +130,14 @@ No model is called to make the routing decision.
 
 ## Installation and verification
 
-See [docs/INSTALL.md](docs/INSTALL.md). The plugin is installed in the live desktop in **dry-run** mode as of 2026-10-28; automatic routing is not enabled. The pre-deployment backup and independent rollback are:
+See [docs/INSTALL.md](docs/INSTALL.md). The plugin is installed in the live desktop with **automatic routing active** as of 2026-10-28; premium and purchased-credit spending remain disabled. Backups and independent rollback:
 
 ```text
+Pre-deployment + full rollback:
 ~/Documents/opencode-smart-router-backups/20261027-223912
-~/Documents/opencode-smart-router-backups/20261027-223912/rollback.sh
+
+Promotion dry-run snapshot + immediate rollback:
+~/Documents/opencode-smart-router-backups/20261027-225615-promotion
 ```
 
 To install, verify, or remove the plugin, see [docs/INSTALL.md](docs/INSTALL.md).
