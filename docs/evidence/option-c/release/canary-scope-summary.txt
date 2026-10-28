@@ -1,0 +1,9 @@
+project-scoped canary scope test
+core=5acibtsl
+bridges=[A] after A/B prompts; B not routed
+titleA=AUTO · lab-cc · Lab Claude Haiku 5.5 — scope A
+titleB=scope B
+commandsA=0
+commandsB=0
+slash /router-status: sent to model (mock chat count +1), not executed as a command
+conclusion: project-scoped plugin isolates routing to A but exposes no commands/RPC; not a full canary

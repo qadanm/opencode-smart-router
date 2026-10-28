@@ -1,0 +1,27 @@
+--- concurrent creation 10 ---
+created=      10
+AUTO · lab-cc · Lab Claude Haiku 5.5 — concurrent p8	lab-cc	succeeded
+AUTO · lab-cc · Lab Claude Haiku 5.5 — concurrent p5	lab-cc	succeeded
+AUTO · lab-cc · Lab Claude Haiku 5.5 — concurrent p2	lab-cc	succeeded
+AUTO · lab-cc · Lab Claude Haiku 5.5 — concurrent p6	lab-cc	succeeded
+AUTO · lab-cc · Lab Claude Haiku 5.5 — concurrent p1	lab-cc	succeeded
+AUTO · lab-cc · Lab Claude Haiku 5.5 — concurrent p4	lab-cc	succeeded
+AUTO · lab-cc · Lab Claude Haiku 5.5 — concurrent p3	lab-cc	succeeded
+AUTO · lab-cc · Lab Claude Haiku 5.5 — concurrent p10	lab-cc	succeeded
+AUTO · lab-cc · Lab Claude Haiku 5.5 — concurrent p7	lab-cc	succeeded
+AUTO · lab-cc · Lab Claude Haiku 5.5 — concurrent p9	lab-cc	succeeded
+diag_after_create={"coreID":"n7c33idp","pid":8313,"bridgeCount":21,"setups":84,"disposes":63,"eventStreams":1,"errors":0}
+--- evict p1..p5 ---
+evict p2 204
+evict p1 204
+evict p3 204
+evict p5 204
+evict p4 204
+diag_after_evict={"coreID":"n7c33idp","pid":8313,"bridgeCount":21,"setups":85,"disposes":64,"eventStreams":1,"errors":0}
+diag_after_revive={"coreID":"n7c33idp","pid":8313,"bridgeCount":21,"setups":85,"disposes":64,"eventStreams":1,"errors":0}
+AUTO · lab-cc · Lab Claude Haiku 5.5 — concurrent p1	succeeded
+AUTO · lab-cc · Lab Claude Haiku 5.5 — concurrent p2	succeeded
+AUTO · lab-cc · Lab Claude Haiku 5.5 — concurrent p3	succeeded
+AUTO · lab-cc · Lab Claude Haiku 5.5 — concurrent p4	succeeded
+AUTO · lab-cc · Lab Claude Haiku 5.5 — concurrent p5	succeeded
+thrash=0 errors=1

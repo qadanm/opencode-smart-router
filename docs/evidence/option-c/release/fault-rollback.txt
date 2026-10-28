@@ -1,0 +1,14 @@
+reload_fault=204
+fault_prompt=500
+fault_title=BLOCKED · router setup failed — scope A
+context_after_fault=18
+--- remove plugin and reload ---
+reload_removed=204
+ordinary_prompt=200
+ordinary_session={"title":"BLOCKED · router setup failed — scope A","outcome":"succeeded"}
+context_after_ordinary=21
+--- restore release + plugin config ---
+reload_restored=204
+restored_prompt=200
+restored_session={"title":"AUTO · lab-cc · Lab Claude Haiku 5.5 — scope A","outcome":"succeeded"}
+thrash=0 errors=0

@@ -1,0 +1,14 @@
+context_before=12
+--- reload without plugin ---
+reload_http=204
+probe_after_remove={"at":1793156105638,"probe":"/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T//opencode/smart-router-canary/B","core":"5acibtsl","bridges":[],"setups":1,"disposes":1,"streams":0}
+ordinary_prompt={"title":"AUTO · lab-cc · Lab Claude Haiku 5.5 — scope A","outcome":"succeeded"}
+context_after_ordinary=15
+--- wait 12s for core grace ---
+probe_after_grace={"at":1793156125665,"probe":"/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T//opencode/smart-router-canary/B","core":"5acibtsl","bridges":[],"setups":1,"disposes":1,"streams":0}
+--- restore plugin and reload ---
+reload_http=204
+probe_after_restore={"at":1793156129782,"probe":"/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T//opencode/smart-router-canary/A","core":"5acibtsl","bridges":["/var/folders/xl/j1hcyysn48j84hlbwf0f9dwh0000gn/T//opencode/smart-router-canary/A"],"setups":2,"disposes":1,"streams":1}
+routed_prompt={"title":"AUTO · lab-cc · Lab Claude Haiku 5.5 — scope A","outcome":"succeeded"}
+context_after_routed=18
+thrash=0 errors=0

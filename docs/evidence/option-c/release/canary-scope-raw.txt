@@ -1,0 +1,8 @@
+--- startup diagnostics (neutral cwd) ---
+sida=ses_e7f93ad12ffetFf29SKPJ1ljW4 sidb=ses_e7f93ad01ffeunzWrFWFVrZCbD
+diag_after_prompts=
+titleA=AUTO · lab-cc · Lab Claude Haiku 5.5 — scope A
+titleB=scope B
+commandsA=0
+commandsB=0
+plugin=[]

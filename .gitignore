@@ -4,3 +4,5 @@ dist-final/
 coverage/
 .DS_Store
 .superpowers/
+dist-release/
+dist-fault/

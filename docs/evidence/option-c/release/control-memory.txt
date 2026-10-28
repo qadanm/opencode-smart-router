@@ -1,0 +1,11 @@
+control (plugin disabled) pid=38530
+rssKb=550496
+footprint:
+    phys_footprint: 398 MB
+    phys_footprint_peak: 511 MB
+
+vmmap:
+Physical footprint:         398.0M
+Physical footprint (peak):  510.8M
+plugin=[]
+thrash=0 errors=0

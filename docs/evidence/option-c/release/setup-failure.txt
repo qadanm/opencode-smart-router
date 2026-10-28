@@ -1,0 +1,10 @@
+sid=ses_e7f907720ffeqsyUsWIBO8M3UH
+fault_prompt_http=500
+fault_title=BLOCKED · router setup failed — fault setup
+mock_before_recovery=1529
+--- replace with release and reload ---
+reload_http=204
+recovery_prompt_http=200
+recovery_session={"title":"AUTO · lab-cc · Lab Claude Haiku 5.5 — fault setup","outcome":"succeeded"}
+mock_after_recovery=1530
+thrash=0 errors=0

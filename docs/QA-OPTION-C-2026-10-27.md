@@ -1,5 +1,7 @@
 # QA — Option C implementation
 
+> **Release gate:** the final 30-minute soak and release-readiness results are in [RELEASE-READINESS-2026-10-28.md](RELEASE-READINESS-2026-10-28.md). The proposed canary is in [CANARY-PLAN.md](CANARY-PLAN.md).
+
 **Date:** 2026-10-27/28
 **Branch:** `option-c` (baseline `af28882`, HEAD `9577da3`)
 **Status:** implementation and isolated verification complete; **live installation not performed**

@@ -1,0 +1,22 @@
+{
+  "samples": 29,
+  "minutes": 30,
+  "rssMinKb": 360816,
+  "rssMaxKb": 617552,
+  "rssLastKb": 364272,
+  "mockRequests": 1502,
+  "requestsPerMin": 50,
+  "pids": [
+    8313
+  ],
+  "bridges": 21,
+  "setups": 63,
+  "disposes": 42,
+  "handled": 17018,
+  "ignored": 3343,
+  "ledgerEvents": 2000,
+  "eventStreams": 1,
+  "errors": 0,
+  "serverStarts": 1,
+  "sha256": "f2e76af0fc6c889e5693308309128067d99f551b272538492836049a5e4dbe74"
+}

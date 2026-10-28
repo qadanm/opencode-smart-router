@@ -1,0 +1,49 @@
+pid=8313
+--- idle baseline 60s ---
+idle t=1x5s rssKb=204176
+idle t=2x5s rssKb=176224
+idle t=3x5s rssKb=28192
+idle t=4x5s rssKb=129184
+idle t=5x5s rssKb=142064
+idle t=6x5s rssKb=145680
+idle t=7x5s rssKb=21712
+idle t=8x5s rssKb=116064
+idle t=9x5s rssKb=18512
+idle t=10x5s rssKb=118032
+idle t=11x5s rssKb=151728
+idle t=12x5s rssKb=82448
+--- location reload at 02:48:34 ---
+reload_http=204
+reload t=1x2s rssKb=633632
+reload t=2x2s rssKb=688480
+reload t=3x2s rssKb=639120
+reload t=4x2s rssKb=549936
+reload t=5x2s rssKb=508944
+reload t=6x2s rssKb=408640
+reload t=7x2s rssKb=500544
+reload t=8x2s rssKb=470352
+reload t=9x2s rssKb=428896
+reload t=10x2s rssKb=428976
+reload t=11x2s rssKb=388368
+reload t=12x2s rssKb=388512
+reload t=13x2s rssKb=314448
+reload t=14x2s rssKb=47024
+reload t=15x2s rssKb=34784
+reload t=16x2s rssKb=51088
+reload t=17x2s rssKb=99152
+reload t=18x2s rssKb=99216
+reload t=19x2s rssKb=99264
+reload t=20x2s rssKb=99968
+reload t=21x2s rssKb=100352
+reload t=22x2s rssKb=162576
+reload t=23x2s rssKb=162560
+reload t=24x2s rssKb=231024
+reload t=25x2s rssKb=192320
+reload t=26x2s rssKb=191664
+reload t=27x2s rssKb=191888
+reload t=28x2s rssKb=189840
+reload t=29x2s rssKb=189696
+reload t=30x2s rssKb=189712
+--- diag after reload ---
+{"coreID":"n7c33idp","pid":8313,"bridgeCount":21,"setups":84,"disposes":63,"eventStreams":1,"errors":0}
+thrash=0 errors=1

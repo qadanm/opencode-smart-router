@@ -1,0 +1,13 @@
+sid=ses_e7f8fb5f5ffeA51eKom5uHhKrM
+glm_before=0
+prompt1_http=200
+session1={"title":"AUTO · lab-cc · Lab Claude Haiku 5.5 — premium gate","model":{"id":"claude-haiku-5-5","providerID":"lab-cc","variant":"default"},"outcome":"succeeded"}
+status1={"premium":{"mode":"ask","monthlyBudgetUsd":0,"spentUsd":0,"remainingUsd":0,"oneShotGranted":false},"last":{"chosen":{"providerID":"lab-cc","id":"claude-haiku-5-5"},"needsPremiumApproval":true,"error":null,"switchReason":"The current model already is the least-cost qualified route."}}
+glm_after_first=0
+--- approve one shot ---
+approve_http=200
+prompt2_http=200
+session2={"title":"AUTO · lab-cc · GLM-5.3-Flash — premium gate","model":{"id":"glm-5.3-flash","providerID":"lab-cc","variant":"default"},"outcome":"succeeded"}
+status2={"premium":{"mode":"ask","monthlyBudgetUsd":0,"spentUsd":0.0000025,"remainingUsd":0,"oneShotGranted":false},"last":{"chosen":{"providerID":"lab-cc","id":"glm-5.3-flash"},"needsPremiumApproval":false,"error":null,"switchReason":"Switch to GLM-5.3-Flash."}}
+glm_after_approval=0
+thrash=0 errors=0
