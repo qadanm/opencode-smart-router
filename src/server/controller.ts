@@ -168,6 +168,17 @@ export class RouterController {
    * genuinely new failure later in the session still counts separately.
    */
   private readonly recordedFaults = new Map<string, number>()
+  /**
+   * Every model a session has been seen on, keyed by model key.
+   *
+   * The desktop client sends the model it has saved for a session with each
+   * prompt. When the router has switched that session to something else, the
+   * client's saved model is stale, so the next prompt switches the session
+   * back and the host reports a model change the router did not make. That
+   * change is always to a model the session has already been on, which is
+   * what distinguishes it from the owner picking a model they have not used.
+   */
+  private readonly modelsSeen = new Map<string, Set<string>>()
   private readonly inflight = new Set<string>()
   private readonly promptSeen = new Set<string>()
   private readonly created = new Map<string, number>()
@@ -828,6 +839,7 @@ export class RouterController {
       cooldowns: this.ledger.cooldowns(),
       providerCooldowns: this.ledger.providerCooldowns(),
     })
+    if (session.lastModel) this.rememberModel(sessionID, session.lastModel.providerID, session.lastModel.id)
 
     let switchError: string | undefined
     if (result.chosenModel && result.decision.switched) {
@@ -851,6 +863,7 @@ export class RouterController {
           lastModel: { providerID: target.providerID, id: target.modelID },
           lastRoutedModel: { providerID: target.providerID, id: target.modelID },
         })
+        this.rememberModel(sessionID, target.providerID, target.modelID)
         if (result.decision.premium.oneShotGranted && target.premium) {
           this.ledger.consumePremiumOneShot(sessionID)
         }
@@ -1052,6 +1065,7 @@ export class RouterController {
         if (ref) {
           model = ref
           this.ledger.patchSession(sessionID, { lastModel: ref })
+          this.rememberModel(sessionID, ref.providerID, ref.id)
         }
       } catch {
         // The session may already be gone; the fault is still recorded.
@@ -1079,6 +1093,17 @@ export class RouterController {
       cooldownMs: assessment.cooldownMs,
       providerScoped: assessment.providerScoped,
     })
+  }
+
+  /** Record that a session has been on a model, so a later change back to
+   * it is read as the client catching up rather than a fresh pick. */
+  private rememberModel(sessionID: string, providerID: string, id: string) {
+    let seen = this.modelsSeen.get(sessionID)
+    if (!seen) {
+      seen = new Set()
+      this.modelsSeen.set(sessionID, seen)
+    }
+    seen.add(modelKey(providerID, id))
   }
 
   /**
@@ -1197,6 +1222,18 @@ export class RouterController {
       const created = this.created.get(sessionID) ?? 0
       const initialSelection = !this.promptSeen.has(sessionID) && Date.now() - created < 5_000 && !data.previous
       if (initialSelection) return
+      // A change back to a model this session has already been on is the
+      // client catching up with its own saved selection, not the owner
+      // picking a model. Only a model new to the session suspends routing.
+      const changedModelKey = modelKey(model.providerID, model.id)
+      const seen = this.modelsSeen.get(sessionID)
+      const isCatchUp = seen?.has(changedModelKey) === true
+      this.rememberModel(sessionID, model.providerID, model.id)
+      if (isCatchUp) {
+        this.ledger.patchSession(sessionID, { lastModel: model })
+        this.persistLedgerSoon()
+        return
+      }
       this.ledger.setManual(sessionID, model)
       this.persistLedgerSoon()
       void this.emit("status", { sessionID, summary: { manualOverride: true, model } })
@@ -1367,6 +1404,7 @@ export class RouterController {
         }
         this.ledger.setManual(input.sessionID, model)
         this.ledger.patchSession(input.sessionID, { pinnedModel: model, lastModel: model })
+        this.rememberModel(input.sessionID, model.providerID, model.id)
         void this.queueTitle(input.sessionID)
         this.modelNotice(input.sessionID, "MANUAL", model, "pinned · /router-auto to resume")
         this.expectedSwitch.set(input.sessionID, { key: modelKey(model.providerID, model.id), at: Date.now() })
@@ -1566,6 +1604,7 @@ export class RouterController {
         }
         this.ledger.setManual(sessionID, model)
         this.ledger.patchSession(sessionID, { pinnedModel: model, lastModel: model })
+        this.rememberModel(sessionID, model.providerID, model.id)
         this.expectedSwitch.set(sessionID, { key: requested, at: Date.now() })
         try {
           await this.ctx.session.switchModel({ sessionID, model })
