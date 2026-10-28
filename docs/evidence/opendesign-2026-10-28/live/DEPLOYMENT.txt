@@ -1,0 +1,24 @@
+OpenDesign provider integration - live deployment
+=================================================
+Deployed at : 2026-10-28T16:51:43Z
+Approved by : owner, in session
+Artifact    : 33401a1f5af2ca85f210fd5d8c0b30088bd9ddf5abfa76df05b450e130047246
+Code commit : 322cd1e
+Baseline    : e8fa5ac (preserved)
+Previous    : 8c71c46c5f7616f950c6a3fcf5c42be2198407848cf9ffac15d01504496f8920
+Rollback    : ~/Documents/opencode-smart-router-backups/20261028-095034-opendesign/rollback.sh
+
+Verified after restart:
+  - Running artifact sha256 matches the deployed artifact
+  - Router: enabled, balanced, automatic, dry-run off, premium off
+  - Three providers registered: opencode-go (verified), commandcode (verified),
+    opendesign (estimated)
+  - Approved models: commandcode 9, opencode-go 13, opendesign 7
+  - Shared core: one coreID, one event stream, 0 errors
+  - OpenDesign quota is an estimate: no control key configured, and no
+    OpenDesign usage has been routed yet, so the estimate starts at zero
+  - Only warning is the expected one: no control key path, so quota is an
+    estimate rather than a verified balance
+
+Not exercised: a live OpenDesign inference request. The owner's next prompt is
+the end-to-end check; no test request was charged to the account.

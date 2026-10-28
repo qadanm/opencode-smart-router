@@ -1,0 +1,51 @@
+{
+  "enabled": true,
+  "dryRun": false,
+  "mode": "balanced",
+  "providers": {
+    "opencode-go": {
+      "enabled": true,
+      "probeUsage": true,
+      "allowExtraUsage": false
+    },
+    "commandcode": {
+      "enabled": true,
+      "probeUsage": true,
+      "allowExtraUsage": false
+    },
+    "opendesign": {
+      "enabled": true,
+      "probeUsage": true,
+      "allowExtraUsage": false,
+      "subscriptionOnly": true,
+      "providerScopedQuota": true,
+      "plan": "go",
+      "monthlyCreditsUsd": 120,
+      "fiveHourCapUsd": 10,
+      "weeklyCapUsd": 30
+    }
+  },
+  "premium": {
+    "mode": "off",
+    "monthlyBudgetUsd": 0,
+    "oneShotApproval": false
+  },
+  "routing": {
+    "failClosed": true
+  },
+  "quota": {
+    "probeOpenCodeGo": true,
+    "probeCommandCode": true,
+    "probeIntervalMinutes": 5,
+    "bootstrapSessions": 20,
+    "bootstrapDays": 31
+  },
+  "ui": {
+    "titleIndicator": true,
+    "notifications": true
+  },
+  "logging": {
+    "storePromptText": false,
+    "diagnostics": true
+  }
+}
