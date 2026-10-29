@@ -1,0 +1,70 @@
+OpenDesign context-window fix - live deployment
+================================================
+Deployed at : 2026-10-29T22:24:09Z
+Artifact    : ed5a64937a42438effde216bbe8ac21a1cd11c41f94e8199fbe2a3ef0e0bed55
+Code commit : b8c6eef
+Previous    : 13bfb85eb0700aeec4aa35787257be9caf7e8d51560d719873fefc83274eeb53
+Rollback    : ~/Documents/opencode-smart-router-backups/20261029-152224-od-context-limit-fix/rollback.sh
+
+What was wrong
+--------------
+A live session could not send a single prompt:
+
+  BLOCKED - OD - minimax-m3.1-flash - We need title only. Main topic build
+  clean slate studio...
+
+56 consecutive failures in one minute, all with:
+  "Context requirement 329,321 exceeds this model's safe window"
+
+The cause was a wrong context window, not a genuinely oversized session.
+
+OpenDesign's gateway reports two context numbers per model:
+  context_limit   - the vendor's total window
+  context_budget  - the usable input budget
+
+minimax-m3.1-flash reports context_limit 1000000 and no context_budget at
+all - the only one of 13 enabled models missing that field. toLiveModels
+fell back to a hand-written 232k guess for that case, a number that is not a
+property of the model.
+
+The session's real context was 309,321 tokens, so the router judged it
+against a 220,400 ceiling the model never had. That excluded OpenDesign's
+minimax. Go Plus and Command Code were already excluded by their own quota
+reserves (monthly at 90% against a 10% reserve; weekly at 85.8% against a
+15% reserve). With no eligible candidate left and failClosed on, every
+prompt was blocked.
+
+Evidence the 232k figure was wrong
+----------------------------------
+  - The gateway reports context_limit 1000000 with context_budget absent.
+  - models.dev independently reports limit.context 1000000 for
+    minimax-m3.1-flash.
+  - 475 recorded calls to this model reached 309,321 tokens with zero
+    context-length errors; 132 of them exceeded 232,000.
+  - The owner's own opencode.json already declared limit.context 1000000.
+  - OD deepseek-v4.1-flash, whose budget IS reported as 328,000, has never
+    exceeded 328,000 in 4,238 calls - so the budget is meaningful where it
+    is reported, and its absence for minimax means unknown, not small.
+
+The fix
+-------
+toLiveModels now uses the gateway's vendor context_limit when a model
+reports no context_budget, and treats it as an upper bound so a reported
+budget can never exceed the vendor limit it lives inside. The curated seed
+spec carried the same wrong 232k assumption and is corrected too.
+
+Verified after restart
+----------------------
+  - Running artifact sha256 matches the deployed artifact
+  - Router health: one core, 7 bridges, 0 errors
+  - Live registry now reports minimax-m3.1-flash at 1,000,000 (was 232,000)
+  - The blocked session routes again:
+      ses_e9d15568  ctx=309,321  -> opendesign/minimax-m3.1-flash  (0 warnings)
+      ses_e85a4fff  ctx=275,710  -> opendesign/deepseek-v4.1-flash (0 warnings)
+      ses_e9b57e9e  ctx=189,530  -> opendesign/deepseek-v4.1-flash (0 warnings)
+  - All 13 live sessions checked: 0 blocked. The one session with no
+    candidate is a manual override ("Manual override respected"), which is
+    correct behaviour - its title reads MANUAL, not BLOCKED.
+
+Tests: 218 passing (4 new in test/opendesign-context-limit.test.ts, 3 of
+them verified to fail against the previous code), typecheck clean.
