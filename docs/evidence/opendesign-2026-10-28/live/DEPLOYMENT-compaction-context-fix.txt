@@ -1,0 +1,53 @@
+Compaction-context fix - live deployment
+========================================
+Deployed at : 2026-10-29T20:06:46Z
+Artifact    : 13bfb85eb0700aeec4aa35787257be9caf7e8d51560d719873fefc83274eeb53
+Code commit : 6b33439
+Previous    : 1dbbb39a232743aa386bb7867265996f5960935f68a64fd93ae8d119df907fd8
+Rollback    : ~/Documents/opencode-smart-router-backups/20261029-130607-compaction-context-fix/rollback.sh
+
+What was wrong
+--------------
+An audit of the last 120 routing decisions found 9 that used a context size
+the session no longer had - every one directly after a completed compaction,
+with drifts from 97k to 472k tokens.
+
+The context gate is contextTokens + 20,000 <= model.context * 0.95. OpenDesign's
+328k window admits at most 291,600 tokens. A session compacted from 450k to 95k
+still looked like 450k, so OpenDesign was excluded and the work continued on
+OpenCode Go Plus - the pool that is 89% spent.
+
+Two causes:
+  1. The router never handled session.compaction.ended. The host emits it when a
+     compaction completes and the router subscribes to the whole event bus, but
+     there was no handler, so the pre-compaction value survived.
+  2. The context size came from session.get().tokens, which is the session's
+     CUMULATIVE usage over its whole life - 43M input and 2.9B cache-read on one
+     session - clamped to 400,000. That clamp sits above OpenDesign's admission
+     line, so it always excluded OpenDesign.
+
+The fix
+-------
+Reads the real transcript size instead. A compaction message's own counts
+describe the transcript it replaced, so the authoritative value is the last
+assistant step, whose cache-read count reflects the rebuilt transcript. The
+read costs 20-120ms even on the largest sessions, so admission waits for it
+rather than guessing.
+
+Verified after restart
+----------------------
+  - Running artifact sha256 matches the deployed artifact
+  - Router health: one core, 7 bridges, 0 errors, no warnings
+  - Ledger context now matches the true context for every live session:
+      tjLD2fyG  253,394 = 253,394
+      lUWnAxri  232,976 = 232,976
+      bxDIj2DW  208,488 = 208,488
+      zIvZI4zP  183,258 = 183,258
+      8vZBkUdO  168,273 = 168,273
+      gv7C19IF  130,742 = 130,742
+      BOVwQ2u5  108,484 = 108,484
+      s6FwRA0s   78,692 =  78,692
+    The cumulative-total clamp no longer appears anywhere.
+
+Tests: 214 passing (213 before, 4 new in test/compaction-context.test.ts, all
+verified to fail against the previous code), typecheck clean.
