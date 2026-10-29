@@ -141,7 +141,7 @@ export const OPENDESIGN_MODELS: ReadonlyArray<OpenDesignModelSpec> = [
     notes: "1x credits. Native image and video input.",
   }),
   spec("minimax-m3.1-flash", "MiniMax M3.1 Flash", {
-    context: OPENDESIGN_FALLBACK_CONTEXT,
+    context: 1_000_000,
     maxOutput: OPENDESIGN_FALLBACK_OUTPUT,
     input: ["text", "image", "video"],
     cost: cost(0.15, 0.6, 0.015),
@@ -151,7 +151,7 @@ export const OPENDESIGN_MODELS: ReadonlyArray<OpenDesignModelSpec> = [
     tier: 2,
     approved: true,
     notes:
-      "Gateway reports no context or output budget, so the conservative 232k window is used. Multiplier is not published; the neutral 1x rate is an estimate.",
+      "The gateway reports a 1M vendor limit but no context_budget for this model, so the vendor limit is used. Confirmed against models.dev (1,000,000) and by 475 successful calls with no context-length error. Multiplier is not published; the neutral 1x rate is an estimate.",
   }),
   spec("mimo-v2.6-pro", "MiMo-V2.6-Pro", {
     context: 232_000,

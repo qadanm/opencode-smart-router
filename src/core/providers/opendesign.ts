@@ -351,6 +351,17 @@ export interface OpenDesignLiveModel {
  * `context_limit`. OpenDesign reports a vendor limit of up to 1.05M tokens but
  * a usable input budget of 228k-400k; routing against the vendor limit would
  * send requests the gateway rejects.
+ *
+ * `context_budget` is not always present. `minimax-m3.1-flash` reports only
+ * `context_limit: 1000000`. The fallback for that case used to be a
+ * hand-written 232k guess, which is not a property of the model: it made a
+ * live session's 309k context look four times larger than the model ever
+ * was, pushed the session off the cheap provider, and then failed closed
+ * because no provider was left that could serve it.
+ *
+ * The gateway's own `context_limit` is the correct fallback - it is the
+ * vendor's real window. It is used as an upper bound too, so a reported
+ * budget can never exceed the vendor limit it lives inside.
  */
 export const toLiveModels = (
   discovered: ReadonlyArray<OpenDesignDiscoveredModel>,
@@ -359,7 +370,17 @@ export const toLiveModels = (
   const out: OpenDesignLiveModel[] = []
   for (const model of discovered) {
     const spec = OPEN_DESIGN_MODEL_BY_ID.get(model.id)
-    const context = model.contextBudget ?? spec?.context ?? OPENDESIGN_FALLBACK_CONTEXT
+    const vendorLimit = model.contextLimit > 0 ? model.contextLimit : 0
+    const reported = model.contextBudget ?? vendorLimit
+    // A reported budget describes the usable input window inside the vendor
+    // limit, so it can never be larger than that limit. When the gateway
+    // reports no budget, its vendor limit is the real window.
+    const context =
+      reported > 0 && (vendorLimit === 0 || reported <= vendorLimit)
+        ? reported
+        : vendorLimit > 0
+          ? vendorLimit
+          : (spec?.context ?? OPENDESIGN_FALLBACK_CONTEXT)
     const output = model.outputBudget ?? spec?.maxOutput ?? OPENDESIGN_FALLBACK_OUTPUT
     const cost = spec?.cost ?? [{ input: 0, output: 0, cache: { read: 0, write: 0 } }]
     out.push({

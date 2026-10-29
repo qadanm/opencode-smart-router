@@ -185,7 +185,7 @@ describe("OpenDesign model discovery", () => {
     expect(deepseek?.limit.context).toBe(328_000)
   })
 
-  it("falls back to a conservative window when the gateway reports no budget", async () => {
+  it("uses the vendor context limit when the gateway reports no budget", async () => {
     const result = await discoverOpenDesignModels({
       apiKey: "sk-amr-test",
       fetchImpl: async () => json(GATEWAY_MODELS),
@@ -193,7 +193,11 @@ describe("OpenDesign model discovery", () => {
     })
     const live = toLiveModels(result.models)
     const minimax = live.find((m) => m.id === "minimax-m3.1-flash")
-    expect(minimax?.limit.context).toBe(232_000)
+    // The gateway reports context_limit 1,000,000 and no context_budget for
+    // this model. The vendor limit is the model's real window; a hand-written
+    // guess would be smaller than the truth and would wrongly push sessions
+    // off this provider.
+    expect(minimax?.limit.context).toBe(1_000_000)
     expect(minimax?.limit.output).toBe(32_000)
   })
 
