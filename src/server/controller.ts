@@ -454,27 +454,36 @@ export class RouterController {
           ...(session.manualOverride ? { manualModel: model } : {}),
         })
       }
-      // A full transcript read can take seconds on a very large session. Use a
-      // conservative cumulative estimate for admission, then refine it in the
-      // background. This keeps prompt latency low without losing cache affinity.
+      // The context size decides which providers may serve this session, so
+      // it has to be the size of the transcript the next request carries.
+      //
+      // `info.tokens` is the session's CUMULATIVE usage across its whole
+      // life, not that size. It grows without bound, so it can only ever be
+      // an upper bound, and using it makes a session look far larger than it
+      // is - which pushes it off providers whose window it would actually
+      // fit in. The transcript read below gives the real number.
       if (session.contextTokens === 0) {
-        const cumulative = (Number(info?.tokens?.input) || 0) + (Number(info?.tokens?.cache?.read) || 0)
-        const created = Number(info?.time?.created) || 0
-        const updated = Number(info?.time?.updated) || 0
-        let estimate = 0
-        if (cumulative > 0) {
-          estimate = Math.min(400_000, cumulative)
-        } else if (info?.fork) {
-          // A fork inherits a transcript but may carry no cumulative usage.
-          estimate = 350_000
-        } else if (created > 0 && updated - created > 60_000) {
-          estimate = 150_000
-        }
-        if (estimate > 0) {
+        const real = await this.readCurrentContext(sessionID)
+        if (real !== undefined) {
           this.ledger.patchSession(sessionID, {
-            contextTokens: estimate,
-            cacheReadTokens: Math.min(Number(info?.tokens?.cache?.read) || 0, estimate),
+            contextTokens: real.contextTokens,
+            cacheReadTokens: real.cacheReadTokens,
           })
+        } else {
+          // The read failed. Assume a modest transcript rather than
+          // inventing a number that would wrongly exclude a model.
+          const created = Number(info?.time?.created) || 0
+          const updated = Number(info?.time?.updated) || 0
+          let estimate = 0
+          if (info?.fork) {
+            // A fork inherits a transcript but may carry no cumulative usage.
+            estimate = 350_000
+          } else if (created > 0 && updated - created > 60_000) {
+            estimate = 150_000
+          }
+          if (estimate > 0) {
+            this.ledger.patchSession(sessionID, { contextTokens: estimate, cacheReadTokens: 0 })
+          }
         }
       }
     } catch {
@@ -636,19 +645,12 @@ export class RouterController {
     if (existing) return existing
     const task = (async () => {
       try {
-        const messages = unwrap<any>(
-          await Promise.race([
-            this.ctx.session.context({ sessionID }),
-            new Promise((resolve) => setTimeout(() => resolve({ data: [] }), 2_500)),
-          ]),
-        )
-        const assistant = [...messages].reverse().find((message: any) => message?.type === "assistant" && message?.tokens)
-        if (assistant?.tokens) {
-          const tokens = tokensFrom(assistant.tokens)
+        const real = await this.readCurrentContext(sessionID)
+        if (real) {
           this.sessionState(sessionID)
           this.ledger.patchSession(sessionID, {
-            contextTokens: tokens.input + tokens.cache.read + tokens.cache.write,
-            cacheReadTokens: tokens.cache.read,
+            contextTokens: real.contextTokens,
+            cacheReadTokens: real.cacheReadTokens,
           })
         }
       } catch {
@@ -660,6 +662,58 @@ export class RouterController {
     })()
     this.contextInflight.set(sessionID, task)
     return task
+  }
+
+  /**
+   * Read a session's real context size from the host's transcript.
+   *
+   * The authoritative value is the last assistant step: its cache-read
+   * count is the size of the transcript the next request will carry. A
+   * compaction message's own counts describe the transcript it replaced, so
+   * those are not used.
+   *
+   * Returns undefined when the transcript cannot be read.
+   */
+  private async readCurrentContext(
+    sessionID: string,
+  ): Promise<{ contextTokens: number; cacheReadTokens: number } | undefined> {
+    try {
+      const messages = unwrap<any>(
+        await Promise.race([
+          this.ctx.session.context({ sessionID }),
+          new Promise((resolve) => setTimeout(() => resolve({ data: [] }), 5_000)),
+        ]),
+      )
+      const assistant = [...messages]
+        .reverse()
+        .find((message: any) => message?.type === "assistant" && message?.tokens)
+      if (!assistant?.tokens) return undefined
+      const tokens = tokensFrom(assistant.tokens)
+      const contextTokens = tokens.input + tokens.cache.read + tokens.cache.write
+      if (contextTokens <= 0) return undefined
+      return { contextTokens, cacheReadTokens: tokens.cache.read }
+    } catch {
+      return undefined
+    }
+  }
+
+  /**
+   * Re-read a session's real context size right after a compaction.
+   *
+   * A compaction rebuilds the transcript, so the size the router was
+   * carrying is stale. Learning the new size now - rather than at the next
+   * prompt - means the cheap provider is eligible again on the very next
+   * turn instead of being excluded for a size the session no longer has.
+   */
+  private async refreshContextAfterCompaction(sessionID: string) {
+    const real = await this.readCurrentContext(sessionID)
+    if (!real) return
+    this.sessionState(sessionID)
+    this.ledger.patchSession(sessionID, {
+      contextTokens: real.contextTokens,
+      cacheReadTokens: real.cacheReadTokens,
+    })
+    this.persistLedgerSoon()
   }
 
   private classifierFiles(files: unknown): ClassifierFile[] {
@@ -1397,6 +1451,30 @@ export class RouterController {
         }
         this.persistLedgerSoon()
       }
+      return
+    }
+    if (type === "session.compaction.ended" || type === "session.compaction.failed") {
+      const sessionID = data.sessionID
+      if (typeof sessionID !== "string") return
+      // A compaction rebuilds the transcript, so the context size the router
+      // has been carrying is stale: it still reflects the pre-compaction
+      // session. That stale number is what the context gate uses to decide
+      // whether a model can serve the session, so a session that was just
+      // compacted can be wrongly excluded from the cheapest provider - it
+      // looks too large for OpenDesign's window when it is not.
+      //
+      // Drop the cached value so the next prompt re-reads the real size.
+      this.contextLoaded.delete(sessionID)
+      const session = this.ledger.getSession(sessionID)
+      if (session) {
+        this.ledger.patchSession(sessionID, { contextTokens: 0, cacheReadTokens: 0 })
+      }
+      // Re-read the real size now rather than at the next prompt. The
+      // compaction message's own token counts describe the transcript it
+      // replaced, not the rebuilt one, so the authoritative value is the
+      // last assistant step after the compaction.
+      void this.refreshContextAfterCompaction(sessionID)
+      this.persistLedgerSoon()
       return
     }
     if (type === "session.step.ended") {

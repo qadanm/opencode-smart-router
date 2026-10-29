@@ -52,6 +52,9 @@ export const makeCtx = (directory: string) => {
   const syntheticCalls: any[] = []
   const compactions: any[] = []
   const sessions = new Map<string, any>()
+  /** Messages returned by `session.context()`. Tests set this to model the
+   * host's transcript, including its token counts. */
+  let contextMessages: any[] = []
   const titles = new Map<string, string>()
   let rpcImpl: any
   const ctx: any = {
@@ -92,7 +95,7 @@ export const makeCtx = (directory: string) => {
         }
         return sessions.get(sessionID)
       },
-      context: async () => ({ data: [] }),
+      context: async () => ({ data: contextMessages }),
       switchModel: async ({ sessionID, model }: any) => {
         const session = await ctx.session.get({ sessionID })
         session.model = model
@@ -146,6 +149,10 @@ export const makeCtx = (directory: string) => {
     compactions,
     sessions,
     titles,
+    /** Replace the transcript that `session.context()` returns. */
+    setContextMessages: (messages: any[]) => {
+      contextMessages = messages
+    },
     rpc: () => rpcImpl,
     restoreHome: () => {
       if (previousHome === undefined) delete process.env.HOME
