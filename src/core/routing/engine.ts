@@ -373,7 +373,7 @@ export const routeTask = (input: EngineInput): EngineResult => {
    * being routed to the configured default, and without this note the only
    * visible signal is that some other model is suddenly in use.
    */
-  const contextRejected: Array<{ model: ModelRecord; required: number; window: number; usd: number }> = []
+  const contextRejected: Array<{ model: ModelRecord; required: number; window: number; usd: number; tier: number }> = []
 
   const evaluate = (designRelaxation: 0 | 1 | 2) => {
     const taskForEvaluation =
@@ -440,11 +440,16 @@ export const routeTask = (input: EngineInput): EngineResult => {
         escalationPoolProtected: protectEscalation,
       })
         if (!eligibility.eligible) {
-          // Record only the context-capacity rejection: it is deterministic,
-          // actionable ("start a new session"), and invisible otherwise.
-          const required = Math.max(input.contextTokens, taskForEvaluation.scope.promptTokens) + 20_000
-          if (model.context > 0 && required > model.context * 0.95) {
-            contextRejected.push({ model, required, window: model.context, usd: estimate.usd })
+          // Record only a context-capacity rejection. It is deterministic,
+          // actionable ("start a new session"), and otherwise invisible.
+          if (eligibility.rejectedFor === "context" && eligibility.contextRequiredTokens !== undefined && eligibility.contextWindowTokens !== undefined) {
+            contextRejected.push({
+              model,
+              required: eligibility.contextRequiredTokens,
+              window: eligibility.contextWindowTokens,
+              usd: estimate.usd,
+              tier: model.tier,
+            })
           }
           continue
         }
@@ -660,22 +665,27 @@ export const routeTask = (input: EngineInput): EngineResult => {
   // a large session silently stops using the configured default and the only
   // visible signal is that some other model is suddenly in use.
   //
-  // Report the most relevant displacement rather than whichever model happened
-  // to be evaluated first: the current session's model if it was displaced,
-  // otherwise the cheapest one that lost its eligibility to context.
-  const contextDisplaced = contextRejected.filter(
+  // Two conditions keep this from becoming noise. The model must be a plausible
+  // winner: it has to meet the task tier and be cheaper than what was chosen,
+  // otherwise it never mattered. And if its display name matches the chosen
+  // model's, the provider is named too, because "DeepSeek was skipped" while
+  // DeepSeek is running reads as a bug.
+  const viableOnMerit = contextRejected.filter(
     (entry) =>
-      entry.model.providerID !== chosen.model.providerID || entry.model.modelID !== chosen.model.modelID,
+      (entry.model.providerID !== chosen.model.providerID || entry.model.modelID !== chosen.model.modelID) &&
+      entry.tier >= input.task.tier &&
+      entry.usd < chosen.candidate.estimatedUsd,
   )
   const displaced =
-    contextDisplaced.find(
+    viableOnMerit.find(
       (entry) =>
         input.current?.providerID === entry.model.providerID && input.current?.id === entry.model.modelID,
-    ) ??
-    [...contextDisplaced].sort((a, b) => a.usd - b.usd)[0]
+    ) ?? [...viableOnMerit].sort((a, b) => a.usd - b.usd)[0]
   if (displaced) {
+    const sameName = displaced.model.name === chosen.model.name
+    const label = sameName ? `${displaced.model.name} on ${displaced.model.providerID}` : displaced.model.name
     warnings.push(
-      `${displaced.model.name} was skipped for this turn: the transcript needs about ${thousands(displaced.required)} tokens of context and that model's window is ${thousands(displaced.window)}. Start a new session to route to it again.`,
+      `${label} was skipped for this turn: the transcript needs about ${thousands(displaced.required)} tokens of context and that model's window is ${thousands(displaced.window)}. Start a new session to route to it again.`,
     )
   }
   if (chosen.model.premium) {

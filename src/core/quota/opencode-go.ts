@@ -1,5 +1,6 @@
 import type { ProviderQuotaSnapshot, ProviderSettings, QuotaWindow } from "../types.js"
 import { clamp, describePlan, pct, redact } from "../util.js"
+import { resolvePlan } from "../plans/catalog.js"
 
 const USAGE_URL = "https://opencode.ai/zen/go/v1/usage"
 const USER_AGENT = "opencode-smart-router/0.1"
@@ -50,7 +51,7 @@ const baseSnapshot = (
 ): ProviderQuotaSnapshot => ({
   providerID: "opencode-go",
   label: input.settings.plan === "go-plus" ? "OpenCode Go Plus" : "OpenCode Go",
-  plan: describePlan(undefined, input.settings.plan),
+  plan: describePlan(resolvePlan("opencode-go", input.settings.plan)?.planID, input.settings.plan),
   source: "unknown",
   fetchedAt: now,
   stale: false,
@@ -119,7 +120,7 @@ export const probeOpenCodeGoQuota = async (input: GoUsageProbeInput): Promise<Go
     const snapshot: ProviderQuotaSnapshot = {
       providerID: "opencode-go",
       label: input.settings.plan === "go-plus" ? "OpenCode Go Plus" : "OpenCode Go",
-      plan: describePlan(undefined, input.settings.plan),
+      plan: describePlan(resolvePlan("opencode-go", input.settings.plan)?.planID, input.settings.plan),
       source: "provider",
       fetchedAt: now,
       stale: false,

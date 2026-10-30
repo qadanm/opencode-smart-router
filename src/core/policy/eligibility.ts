@@ -80,6 +80,15 @@ export interface EligibilityResult {
   readonly eligible: boolean
   readonly reason: string
   readonly warnings: string[]
+  /**
+   * Why the model was rejected, when that reason is worth reporting to a user.
+   * `context` is the case that matters: the model is a good route but the
+   * transcript no longer fits, which is a different situation from being
+   * unqualified or over budget.
+   */
+  readonly rejectedFor?: "context"
+  readonly contextRequiredTokens?: number
+  readonly contextWindowTokens?: number
 }
 
 const providerAuthFailure = (snapshot: ProviderQuotaSnapshot | undefined): boolean => {
@@ -225,7 +234,16 @@ export const evaluateEligibility = (input: EligibilityInput): EligibilityResult 
 
   const requiredContext = Math.max(input.contextTokens, task.scope.promptTokens) + 20_000
   if (model.context > 0 && requiredContext > model.context * 0.95) {
-    return { eligible: false, reason: `Context requirement ${requiredContext.toLocaleString()} exceeds this model's safe window`, warnings }
+    return {
+      eligible: false,
+      reason: `Context requirement ${requiredContext.toLocaleString()} exceeds this model's safe window`,
+      warnings,
+      // Machine-readable so callers can explain *this* rejection without
+      // pattern-matching the message above.
+      rejectedFor: "context",
+      contextRequiredTokens: requiredContext,
+      contextWindowTokens: model.context,
+    }
   }
 
   const substantive = task.tier >= 2

@@ -46,3 +46,26 @@ describe("describing a plan to a user", () => {
     expect(result.snapshot.plan).not.toBe("pro")
   })
 })
+
+describe("a valid plan is never reported as unresolved", () => {
+  it("labels OpenCode Go with its real plan id", async () => {
+    // A regression introduced while normalizing this field passed `undefined`
+    // as the resolved id, which made every provider look unresolved.
+    const { probeOpenCodeGoQuota } = await import("../src/core/quota/opencode-go.js")
+    const result = await probeOpenCodeGoQuota({
+      settings: {
+        ...structuredClone(DEFAULT_SETTINGS.providers["opencode-go"])!,
+        enabled: true,
+        plan: "go",
+      },
+      accessToken: "a-test-access-token",
+      fetchImpl: (async () =>
+        new Response(JSON.stringify({ percent: 0, resetsAt: new Date(Date.now() + 3600_000).toISOString() }), {
+          status: 200,
+        })) as unknown as typeof fetch,
+      now: () => Date.UTC(2026, 9, 29, 12),
+    })
+    expect(result.snapshot.plan).toBe("go")
+    expect(result.snapshot.plan).not.toMatch(/unresolved/)
+  })
+})

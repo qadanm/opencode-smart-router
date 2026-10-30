@@ -414,9 +414,12 @@ describe("a transcript that outgrows the default model", () => {
     const warning = result.decision.warnings.find((entry) => /DeepSeek/i.test(entry))
     expect(warning).toBeDefined()
     // The explanation must name both numbers and the way out.
-    expect(warning).toMatch(/309,3|needs about/i)
+    expect(warning).toMatch(/329,321/)
     expect(warning).toMatch(/328,000/)
     expect(warning).toMatch(/new session/i)
+    // It must not read as "DeepSeek was skipped" while DeepSeek is running,
+    // which happens because another provider serves a model with the same name.
+    expect(warning).toMatch(/on opendesign/i)
   })
 
   it("still routes to the default model when the transcript fits", () => {
@@ -429,5 +432,22 @@ describe("a transcript that outgrows the default model", () => {
       `${result.decision.chosen!.providerID}/${result.decision.chosen!.id}`,
     ).toBe("opendesign/deepseek-v4.1-flash")
     expect(result.decision.warnings.join(" ")).not.toMatch(/DeepSeek.*skipped/i)
+  })
+})
+
+describe("the displacement warning stays quiet when it would be noise", () => {
+  it("does not warn about a model that was never a cheaper winner", () => {
+    // GLM-5.3-Flash costs more than DeepSeek here, so its 232k window losing
+    // eligibility changes nothing. Reporting it would teach users to ignore
+    // the warning that actually matters.
+    const result = run({
+      text: "Implement a small feature in src/app.ts",
+      contextTokens: 205_283,
+      current: { providerID: "opendesign", id: "glm-5.3-flash" },
+    })
+    expect(`${result.decision.chosen!.providerID}/${result.decision.chosen!.id}`).toBe(
+      "opendesign/deepseek-v4.1-flash",
+    )
+    expect(result.decision.warnings.join(" ")).not.toMatch(/was skipped for this turn/)
   })
 })
