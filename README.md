@@ -47,8 +47,7 @@ The installed OpenCode version does not expose the experimental GUI plugin SDK (
 |---|---|
 | `/router-status` | Current runtime mode, selected model, task tier, quota, and warnings |
 | `/router-explain` | Last decision, signals, candidate costs, and reasons |
-| `/router-report` | Local usage, switches, premium prevention, retries, latency |
-| `/router-mode efficiency\|balanced\|premium` | Change the routing mode |
+| `/router-report` | Local usage, switches, premium prevention, retries, latency || `/router-mode efficiency\|balanced\|premium` | Change the routing mode |
 | `/router-dry-run on\|off` | Explain decisions without changing the model |
 | `/router-auto` | Clear a manual override and resume automatic routing for this session |
 | `/router-pin provider/model` | Pin a model for this session |

@@ -69,6 +69,21 @@ opencode api POST /api/rpc/smart-router/status -d '{"input":{}}'
 
 Use `opencode api` so authentication is handled by OpenCode. The output labels each provider quota source as `provider`, `estimate`, or `unknown`.
 
+For durable usage history, per-model totals and rolling-window forecasts:
+
+```bash
+opencode api POST /api/rpc/smart-router/usage -d '{"input":{}}'
+```
+
+This reports each provider's five-hour, seven-day and monthly consumption with input, output, cache-read and cache-write tokens, the cache share, per-model totals, and a forecast per window. A plan with no five-hour window reports that row as not applicable rather than as 0% used. It makes no inference request.
+
+For a safe dry-run of a routing decision without changing the model:
+
+```bash
+opencode api POST /api/rpc/smart-router/preview \
+  -d '{"input":{"sessionID":"ses_…","text":"Implement a small feature in src/app.ts"}}'
+```
+
 A safe smoke test:
 
 1. Create a new session with a cheap or free model.

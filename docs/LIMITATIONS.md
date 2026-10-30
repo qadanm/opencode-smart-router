@@ -95,7 +95,26 @@ Prompt caches are provider- and model-specific. A model switch is priced as a ca
 
 Command Code DeepSeek V4.1 Flash has documented time-of-day pricing: off-peak rates for 17 hours per day and 2× rates from 01:00–04:00 and 06:00–10:00 UTC, Monday–Friday. The router applies that multiplier to input, output, cache-read, and cache-loss estimates. Models without documented peak metadata use flat catalog rates; their time-of-day pricing is not assumed.
 
-Context-health recommendations are non-destructive. The router never compacts or replaces a conversation automatically.
+Context-health recommendations are non-destructive: they advise a new session and never compact anything on their own.
+
+Router-driven compaction is governed by `contextManagement.mode`:
+
+- `native` (default) and `conservative` never compact except when the transcript would genuinely exceed the model's verified accepted window. The provider's native handling is preferred; the router steps in only for that case, and announces it.
+- `budget-optimized` preserves the legacy behaviour: it compacts early to keep a session on the cheapest qualified route. It exists for small plans and small-window models.
+
+In every mode the window used is the one the provider actually accepts, never a theoretical maximum, and the current model's window is used rather than another provider's variant of the same model. Provider-side prompt caching is never disabled by any mode.
+
+## 8a. OpenDesign plan accounting
+
+OpenDesign Pro exposes two independent credit pools: Design Plan credits ($360/month, $90 per rolling seven days, no five-hour window) and plan model credits ($120/month, no usage windows). They are reported side by side and **never summed**. The advertised $480 total is not a single spendable balance, and Design Plan credit multipliers apply only inside the Design Plan pool.
+
+These figures are **estimated**, not provider-confirmed. An OpenDesign inference key cannot read quota: `GET /v1/usage` and `/v1/me` return 404 and the account-control host rejects an inference key. A control key would enable verified reads; none is configured, and the router never acquires one automatically. Because usage from the OpenDesign app is invisible to the router, the estimate is a lower bound.
+
+`minimax-m3.1-flash`'s Design Plan multiplier is unpublished, so a neutral 1× is applied and the uncertainty is reported rather than hidden. The same applies to the GLM cache-read price.
+
+## 8b. Measured speed
+
+Generation speed is recorded as output tokens per second, which separates a slow provider from a model that reasons for longer. It is compared against the fastest eligible route rather than an absolute figure, is neutral below a configurable sample floor, and raises effective cost without ever making a route ineligible. With few samples it does not change decisions — it is machinery that needs production traffic to become discriminating.
 
 ## 9. Precision of scores
 

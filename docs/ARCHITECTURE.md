@@ -66,7 +66,13 @@ Two layers are kept separate:
 
 Provider values override the ledger for plan-level pressure. Local values supply per-model estimates. Every displayed value carries its source (`provider`, `estimate`, or `unknown`). Polling is read-only and spends no inference allowance.
 
-The ledger is bounded: 2,000 usage events, 120 decisions, 250 sessions, and 40 days of retention. Writes are debounced and JSON-sanitized.
+The ledger keeps 2,000 *raw* usage events for per-request detail, but nothing is discarded when that cap is exceeded. Events older than a 48-hour horizon — or pushed out by the cap — are folded into hourly `UsageBucket` aggregates keyed by provider, model and billing period, retained for 400 days. Aggregation reads both sources, so a heavy week stays fully accounted at a few hundred rows instead of losing its own beginning.
+
+History is also preserved across an upgrade: hydrating a ledger written before aggregates existed folds the overflow into buckets rather than applying the old truncation.
+
+Decisions (120) and sessions (250) remain bounded, and writes are debounced and JSON-sanitized.
+
+Plan definitions live in `src/core/plans/catalog.ts` as data, not as branches in routing or quota code. A plan is a set of credit pools plus the window rule for each pool, so supporting a different user's tier requires no source change, and a provider's plan strings never appear in the routing or policy layers.
 
 ## Concurrency
 

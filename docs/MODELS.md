@@ -8,7 +8,7 @@ The router starts from a curated seed and merges live metadata from OpenCode. A 
 - **Design** is a separate curated score for front-end and UX quality. It is not benchmarked by the same method as intelligence.
 - **Vision** means the model accepts native image input in the live catalog.
 - **Premium** is a policy label for high-cost models. A premium model is never selected for economy or ordinary standard work.
-- **Monthly allowance** is public-rate usage included by the subscription. OpenCode Go values are from the Go Plus table. Command Code values are the GOAT per-model allowances. Provider-reported totals override these numbers for the plan-level balance.
+- **Monthly allowance** is public-rate usage included by the subscription. OpenCode Go values come from the plan catalog's Go table (Go Plus is a separate, larger table); selecting the wrong tier overstates capacity by roughly 2x. Command Code values are the GOAT per-model allowances. Provider-reported totals override these numbers for the plan-level balance.
 - **Time-of-day pricing** is applied only where documented. Command Code DeepSeek V4.1 Flash is listed at off-peak rates and charges 2× from 01:00–04:00 and 06:00–10:00 UTC, Monday–Friday; the router applies that multiplier to input, output, cache-read, and cache-loss estimates. Models without documented peak metadata use flat catalog rates.
 
 These scores are planning inputs, not marketing claims. Models marked **unverified** or **unscored** are not approved for automatic substantive work.
