@@ -445,6 +445,21 @@ MUTATIONS = [
         "        usage: this.options.getUsageEvents?.() ?? [],",
         "test/quota-service.test.ts",
     ),
+    # -------------------------------------------- switch penalty accounting
+    Mutation(
+        "the reported switch penalty charges the whole context, not the cached share",
+        "src/core/routing/engine.ts",
+        "    : Math.max(0, (context * CACHE_REUSE_SHARE * (inputPrice - cacheReadPrice)) / 1_000_000)",
+        "    : Math.max(0, (context * (inputPrice - cacheReadPrice)) / 1_000_000)",
+        "test/switch-penalty.test.ts",
+    ),
+    Mutation(
+        "switching is modelled as free, so the estimate ignores cache loss",
+        "src/core/routing/engine.ts",
+        "  const cachedShare = sameModel ? CACHE_REUSE_SHARE : 0",
+        "  const cachedShare = CACHE_REUSE_SHARE",
+        "test/switch-penalty.test.ts",
+    ),
     Mutation(
         "the tightest window no longer dominates",
         "src/core/policy/eligibility.ts",

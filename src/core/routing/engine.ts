@@ -98,6 +98,16 @@ const stepsFor: Record<TaskKind, number> = {
   unknown: 2,
 }
 
+/**
+ * The share of the context a staying model reads from prompt cache.
+ *
+ * The remainder is re-sent as fresh input. This is a modelling assumption, not a
+ * measured cache-hit rate, and it drives both the ranked estimate and the switch
+ * penalty that is reported alongside it, so the two can never disagree about how
+ * much a switch really costs.
+ */
+const CACHE_REUSE_SHARE = 0.85
+
 const selectCostTier = (model: ModelRecord, contextTokens: number): CostTier => {
   const sorted = [...model.cost].sort((a, b) => (a.tier?.size ?? 0) - (b.tier?.size ?? 0))
   let selected = sorted[0] ?? { input: 0, output: 0, cache: { read: 0, write: 0 } }
@@ -153,8 +163,13 @@ export const estimateTaskCost = (input: {
       : 1
   const outputPer = Math.min(outputPerStep[task.kind] * (task.tier === 3 ? 1.5 : 1), model.maxOutput || outputPerStep[task.kind])
   const output = outputPer * steps
-  const freshInput = task.scope.promptTokens + context * (sameModel ? 0.15 : 1) + context * 0.05 * (steps - 1)
-  const cacheRead = context * (sameModel ? 0.85 : 0) + context * 0.95 * (steps - 1)
+  // Staying on a model reuses the prompt cache. Switching loses it, so the whole
+  // context is re-sent as fresh input instead of being read from cache. Both
+  // halves of that trade depend on the same cached share, which is why it is
+  // named once and used by the estimate and by the reported penalty alike.
+  const cachedShare = sameModel ? CACHE_REUSE_SHARE : 0
+  const freshInput = task.scope.promptTokens + context * (1 - cachedShare) + context * 0.05 * (steps - 1)
+  const cacheRead = context * cachedShare + context * 0.95 * (steps - 1)
   // A live catalog entry or a hand-written definition can omit cache pricing.
   // Price it as zero rather than letting the router throw and fail open.
   const inputPrice = (Number.isFinite(tier.input) ? tier.input : 0) * peakMultiplier
@@ -164,9 +179,12 @@ export const estimateTaskCost = (input: {
     (freshInput * inputPrice) / 1_000_000 +
     (output * outputPrice) / 1_000_000 +
     (cacheRead * cacheReadPrice) / 1_000_000
+  // The extra cost a switch actually adds, which is the cached share of the
+  // context moving from cache-read price to full input price. Reporting the whole
+  // context here charged the reader 17.6% more than the estimate in force.
   const switchPenaltyUsd = sameModel
     ? 0
-    : Math.max(0, (context * (inputPrice - cacheReadPrice)) / 1_000_000)
+    : Math.max(0, (context * CACHE_REUSE_SHARE * (inputPrice - cacheReadPrice)) / 1_000_000)
   // OpenDesign converts the dollar value of usage into Design Plan credits
   // with a per-model multiplier. The result is still an estimate of credits,
   // never an observed provider charge.
