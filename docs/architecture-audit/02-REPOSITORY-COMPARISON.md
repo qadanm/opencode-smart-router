@@ -49,10 +49,10 @@ The requested URL `https://github.com/s-berdia/opencode-router` returns **HTTP 4
 **Known defects / limitations**
 
 - Fail-open on unexpected routing exceptions. Reproduced: a cost tier without `cache` throws at `engine.ts:113`; the hook swallows it at `controller.ts:807-811`.
-- `src/index.ts` retains a module-level `active` controller and disposes it on each setup. The observed behaviour says module scope is per location, but the host does not guarantee that.
+- `src/index.ts` retains a module-level `active` controller and disposes it on each setup. The observed behavior says module scope is per location, but the host does not guarantee that.
 - `ctx.model.list()` is still called once per bridge (`controller.ts:237`), in the background.
 - Docs drift: `docs/ARCHITECTURE.md` describes the pre-bridge design; `docs/LIMITATIONS.md` says prompt rejection is impossible.
-- No licence file.
+- No license file.
 - The Command Code adapter relies on undocumented `/alpha/*` routes.
 
 **API compatibility.** `@opencode/plugin` 2.1.4; `Plugin.define`; tested against the installed desktop server 2.1.4.
@@ -89,7 +89,7 @@ The requested URL `https://github.com/s-berdia/opencode-router` returns **HTTP 4
 - 3,249–6,357 characters of protocol overhead on every message (documented in the README).
 - GPL-3.0-only: copying code into this repository would require relicensing the combined work under GPL.
 
-**Verdict.** Excellent lifecycle and testing discipline to learn from; wrong product and wrong licence to adopt.
+**Verdict.** Excellent lifecycle and testing discipline to learn from; wrong product and wrong license to adopt.
 
 ---
 
@@ -228,7 +228,7 @@ The requested URL `https://github.com/s-berdia/opencode-router` returns **HTTP 4
 
 ## What was not verified
 
-- Marco's 342 test files, smoke suites, and live lifecycle behaviour were **not executed**. The repository is large and GPL-3.0; running its smoke suite would require provider credentials and a substantial environment.
+- Marco's 342 test files, smoke suites, and live lifecycle behavior were **not executed**. The repository is large and GPL-3.0; running its smoke suite would require provider credentials and a substantial environment.
 - Usage-limits' suite was **not executed** because it is a Bun workspace with `catalog:` dependencies and OpenTUI peers. Its source and test structure were inspected.
 - Sertdisk has no tests to run.
-- No live paid provider request was made for any candidate. Quota endpoint behaviour is taken from source and, for our adapters, from earlier isolated probes.
+- No live paid provider request was made for any candidate. Quota endpoint behavior is taken from source and, for our adapters, from earlier isolated probes.

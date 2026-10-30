@@ -23,7 +23,7 @@ export const LEDGER_VERSION = 1 as const
  * between, before the whole provider is treated as not serving.
  *
  * A transient blip is ridden out by the host's own retry and by the owner
- * saying "continue" — a couple of failures in a row is normal during a
+ * saying "continue", because a couple of failures in a row is normal during a
  * gateway hiccup. Only a sustained failure, where every attempt fails and
  * nothing succeeds in between, is an outage worth stepping back from.
  */
@@ -614,7 +614,7 @@ export class LedgerStore {
       modelMetrics.latencyMsTotal += latency
       // Generation speed is the only figure that separates a slow provider
       // from a model that simply reasons for longer: dividing by the tokens
-      // actually produced normalises for reasoning depth.
+      // actually produced normalizes for reasoning depth.
       if (event.output > 0) {
         const seconds = latency / 1000
         const instant = event.output / Math.max(0.001, seconds)

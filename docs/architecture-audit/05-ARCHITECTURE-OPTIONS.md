@@ -2,14 +2,14 @@
 
 ## Option A — Repair our plugin
 
-Keep the routing engine, policy, ledger, classifier, and quota adapters. Finish the shared-core/per-location-bridge split, remove the remaining lifecycle assumptions, and harden fail-closed behaviour.
+Keep the routing engine, policy, ledger, classifier, and quota adapters. Finish the shared-core/per-location-bridge split, remove the remaining lifecycle assumptions, and harden fail-closed behavior.
 
 **Pros**
 
 - The only option that already satisfies the full requirement set.
 - Behaviour can be preserved exactly: AUTO/MANUAL/PAUSED/DRY RUN titles, commands, RPC, quota policy, premium approval, cache affinity.
 - Incremental: every phase can be tested against the existing 77-test suite.
-- No new licence or dependency.
+- No new license or dependency.
 
 **Cons**
 

@@ -115,7 +115,7 @@ Full suite **218 passing**, typecheck clean.
 
 All 13 live sessions checked: **0 blocked**. The single session with no
 chosen candidate is a manual override — its title reads `MANUAL`, and
-"Manual override respected" is the correct behaviour, not a block.
+"Manual override respected" is the correct behavior, not a block.
 
 ## Remaining constraint (not a bug)
 

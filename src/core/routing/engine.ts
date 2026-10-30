@@ -119,10 +119,10 @@ const isPeakPricingActive = (now: number, peak: PeakPricing): boolean => {
 }
 
 /**
- * Estimate the total request cost of a task, not just one call. The estimate
- * deliberately includes later agent-loop steps and treats a model switch as a
- * cache loss. Documented peak pricing is applied using the supplied time;
- * omitting `now` uses the current time.
+ * Estimate the total request cost of a task across its whole agent loop rather
+ * than a single call. The estimate includes later steps and treats a model
+ * switch as a cache loss. Documented peak pricing is applied using the supplied
+ * time; omitting `now` uses the current time.
  */
 export const estimateTaskCost = (input: {
   model: ModelRecord

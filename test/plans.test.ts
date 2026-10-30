@@ -201,7 +201,7 @@ describe("plan catalog", () => {
   })
 
   it("never resolves an unknown plan to a larger allowance", () => {
-    // The previous behaviour fell back to this repository's own tier, which
+    // The previous behavior fell back to this repository's own tier, which
     // for OpenDesign meant $360/month of assumed capacity on a typo.
     const resolved = resolvePlanWithReason("opendesign", "maxx")
     expect(resolved.resolution).toBe("unknown")

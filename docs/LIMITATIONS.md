@@ -93,14 +93,14 @@ The purchased-credit guard is unit-tested, including the explicitly-allowed case
 
 Prompt caches are provider- and model-specific. A model switch is priced as a cache loss in the router's estimate. The router keeps the current model when the estimated savings are below the hysteresis threshold, and uses a wider threshold above 300K context tokens. It never truncates, summarizes, or deletes conversation history to make a model eligible.
 
-Command Code DeepSeek V4.1 Flash has documented time-of-day pricing: off-peak rates for 17 hours per day and 2× rates from 01:00–04:00 and 06:00–10:00 UTC, Monday–Friday. The router applies that multiplier to input, output, cache-read, and cache-loss estimates. Models without documented peak metadata use flat catalog rates; their time-of-day pricing is not assumed.
+Command Code DeepSeek V4.1 Flash has documented time-of-day pricing: off-peak rates for 17 hours per day and 2x rates from 01:00 to 04:00 and 06:00 to 10:00 UTC, Monday through Friday. The router applies that multiplier to input, output, cache-read, and cache-loss estimates. Models without documented peak metadata use flat catalog rates; their time-of-day pricing is not assumed.
 
 Context-health recommendations are non-destructive: they advise a new session and never compact anything on their own.
 
 Router-driven compaction is governed by `contextManagement.mode`:
 
 - `native` (default) and `conservative` never compact except when the transcript would genuinely exceed the model's verified accepted window. The provider's native handling is preferred; the router steps in only for that case, and announces it.
-- `budget-optimized` preserves the legacy behaviour: it compacts early to keep a session on the cheapest qualified route. It exists for small plans and small-window models.
+- `budget-optimized` preserves the legacy behavior: it compacts early to keep a session on the cheapest qualified route. It exists for small plans and small-window models.
 
 In every mode the window used is the one the provider actually accepts, never a theoretical maximum, and the current model's window is used rather than another provider's variant of the same model. Provider-side prompt caching is never disabled by any mode.
 
@@ -114,7 +114,7 @@ These figures are **estimated**, not provider-confirmed. An OpenDesign inference
 
 ## 8b. Measured speed
 
-Generation speed is recorded as output tokens per second, which separates a slow provider from a model that reasons for longer. It is compared against the fastest eligible route rather than an absolute figure, is neutral below a configurable sample floor, and raises effective cost without ever making a route ineligible. With few samples it does not change decisions — it is machinery that needs production traffic to become discriminating.
+Generation speed is recorded as output tokens per second, which separates a slow provider from a model that reasons for longer. It is compared against the fastest eligible route rather than an absolute figure, is neutral below a configurable sample floor, and raises effective cost without ever making a route ineligible. With few samples it does not change decisions. It is machinery that needs production traffic before it can discriminate.
 
 ## 9. Precision of scores
 

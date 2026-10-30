@@ -2,7 +2,7 @@
 
 **Precondition:** explicit approval of `06-RECOMMENDED-DESIGN.md`. No live installation until Phase 6 and a separate approval.
 
-Each phase is independently testable and reversible. The repository is not a git repository at the time of the audit; initialise or snapshot it before Phase 1 so every phase has a rollback point.
+Each phase is independently testable and reversible. The repository is not a git repository at the time of the audit; initialize or snapshot it before Phase 1 so every phase has a rollback point.
 
 ## Phase 0 — Freeze and baseline (0.5 day)
 
@@ -53,7 +53,7 @@ Changes:
 1. Wrap the entire routing call in `routePromptSafely`. Any non-`RouterBlockedError` exception becomes a blocked decision, a `BLOCKED` title, a notification, and a thrown `RouterBlockedError` when `routing.failClosed` is true.
 2. Normalize model definitions at config load: default `cache` to `{read:0, write:0}`, require finite non-negative numbers, require positive context/output, reject duplicates.
 3. Make `estimateTaskCost` defensive even after validation (optional chaining/defaults).
-4. Remove the catch-and-continue behaviour for routing errors; keep it only for non-routing UI/title errors.
+4. Remove the catch-and-continue behavior for routing errors; keep it only for non-routing UI/title errors.
 5. Add tests:
    - cost tier without `cache` does **not** throw and routes;
    - an injected `routeTask` throw produces a blocked decision and a rejected prompt;
@@ -66,7 +66,7 @@ Changes:
 - A forced routing exception yields HTTP 500 / no provider request in the isolated server, with a `BLOCKED` title.
 - Unit suite covers both fail-closed and opt-out.
 
-**Rollback:** revert the controller/config/engine changes; the old behaviour is known but unsafe. Do not deploy without this phase.
+**Rollback:** revert the controller/config/engine changes; the old behavior is known but unsafe. Do not deploy without this phase.
 
 ## Phase 3 — Quota coordinator consolidation (2–3 days)
 
@@ -206,7 +206,7 @@ Stop and reassess if:
 
 - the 20-location lab cannot maintain one core/one stream after Phase 1;
 - fail-closed cannot be made exception-safe without breaking normal prompts;
-- the host changes prompt-hook or `switchModel` behaviour;
+- the host changes prompt-hook or `switchModel` behavior;
 - quota endpoints become unstable or require credentials we cannot obtain safely;
 - the canary shows any server thrash, restart, or command loss.
 

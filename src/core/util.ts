@@ -19,6 +19,20 @@ export const usd = (value: number) => {
 
 export const percent = (value: number) => `${value.toFixed(value >= 10 ? 0 : 1)}%`
 
+/**
+ * Describe a plan id for display when the catalog could not resolve it.
+ *
+ * An unrecognized configured id must not be echoed as if it were a tier this
+ * build understands, and must not be silently replaced by a default: either
+ * would imply knowledge of an allowance that was never established. The raw
+ * value is kept only as a suffix so a user can see what they typed to fix it.
+ */
+export const describePlan = (resolvedPlanID: string | undefined, configuredPlanID: string | undefined): string => {
+  if (resolvedPlanID) return resolvedPlanID
+  const configured = (configuredPlanID ?? "").trim()
+  return configured ? `unresolved (${configured})` : "unresolved"
+}
+
 /** Group an integer with thousands separators, for token counts in prose. */
 export const thousands = (value: number) =>
   Number.isFinite(value) ? Math.round(value).toLocaleString("en-US") : "0"

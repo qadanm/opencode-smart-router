@@ -27,13 +27,13 @@ This preserves 100% of the stated requirements while reducing lifecycle surface.
 
 ## What the audit actually established
 
-### Host behaviour (verified by isolated probes)
+### Host behavior (verified by isolated probes)
 
 - OpenCode 2.1.4 loaded 20 project locations in **one process** with **one** shared `globalThis` and **one** plugin-storage namespace.
 - `setup` runs once per loaded location (133 setup events observed during a churn test; one PID, one core id).
 - Commands and RPC are location-scoped; the event stream and plugin storage are process-wide.
 - A prompt-hook throw rejects admission (HTTP 500, no provider request). There is no typed rejection API, but the safety effect is real.
-- Plugin module scope is **not** proven shared. The observed 21 simultaneous bridges with zero disposals implies each location received a separate module evaluation. Our current `src/index.ts` still relies on that behaviour; this is a latent assumption to remove.
+- Plugin module scope is **not** proven shared. The observed 21 simultaneous bridges with zero disposals implies each location received a separate module evaluation. Our current `src/index.ts` still relies on that behavior; this is a latent assumption to remove.
 
 ### Our current build (post-rebuild, before this audit)
 
@@ -49,7 +49,7 @@ This preserves 100% of the stated requirements while reducing lifecycle surface.
 2. **Config validation accepts the shape that triggers it.** `src/core/config.ts:210-211` accepts a cost tier with only `input`/`output`; the engine assumes `cache.read`.
 3. **Latent module-scope lifecycle assumption.** `src/index.ts:10-24` keeps a module-level `active` controller and disposes it on every `setup`. This is safe only because module scope appears to be per location. The shared core already has a bridge registry; the module-level controller should be deleted.
 4. **Startup work still scales with locations.** Each bridge runs `ctx.model.list()` in the background (`src/server/controller.ts:237`). It is local and non-blocking, but it is N calls, not one.
-5. **Documentation drift.** `docs/ARCHITECTURE.md` still describes “one controller per process” and `docs/LIMITATIONS.md` still says there is no prompt rejection, contradicting the current code and the verified blocked-prompt behaviour.
+5. **Documentation drift.** `docs/ARCHITECTURE.md` still describes “one controller per process” and `docs/LIMITATIONS.md` still says there is no prompt rejection, contradicting the current code and the verified blocked-prompt behavior.
 6. **No license.** The repository has no `LICENSE` file, which blocks any deliberate reuse or distribution decision.
 
 ## Requirement fit
@@ -99,7 +99,7 @@ The “ours” stability score is deliberately moderate: the architecture is mat
 3. **Undocumented quota endpoints.** Go `/zen/go/v1/usage` and Command Code `/alpha/*` are best-effort. They can change without notice. Keep them read-only, bounded, stale-aware, and non-authoritative.
 4. **SDK drift.** The v2 plugin API is young. Marco's own v2 migration issue (#40) is evidence. Pin the host version and keep the bridge thin.
 5. **Insufficient final-build evidence.** The last 30-minute soak predates the audit fixes. Any implementation phase must end with a fresh 20-location soak on the exact artifact proposed for installation.
-6. **Documentation and licence hygiene.** The docs contradict the code, and there is no licence. Both undermine maintainability and any future reuse decision.
+6. **Documentation and license hygiene.** The docs contradict the code, and there is no license. Both undermine maintainability and any future reuse decision.
 
 ## Decision requested
 

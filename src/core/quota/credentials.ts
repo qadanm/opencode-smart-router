@@ -17,7 +17,7 @@ import { redact } from "../util.js"
  * that deserves explicit, documented containment, because a router that
  * "finds" credentials automatically is one bad path away from reading
  * something it has no business reading. The rules below are therefore
- * enforced in code, not just described:
+ * enforced in code and asserted in tests:
  *
  *  1. **Opt-in, never implicit.** Automatic filesystem discovery requires
  *     `credentialSource: "auto"` (or the `SMART_ROUTER_ALLOW_KEY_DISCOVERY`
@@ -182,11 +182,20 @@ const COMMAND_CODE_FILE_OPTIONS: CredentialFileOptions = {
  * The file is opened once with `O_NOFOLLOW` and every check runs against the
  * open descriptor, so a path cannot be swapped for a symlink between the
  * permission check and the read. The descriptor is closed on every path out.
+ *
+ * `explicit` marks a path the operator named directly. Discovery applies a
+ * stricter rule than configuration does: when scanning well-known locations
+ * the router must not accept a file owned by another account, because it did
+ * not intend to read that specific file. When an operator names a path, that
+ * is already a deliberate trust decision, and refusing it on uid alone breaks
+ * containers and bind mounts where the process runs as a different user than
+ * the one that owns the mounted secret.
  */
 export const readCredentialFileWith = (
   path: string,
   warnings: string[],
   options: CredentialFileOptions,
+  explicit = false,
 ): CredentialCandidate | undefined => {
   let fd: number | undefined
   try {
@@ -202,14 +211,16 @@ export const readCredentialFileWith = (
       warnings.push(`${options.label} credential file is unexpectedly large: ${path}`)
       return undefined
     }
-    // The key is a bearer credential. Refuse group/world-readable files, and
-    // refuse a file owned by a different user: on a shared machine another
-    // account's file must not be able to influence which credential we use.
+    // The key is a bearer credential. Refuse group/world-readable files
+    // unconditionally. Refuse a file owned by another user only when the path
+    // was discovered rather than named: on a shared machine another account's
+    // file must not be able to influence which credential we use, but an
+    // operator who named this exact path already made that decision.
     if ((stat.mode & 0o077) !== 0) {
       warnings.push(`Ignoring ${options.label} credential file with group/world permissions: ${path}`)
       return undefined
     }
-    if (typeof process.getuid === "function" && stat.uid !== process.getuid()) {
+    if (!explicit && typeof process.getuid === "function" && stat.uid !== process.getuid()) {
       warnings.push(`Ignoring ${options.label} credential file owned by another user: ${path}`)
       return undefined
     }
@@ -284,7 +295,8 @@ export interface DiscoverCommandCodeInput {
  *
  * Note what is *absent*: OpenCode's own `auth.json` is never read. That file is
  * another application's unified credential store and contains OAuth material
- * for every provider the user has connected, not just this one.
+ * for every provider the user has connected. Those tokens belong to providers
+ * this router was never asked about.
  */
 export const discoverCommandCodeCredentials = (input: DiscoverCommandCodeInput = {}): CredentialDiscovery => {
   const warnings: string[] = []
@@ -303,7 +315,7 @@ export const discoverCommandCodeCredentials = (input: DiscoverCommandCodeInput =
   const envKey = env.COMMAND_CODE_API_KEY?.trim() || env.COMMANDCODE_API_KEY?.trim()
   if (envKey && plausibleKey(envKey)) add({ source: "environment", key: envKey })
 
-  if (input.explicitPath) add(readCredentialFile(input.explicitPath, warnings))
+  if (input.explicitPath) add(readCredentialFileWith(input.explicitPath, warnings, COMMAND_CODE_FILE_OPTIONS, true))
 
   if (policy === "off") {
     if (candidates.length === 0) {
@@ -386,7 +398,7 @@ export const discoverOpenDesignCredentials = (input: DiscoverOpenDesignInput = {
     else warnings.push("The OpenDesign environment key does not look like an inference key and was ignored.")
   }
 
-  if (input.explicitPath) add(readCredentialFileWith(input.explicitPath, warnings, OPENDESIGN_FILE_OPTIONS))
+  if (input.explicitPath) add(readCredentialFileWith(input.explicitPath, warnings, OPENDESIGN_FILE_OPTIONS, true))
 
   if (policy === "off") {
     if (candidates.length === 0) {
@@ -431,11 +443,16 @@ export const discoverOpenDesignControlKey = (input: {
     )
     return { candidates, warnings }
   }
-  const candidate = readCredentialFileWith(input.explicitPath, warnings, {
-    envNames: ["OPENDESIGN_CONTROL_KEY"],
-    jsonKeys: ["opendesign-control", "opendesignControl", "control"],
-    label: "OpenDesign control",
-  })
+  const candidate = readCredentialFileWith(
+    input.explicitPath,
+    warnings,
+    {
+      envNames: ["OPENDESIGN_CONTROL_KEY"],
+      jsonKeys: ["opendesign-control", "opendesignControl", "control"],
+      label: "OpenDesign control",
+    },
+    true,
+  )
   if (candidate) candidates.push(candidate)
   return { candidates, warnings }
 }
@@ -467,7 +484,7 @@ export const describeCredentialSource = (candidate: CredentialCandidate | undefi
     case "OpenCode provider settings":
       return "OpenCode provider settings"
     default:
-      // Never echo an unrecognised source string.
+      // Never echo an unrecognized source string.
       return "configured"
   }
 }

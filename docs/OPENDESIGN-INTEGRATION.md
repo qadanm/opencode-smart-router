@@ -5,7 +5,7 @@ Command Code GOAT. This document records what the integration does, where its
 numbers come from, and what it cannot promise.
 
 It extends the existing Option C router. It is not a second router, and it does
-not change the behaviour of the two existing providers.
+not change the behavior of the two existing providers.
 
 ---
 
@@ -13,20 +13,20 @@ not change the behaviour of the two existing providers.
 
 | Area | Change |
 |---|---|
-| Provider adapter | `src/core/providers/opendesign.ts` — base URL handling, protocol selection, read-only model discovery, error and size normalisation |
-| Model catalog | `src/core/providers/opendesign-models.ts` — the 13 models the gateway serves, with credit multipliers and curated quality scores |
-| Credit semantics | `src/core/providers/opendesign-credits.ts` — published multipliers, promotion handling, credit conversion |
-| Quota integration | `src/core/quota/opendesign.ts` — verified / estimated / unknown / exhausted states |
-| Credential discovery | `src/core/quota/credentials.ts` — inference key and explicitly supplied control key, kept separate |
-| Routing | `src/core/routing/engine.ts` — credit multiplier in the cost ranking, cooldown exclusion, reliability weighting |
-| Policy | `src/core/policy/eligibility.ts` — subscription-only guard and unknown-quota policy |
-| Quota coordinator | `src/core/quota/service.ts` — OpenDesign probes run through the same single-flight service as the other two providers |
-| Model registry | `src/core/models/seed.ts`, `src/core/models/registry.ts` — OpenDesign seeds, gateway metadata merged over them |
-| Shared core | `src/server/shared-core.ts` — one single-flight discovery per process, merged into the one model catalog |
+| Provider adapter | `src/core/providers/opendesign.ts` : base URL handling, protocol selection, read-only model discovery, error and size normalisation |
+| Model catalog | `src/core/providers/opendesign-models.ts` : the 39 models the gateway serves, with credit multipliers and curated quality scores |
+| Credit semantics | `src/core/providers/opendesign-credits.ts` : published multipliers, promotion handling, credit conversion |
+| Quota integration | `src/core/quota/opendesign.ts` : verified / estimated / unknown / exhausted states |
+| Credential discovery | `src/core/quota/credentials.ts` : inference key and explicitly supplied control key, kept separate |
+| Routing | `src/core/routing/engine.ts` : credit multiplier in the cost ranking, cooldown exclusion, reliability weighting |
+| Policy | `src/core/policy/eligibility.ts` : subscription-only guard and unknown-quota policy |
+| Quota coordinator | `src/core/quota/service.ts` : OpenDesign probes run through the same single-flight service as the other two providers |
+| Model registry | `src/core/models/seed.ts`, `src/core/models/registry.ts`: OpenDesign seeds, gateway metadata merged over them |
+| Shared core | `src/server/shared-core.ts` : one single-flight discovery per process, merged into the one model catalog |
 | Commands | `/router-opendesign` added; `/router-status`, `/router-report`, `/router-explain` updated |
 
 The provider is **optional and disabled by default**. A user with no OpenDesign
-credentials sees no behaviour change at all.
+credentials sees no behavior change at all.
 
 ---
 
@@ -41,7 +41,7 @@ Recorded 2026-10-28.
 | `nexu-io/open-design` #8674 | open | No API-key-readable quota endpoint |
 | `nexu-io/open-design` #8870 | open | Control-key lifecycle and revocation gaps |
 | `nexu-io/open-design` #8687 | open | Anthropic-messages drops reasoning for DeepSeek V4.1 Flash |
-| `KouzakiUmi/dsh-opendesign-corouter` | `afb390a6bd66` | Gateway shape, protocol endpoints, empty-turn behaviour |
+| `KouzakiUmi/dsh-opendesign-corouter` | `afb390a6bd66` | Gateway shape, protocol endpoints, empty-turn behavior |
 | `KouzakiUmi/dsh-subusage` | `d6d997ddce7a` | Control-plane paths, window classification, credential handling |
 | `open-design.ai/help/cloud-api/`, `/help/billing/`, `/model-credits/` | retrieved 2026-10-28 | Plan shape, credit multipliers, window rules |
 
@@ -72,7 +72,7 @@ Three findings that change how the router treats OpenDesign:
 
 1. **`context_budget`, not `context_limit`, is the usable window.** The vendor
    limit is up to 1.05M tokens, but the gateway's usable input budget is
-   228k–400k. Routing against the vendor limit would send requests the gateway
+   228k to 400k. Routing against the vendor limit would send requests the gateway
    rejects. The router uses `context_budget`.
 2. **Image support is verified from the gateway**, not inferred from a model
    card. `hy4-preview`, `deepseek-v4-flash` and `deepseek-v4-pro` are text only
@@ -115,14 +115,14 @@ Issues #8674 and #8870, which ask for exactly this, are both still open.
 
 The integration therefore has three states:
 
-- **`verified`** — a control key was supplied explicitly. The router reads
+- **`verified`**: a control key was supplied explicitly. The router reads
   `workspaces/current`, `workspaces/{id}/billing/coding-plan-usage` and
   `billing/summary`, and reports provider numbers. This is the only state in
   which the wallet balance is reported.
-- **`estimated`** — only the inference key is available. The router models its
+- **`estimated`**: only the inference key is available. The router models its
   own credit consumption against the published plan caps, applies a
   configurable safety margin (default 20%), and reports it as a lower bound.
-- **`unavailable`** — nothing could be established. OpenDesign is then not
+- **`unavailable`**: nothing could be established. OpenDesign is then not
   routed to.
 
 `stale` marks verified or estimated data older than twice the probe interval.
@@ -271,7 +271,7 @@ kept being selected.
 
 Three changes fix this:
 
-1. **Classification.** Mid-stream faults are recognised even when the HTTP
+1. **Classification.** Mid-stream faults are recognized even when the HTTP
    status is 200. This covers OpenCode's `provider.internal`
    ("Streaming response failed: [500] EngineCore encountered an issue") and
    `provider.invalid-output` ("OpenAI Chat stream ended without
@@ -314,8 +314,7 @@ correct bridge counts, zero duplicate registrations.
 
 ## 10. Test and canary evidence
 
-`npx vitest run` — **183 tests passing** (106 existing, 55 OpenDesign,
-17 reliability, 5 control-base). `tsc --noEmit` clean.
+`npx vitest run` reports **330 tests passing**. `tsc --noEmit` is clean.
 
 Three pre-existing test failures were fixed on the way. The suite read the
 developer's real `~/.config/opencode/smart-router.json` and merged it over the

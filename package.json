@@ -1,5 +1,5 @@
 {
-  "name": "opencode-smart-router",
+  "name": "@qadanm/opencode-smart-router",
   "version": "0.2.0",
   "description": "Subscription-aware model routing for OpenCode: nested usage windows, multi-pool credit accounting, and context policy.",
   "keywords": [

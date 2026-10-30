@@ -306,11 +306,11 @@ The Go and Command Code endpoints remain best-effort and undocumented; the UI an
 | `controller.ts:220-227` fallback `new QuotaService(...)` | **Delete** | The core must always own the quota service; a fallback creates a second owner |
 | Duplicate `compact`/`compactMode` runtime flags | **Collapse** | Two names for one setting |
 | `docs/ARCHITECTURE.md` controller claims | **Rewrite** | Contradicts the bridge design |
-| `docs/LIMITATIONS.md` “no prompt rejection” | **Rewrite** | Contradicted by the verified blocked-prompt behaviour |
+| `docs/LIMITATIONS.md` “no prompt rejection” | **Rewrite** | Contradicted by the verified blocked-prompt behavior |
 | Controller diagnostics object exposure | **Already fixed** | Keep the redacted shape |
 | Unused RPC/commands | **Audit and remove** | Reduce surface |
 
-Target: a net reduction of 15–25% in source lines without losing behaviour.
+Target: a net reduction of 15–25% in source lines without losing behavior.
 
 ## 15. Complexity and risks
 
@@ -319,7 +319,7 @@ Target: a net reduction of 15–25% in source lines without losing behaviour.
 **Main risks**
 
 1. **Host assumptions.** If module scope or `globalThis` sharing changes, the core must detect it. Mitigation: versioned `Symbol.for` key, diagnostics, and a startup self-check that refuses to create a second core in the same process.
-2. **v2 hook semantics.** Prompt rejection is untyped. Mitigation: verified live behaviour, explicit documentation, and a test that asserts the hook throws.
+2. **v2 hook semantics.** Prompt rejection is untyped. Mitigation: verified live behavior, explicit documentation, and a test that asserts the hook throws.
 3. **Quota endpoint drift.** Mitigation: read-only adapters, typed failures, stale data, and a visible `unknown` state.
 4. **Over-engineering relapse.** Mitigation: the scope list in this document; no dashboard, no delegation framework, no web UI.
 5. **Test theater.** Mitigation: the 20-location soak and cold starts are release gates, not optional.

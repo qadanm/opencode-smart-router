@@ -222,7 +222,7 @@ off OpenDesign when a window runs out.
 - **The estimated quota is a lower bound** and cannot account for usage from
   the OpenDesign app or other clients.
 - **No real-provider canary was run.** Every test used mocks. The first real
-  request is where the gateway's actual behaviour, latency and error shapes
+  request is where the gateway's actual behavior, latency and error shapes
   get confirmed.
 - **The verified quota path depends on undocumented endpoints.** They may
   change without notice. If they break, the router degrades to estimated.
@@ -302,7 +302,7 @@ a transient fault on their side, and it hit whichever model happened to be
 serving — so it appeared on DeepSeek V4.1 Flash in one session and on MiniMax
 M3.1 Flash in another.
 
-The router's behaviour was correct: classify it as a provider outage, retry,
+The router's behavior was correct: classify it as a provider outage, retry,
 cap the retries at 3 attempts, and carry on. It recovered every time.
 
 **Two genuine router bugs did make it look worse than it was.**

@@ -7,7 +7,7 @@ No third-party code was copied into our repository during this audit. This docum
 | Decision | Meaning |
 |---|---|
 | **Direct** | Could be used as a dependency or copied with attribution, with little adaptation |
-| **Vendor** | Copy a small, self-contained piece with its licence notice and adapt it |
+| **Vendor** | Copy a small, self-contained piece with its license notice and adapt it |
 | **Concept** | Reimplement the idea in our architecture; no code copied |
 | **Test oracle** | Use the external tests/edge cases to validate our own implementation |
 | **Reject** | Not suitable for licensing, architecture, quality, or scope reasons |
@@ -52,13 +52,13 @@ They are MIT, so vendoring is legally possible with a notice. But they are writt
 
 ### Why not reuse sberdia code?
 
-The MIT licence permits it, and the ledger/health logic is small. But:
+The MIT license permits it, and the ledger/health logic is small. But:
 
 - It is v1-oriented; its model application path does not exist in v2.
 - Its ledger is a read-modify-write JSON file, which we deliberately do not want.
 - Its role model (plan/build/explore) is not a task classifier.
 
-The useful part is the *policy idea*: per-model cooldown and a shared-allowance cooldown. That is ~40 lines in our types, and we can write tests that match its behaviour.
+The useful part is the *policy idea*: per-model cooldown and a shared-allowance cooldown. That is ~40 lines in our types, and we can write tests that match its behavior.
 
 ### Marco: concepts only
 

@@ -10,7 +10,7 @@ import type { LedgerStore } from "../src/core/quota/ledger.js"
 /**
  * The legacy budget-optimized strategy, exercised explicitly.
  *
- * This is the behaviour the router used unconditionally on a $10 plan: an
+ * This is the behavior the router used unconditionally on a $10 plan: an
  * idle session is compacted before it outgrows the cheapest provider that can
  * serve it, so a long conversation keeps routing to the cheap pool. It is no
  * longer the default, but it must keep working for a user whose plan needs it.

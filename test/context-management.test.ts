@@ -17,7 +17,7 @@ import type { LedgerStore } from "../src/core/quota/ledger.js"
  *
  * The default is now `native` mode, which preserves history and only acts
  * when a request would genuinely exceed the window the provider accepts.
- * `budget-optimized` keeps the old behaviour for small plans.
+ * `budget-optimized` keeps the old behavior for small plans.
  */
 describe("context management on an idle session", () => {
   let fake: ReturnType<typeof makeCtx>

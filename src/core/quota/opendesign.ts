@@ -5,7 +5,7 @@ import type {
   QuotaWindow,
   UsageEvent,
 } from "../types.js"
-import { clamp, pct, redact } from "../util.js"
+import { clamp, describePlan, pct, redact } from "../util.js"
 import {
   OPENDESIGN_DEFAULT_CONTROL_BASE_URL,
   OPENDESIGN_USER_AGENT,
@@ -276,7 +276,7 @@ const baseSnapshot = (
   return {
     providerID: "opendesign",
     label: plan?.label ?? "OpenDesign",
-    plan: plan?.planID ?? (input.settings.plan ? `unresolved:${input.settings.plan}` : "unresolved"),
+    plan: describePlan(plan?.planID, input.settings.plan),
     source: "unknown",
     fetchedAt: now,
     stale: false,
@@ -291,7 +291,7 @@ const baseSnapshot = (
 }
 
 /**
- * The caps a plan exposes, honouring explicit overrides and any advertised
+ * The caps a plan exposes, honoring explicit overrides and any advertised
  * removal of a window.
  *
  * OpenDesign Pro has a seven-day Design Plan window and no five-hour window.
@@ -652,7 +652,7 @@ const probeVerified = async (
   const snapshot: ProviderQuotaSnapshot = {
     providerID: "opendesign",
     label: caps.plan?.label ?? "OpenDesign",
-    plan: caps.plan?.planID ?? (input.settings.plan ? `unresolved:${input.settings.plan}` : "unresolved"),
+    plan: describePlan(caps.plan?.planID, input.settings.plan),
     source: "provider",
     fetchedAt: now,
     stale: false,
@@ -728,7 +728,7 @@ const probeEstimated = (input: OpenDesignQuotaInput, now: number): OpenDesignQuo
   const snapshot: ProviderQuotaSnapshot = {
     providerID: "opendesign",
     label: caps.plan?.label ?? "OpenDesign",
-    plan: caps.plan?.planID ?? (input.settings.plan ? `unresolved:${input.settings.plan}` : "unresolved"),
+    plan: describePlan(caps.plan?.planID, input.settings.plan),
     source: "estimate",
     fetchedAt: now,
     stale: false,

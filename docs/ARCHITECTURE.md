@@ -66,7 +66,7 @@ Two layers are kept separate:
 
 Provider values override the ledger for plan-level pressure. Local values supply per-model estimates. Every displayed value carries its source (`provider`, `estimate`, or `unknown`). Polling is read-only and spends no inference allowance.
 
-The ledger keeps 2,000 *raw* usage events for per-request detail, but nothing is discarded when that cap is exceeded. Events older than a 48-hour horizon — or pushed out by the cap — are folded into hourly `UsageBucket` aggregates keyed by provider, model and billing period, retained for 400 days. Aggregation reads both sources, so a heavy week stays fully accounted at a few hundred rows instead of losing its own beginning.
+The ledger keeps 2,000 *raw* usage events for per-request detail, but nothing is discarded when that cap is exceeded. Events older than a 48-hour horizon, or pushed out by the cap, are folded into hourly `UsageBucket` aggregates keyed by provider, model and billing period, retained for 400 days. Aggregation reads both sources, so a heavy week stays fully accounted at a few hundred rows instead of losing its own beginning.
 
 History is also preserved across an upgrade: hydrating a ledger written before aggregates existed folds the overflow into buckets rather than applying the old truncation.
 

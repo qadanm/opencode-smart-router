@@ -42,7 +42,7 @@ Status: live, verified. Nothing pushed, nothing published.
 
 ## 2. Old restrictions removed or disabled
 
-I traced every optimisation to what it actually did, rather than assuming the list in the brief was accurate. Three of the listed items did not exist as separate mechanisms.
+I traced every optimization to what it actually did, rather than assuming the list in the brief was accurate. Three of the listed items did not exist as separate mechanisms.
 
 ### Removed from the default path
 
@@ -56,7 +56,7 @@ I traced every optimisation to what it actually did, rather than assuming the li
 
 ### Explicitly preserved
 
-**Provider-side prompt caching.** Untouched. The router never controlled it; the only thing that damaged it was unnecessary model switching, which the hysteresis and `preferSameProvider` already handled. Nothing in this change disables cache reads, prefix reuse, or cache-friendly behaviour. Live cache share is 98.7%, matching the ~99% you observed.
+**Provider-side prompt caching.** Untouched. The router never controlled it; the only thing that damaged it was unnecessary model switching, which the hysteresis and `preferSameProvider` already handled. Nothing in this change disables cache reads, prefix reuse, or cache-friendly behavior. Live cache share is 98.7%, matching the ~99% you observed.
 
 **Real overflow protection.** Every mode still refuses to knowingly send an over-window request. `native` performs an emergency compaction when the transcript would exceed the *verified* window; setting `allowEmergencyCompaction: false` makes it fail loudly instead.
 
@@ -64,7 +64,7 @@ I traced every optimisation to what it actually did, rather than assuming the li
 
 ---
 
-## 3. New context behaviour
+## 3. New context behavior
 
 Three modes, selected by `contextManagement.mode`. Default is `native`.
 
@@ -92,14 +92,14 @@ Verified live on the deployed build:
 
 ---
 
-## 4. New routing behaviour
+## 4. New routing behavior
 
 Default remains balanced mode, and the ordinary coding default is **`opendesign/deepseek-v4.1-flash`**.
 
 ### Provider priority
 
 1. **OpenDesign Design Plan pool** — DeepSeek V4.1 Flash at 0.5× credits is the cheapest adequately-capable route and wins nearly every ordinary task.
-2. **OpenCode Go** — per-model allowances, 1M window on DeepSeek. Takes over when Design Plan is under pressure, when a longer window is needed, or when speed favours it.
+2. **OpenCode Go** — per-model allowances, 1M window on DeepSeek. Takes over when Design Plan is under pressure, when a longer window is needed, or when speed favors it.
 3. **Command Code GOAT** — independent fallback, one shared $70 pool with nested 5h/7d ceilings.
 4. **OpenDesign plan-model pool** — escalation only.
 
@@ -186,7 +186,7 @@ New coverage by requirement:
 
 | Requirement | Test file | Count |
 |---|---|---|
-| Pro recognised, two pools, no 5h window | `plans.test.ts` | 22 |
+| Pro recognized, two pools, no 5h window | `plans.test.ts` | 22 |
 | Go vs Go Plus, per-model windows, GOAT unchanged | `plans.test.ts` | (incl.) |
 | Ordinary conversations do not compact | `context-management.test.ts` | 16 |
 | Current model's window, not cheapest variant | `context-management.test.ts` | (incl.) |
@@ -218,7 +218,7 @@ New coverage by requirement:
 ### Separated cleanly
 
 - **Plan definitions** — `plans/catalog.ts`. A different user's tier is a data entry, not a code branch. No plan string appears in `routing/`, `policy/` or `models/`.
-- **Provider adapters** — `providers/`, `quota/`. Each adapter normalises into shared types.
+- **Provider adapters** — `providers/`, `quota/`. Each adapter normalizes into shared types.
 - **Context strategies** — `context/strategy.ts`. Provider-agnostic; would serve a hosted API user unchanged.
 - **Usage accounting** — `quota/ledger.ts` + `quota/report.ts`.
 - **Routing** — `routing/engine.ts`, `policy/eligibility.ts`. Reads `ModelRecord`, never a vendor id.
@@ -231,7 +231,7 @@ Audited `src/` for `/Users/…`, personal identifiers, workspace ids and emails:
 
 ### What still needs work before any release
 
-The old optimisation subsystem is reusable but is not yet a separately publishable package: it is imported directly rather than through an interface, and `budget-optimized` has no cost model of its own beyond the cheapest-variant window. That is a packaging task, not an architectural one.
+The old optimization subsystem is reusable but is not yet a separately publishable package: it is imported directly rather than through an interface, and `budget-optimized` has no cost model of its own beyond the cheapest-variant window. That is a packaging task, not an architectural one.
 
 ---
 

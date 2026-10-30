@@ -10,7 +10,7 @@ Three properties matter:
 2. **`globalThis` and plugin storage are process-wide.** All locations observed the same core id, and a value written by location 1 through `ctx.storage` was read by location 2.
 3. **Commands and RPC are location-scoped.** Each location exposes its own command list; a command registered by one location is not visible in another.
 
-A fourth property is **observed but not contractual**: module-level variables appear to be evaluated per location. If they were shared, the 21 simultaneous bridges observed in the lab would have collapsed to one as each setup disposed the previous module-level controller. They did not. The current code nonetheless still depends on this behaviour; see §5.
+A fourth property is **observed but not contractual**: module-level variables appear to be evaluated per location. If they were shared, the 21 simultaneous bridges observed in the lab would have collapsed to one as each setup disposed the previous module-level controller. They did not. The current code nonetheless still depends on this behavior; see §5.
 
 ## 2. What the disabled build did
 
@@ -183,9 +183,9 @@ The core never deletes its `globalThis` key. Deleting it allows a second core to
 | Duplicate quota polling | One service | No quota polling | No polling | No polling | One coordinator |
 | Shared-state races | One core, single writer | Leases/claims on `globalThis` | JSON mtime sync, last-writer-wins | JSON state file | Effect fiber |
 | Cleanup | Registrations + core grace | Extensive dispose barriers | No resources to clean | Disposers + server close | Fiber interrupt |
-| Reload behaviour | Core survives, bridge re-adds | Claims/sweep | Rebuild per instance | Rebind web server | TUI reload |
+| Reload behavior | Core survives, bridge re-adds | Claims/sweep | Rebuild per instance | Rebind web server | TUI reload |
 
-Marco is the only external project that treats multi-location lifecycle as a first-class design problem. Its solution (leases, claims, ownership, dispose barriers) is instructive, but it carries a large amount of machinery and a GPL licence. Our core/bridge split is a smaller version of the same idea.
+Marco is the only external project that treats multi-location lifecycle as a first-class design problem. Its solution (leases, claims, ownership, dispose barriers) is instructive, but it carries a large amount of machinery and a GPL license. Our core/bridge split is a smaller version of the same idea.
 
 ## 8. Lessons that constrain the redesign
 

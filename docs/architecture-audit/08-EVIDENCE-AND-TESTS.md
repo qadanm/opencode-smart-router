@@ -182,7 +182,7 @@ npm test
 
 | File | Contents |
 |---|---|
-| `evidence/repositories.json` | Pins, URLs, test status, host API, licences |
+| `evidence/repositories.json` | Pins, URLs, test status, host API, licenses |
 | `evidence/our-tests.txt` | Typecheck + 77-test run |
 | `evidence/engine-cost-repro.txt` | Test source + output for the `cache` TypeError |
 | `evidence/lab9-fail-open.txt` | Instrumented route log, null decision, cause chain |

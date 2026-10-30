@@ -1,5 +1,5 @@
 import type { ExtraCredits, ProviderQuotaSnapshot, ProviderSettings, QuotaWindow } from "../types.js"
-import { clamp, pct, redact } from "../util.js"
+import { clamp, describePlan, pct, redact } from "../util.js"
 import {
   describeCredentialSource,
   discoverCommandCodeCredentials,

@@ -111,7 +111,7 @@ export const decideCompaction = (input: CompactionContext): CompactionDecision =
     }
   }
 
-  // budget-optimized: the legacy behaviour, preserved deliberately.
+  // budget-optimized: the legacy behavior, preserved deliberately.
   const target = input.cheapestWindow && input.cheapestWindow > 0 ? input.cheapestWindow : effectiveWindow
   const targetLimit = target * CONTEXT_SAFE_WINDOW_FRACTION
   const threshold = Math.min(

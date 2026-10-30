@@ -311,7 +311,7 @@ describe("exhausted and unknown allowances", () => {
   })
 })
 
-describe("an unrecognised plan never overstates capacity", () => {
+describe("an unrecognized plan never overstates capacity", () => {
   it("reports unknown capacity rather than a fresh allowance", async () => {
     const { probeOpenDesignQuota } = await import("../src/core/quota/opendesign.js")
     const result = await probeOpenDesignQuota({

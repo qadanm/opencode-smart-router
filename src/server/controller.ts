@@ -46,6 +46,7 @@ import { OPEN_DESIGN_MODEL_BY_ID } from "../core/providers/opendesign-models.js"
 import { creditMultiplierFor } from "../core/providers/opendesign-credits.js"
 import { SmartRouterRpc } from "../rpc.js"
 import {
+  describePlan,
   keyOfRef,
   modelKey,
   nowId,
@@ -90,7 +91,7 @@ const CONTEXT_SAFE_WINDOW_FRACTION = 0.95
 /**
  * How many attempts a provider-scoped failure may have before the router
  * stops retrying. Each attempt is refused before a model runs, so it costs
- * no allowance — the delay is the only price, and it is far cheaper than a
+ * no allowance. The delay is the only price, and it is far cheaper than a
  * turn dying and waiting for the owner to restart it.
  */
 const PROVIDER_SCOPED_RETRY_ATTEMPTS = 5
@@ -1270,7 +1271,7 @@ export class RouterController {
    *
    *  - `native` (default) never compacts except to avoid a verified overflow.
    *  - `conservative` compacts only to prevent a real overflow.
-   *  - `budget-optimized` preserves the old early-compaction behaviour for
+   *  - `budget-optimized` preserves the old early-compaction behavior for
    *    small plans and small-window models.
    *
    * In every mode the effective window is the one the provider actually
@@ -2193,7 +2194,8 @@ export class RouterController {
       .filter(([, settings]) => settings.enabled)
       .map(([providerID, settings]) => {
         const snapshot = quota.find((entry) => entry.providerID === providerID)
-        const plan = resolvePlan(providerID, settings.plan)
+        const resolvedPlan = resolvePlanWithReason(providerID, settings.plan)
+        const plan = resolvedPlan.plan
         const designPlan = plan?.pools.find((pool) => pool.id === "design-plan")
         const hasFiveHourWindow = Boolean(
           !settings.ignoreFiveHourWindow && designPlan?.fiveHourUsd !== undefined,
@@ -2206,7 +2208,10 @@ export class RouterController {
         return buildProviderUsageReport({
           providerID,
           label: snapshot?.label ?? plan?.label ?? providerID,
-          plan: plan?.planID ?? settings.plan,
+          // A configured-but-unrecognized plan id is reported as unresolved
+          // rather than echoed. Printing the raw string next to dollar figures
+          // implies it is a tier this build understands.
+          plan: describePlan(plan?.planID, settings.plan),
           source: snapshot?.source ?? "unknown",
           ...(snapshot?.quotaState ? { quotaState: snapshot.quotaState } : {}),
           now,

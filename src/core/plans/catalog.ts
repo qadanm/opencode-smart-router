@@ -364,7 +364,7 @@ export const resolvePlanWithReason = (
     }
     const direct = PLAN_BY_KEY.get(`${providerID}/${requested}`)
     if (direct) return { plan: direct, resolution: "exact", planID: direct.planID }
-    // Configured but unrecognised: refuse to guess a tier.
+    // Configured but unrecognized: refuse to guess a tier.
     return { plan: undefined, resolution: "unknown", planID: undefined }
   }
   const fallback = DEFAULT_PLAN_ID[providerID]

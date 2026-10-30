@@ -1,5 +1,5 @@
 /**
- * Portable allowance core — public entry point.
+ * Portable allowance core: public entry point.
  *
  * This module is the part of the router that is useful *without* the router.
  * It answers one question that every coding-agent user now has and that no
@@ -35,7 +35,7 @@
  * ## Typical use
  *
  * ```ts
- * import { resolvePlan, modelWindowCaps, forecast } from "opencode-smart-router/allowance"
+ * import { resolvePlan, modelWindowCaps, forecast } from "@qadanm/opencode-smart-router/allowance"
  *
  * const plan = resolvePlan("opencode-go", "go")!
  * const caps = modelWindowCaps(plan, "deepseek-v4.1-flash")

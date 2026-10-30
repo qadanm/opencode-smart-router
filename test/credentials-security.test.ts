@@ -260,3 +260,48 @@ describe("key shape validation", () => {
     expect(discovery.candidates[0]!.source).toBe("environment")
   })
 })
+
+describe("discovered versus named files", () => {
+  it("refuses another user's file when it was discovered", () => {
+    // Discovery scans well-known locations, so it must not accept a file the
+    // router did not intend to read. Ownership is part of that decision.
+    const home = makeHome()
+    const path = writeKey(home, ".config/opencode/commandcode.key", "user_discovered_foreign_uid_key")
+    const warnings: string[] = []
+    // Simulate a file owned by someone else by comparing against a uid that
+    // cannot be this user's.
+    const real = process.getuid
+    process.getuid = () => (real ? real() + 1 : 99999)
+    try {
+      expect(readCredentialFileWith(path, warnings, OPTIONS)).toBeUndefined()
+      expect(warnings.join(" ")).toMatch(/owned by another user/i)
+    } finally {
+      process.getuid = real
+    }
+  })
+
+  it("accepts another user's file when the operator named it", () => {
+    // A bind-mounted secret in a container is legitimately owned by a
+    // different uid. Naming the path is already a trust decision, so the uid
+    // comparison must not override it; the permission check still applies.
+    const home = makeHome()
+    const path = writeKey(home, "mounted/key", "user_explicit_foreign_uid_key_val")
+    const warnings: string[] = []
+    const real = process.getuid
+    process.getuid = () => (real ? real() + 1 : 99999)
+    try {
+      const found = readCredentialFileWith(path, warnings, OPTIONS, true)
+      expect(found?.path).toBe(path)
+    } finally {
+      process.getuid = real
+    }
+  })
+
+  it("still refuses a group-readable file even when named explicitly", () => {
+    const home = makeHome()
+    const path = writeKey(home, "mounted/loose.key", "user_explicit_loose_permission", 0o644)
+    const warnings: string[] = []
+    expect(readCredentialFileWith(path, warnings, OPTIONS, true)).toBeUndefined()
+    expect(warnings.join(" ")).toMatch(/permissions/i)
+  })
+})
