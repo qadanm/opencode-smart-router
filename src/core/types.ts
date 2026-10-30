@@ -9,6 +9,17 @@ export type Mode = "efficiency" | "balanced" | "premium"
 export type TaskTier = 0 | 1 | 2 | 3
 export type RuntimeMode = "automatic" | "manual" | "paused"
 
+/**
+ * How the router treats conversation size.
+ *
+ * - `native`           never compacts except to avoid a verified overflow.
+ * - `conservative`     preserves history; compacts only to prevent overflow.
+ * - `budget-optimized` the legacy aggressive strategy: compact early to keep
+ *                      a session on the cheapest provider. Kept for small
+ *                      plans, metered APIs and small-window models.
+ */
+export type ContextManagementMode = "native" | "conservative" | "budget-optimized"
+
 export type TaskKind =
   | "deterministic"
   | "mechanical"
@@ -75,6 +86,8 @@ export interface ModelRecord {
    * dollar value of model usage into Design Plan credits.
    */
   readonly creditMultiplier?: number
+  /** True when the model is funded from a pool reserved for escalation. */
+  readonly escalationOnly?: boolean
   readonly premium: boolean
   readonly training: boolean
   readonly free: boolean
@@ -146,6 +159,8 @@ export interface CandidateEvaluation {
   readonly retained: boolean
   /** Credit multiplier applied to the estimate. One for plain USD providers. */
   readonly creditMultiplier?: number
+  /** Multiplier applied for measured generation speed. One when neutral. */
+  readonly speedFactor?: number
 }
 
 export interface QuotaWindow {
@@ -181,6 +196,30 @@ export interface ExtraCredits {
   readonly totalUsd: number
 }
 
+/**
+ * One funding pool belonging to a plan.
+ *
+ * Pools are separate allowances. `monthlyUsd` is the pool's own ceiling; the
+ * weekly and five-hour values nest inside it and are never added to it. A
+ * pool with no window values is metered per billing cycle only.
+ */
+export interface CreditPoolSnapshot {
+  readonly id: string
+  readonly label: string
+  readonly source: "provider" | "estimate" | "unknown"
+  readonly monthlyUsd: number
+  readonly usedUsd: number
+  readonly remainingUsd: number
+  readonly usedPct: number
+  readonly weeklyUsd?: number
+  readonly weeklyUsedPct?: number
+  readonly fiveHourUsd?: number
+  readonly fiveHourUsedPct?: number
+  readonly resetKind: "billing-cycle" | "rolling-7-day"
+  readonly resetsAt?: number
+  readonly note: string
+}
+
 export interface ProviderQuotaSnapshot {
   readonly providerID: string
   readonly label: string
@@ -194,6 +233,8 @@ export interface ProviderQuotaSnapshot {
   readonly monthlyGrantUsd?: number
   readonly monthlyRemainingUsd?: number
   readonly extraCredits?: ExtraCredits
+  /** Every funding pool the plan exposes, in draw order. */
+  readonly pools?: ReadonlyArray<CreditPoolSnapshot>
   readonly planStatus?: string
   readonly periodStart?: number
   readonly periodEnd?: number
@@ -301,6 +342,12 @@ export interface ModelMetrics {
   cacheWrite: number
   usd: number
   failures: number
+  /** Output tokens produced per second of generation, when measurable. */
+  outputTokensPerSecond: number
+  /** Milliseconds from request start to a completed response, when measurable. */
+  latencyMsTotal: number
+  latencySamples: number
+  timeoutFailures: number
 }
 
 export interface Metrics {
@@ -324,6 +371,43 @@ export interface Metrics {
   lastLatencyMs?: number
   failures: Record<FailureClass, number>
   byModel: Record<string, ModelMetrics>
+  /** Request-level latency samples, separate from per-model aggregates. */
+  timeouts: number
+}
+
+/**
+ * A durable per-hour usage bucket.
+ *
+ * Retaining thousands of raw events in the ledger does not scale: 2,000
+ * events covered under seven hours of heavy use, which is useless for weekly
+ * or monthly forecasting. Events are folded into these buckets as they age,
+ * so long-horizon aggregation costs a bounded number of rows instead of
+ * growing without limit, and the totals survive restarts.
+ */
+export interface UsageBucket {
+  /** Hour start, epoch milliseconds, truncated to the hour. */
+  readonly hour: number
+  readonly providerID: string
+  readonly modelID: string
+  /** Billing period the bucket belongs to, so plan changes are separable. */
+  readonly periodID: string
+  requests: number
+  input: number
+  output: number
+  cacheRead: number
+  cacheWrite: number
+  usd: number
+  failures: number
+  latencyMsTotal: number
+  latencySamples: number
+}
+
+export interface UsageRollup {
+  readonly version: 1
+  buckets: UsageBucket[]
+  /** Raw events newer than the fold horizon, retained for exact per-request detail. */
+  recent: UsageEvent[]
+  updatedAt: number
 }
 
 export interface Ledger {
@@ -331,6 +415,8 @@ export interface Ledger {
   bootstrappedAt?: number
   bootstrapSource?: string
   usage: UsageEvent[]
+  /** Hourly aggregates for anything older than the raw-event horizon. */
+  usageRollup?: UsageRollup
   premiumSpend: Array<{ month: string; usd: number }>
   sessions: Record<string, SessionState>
   decisions: RoutingDecision[]
@@ -344,15 +430,30 @@ export interface Ledger {
 
 export interface ProviderSettings {
   readonly enabled: boolean
+  /**
+   * Plan identifier resolved against the plan catalog. A plan is described as
+   * data, so a different user's tier needs no code change.
+   */
   readonly plan: string
   readonly reserveMonthlyPct: number
   readonly reserveWeeklyPct: number
   readonly reserveFiveHourPct: number
   readonly allowExtraUsage: boolean
   readonly probeUsage: boolean
+  /**
+   * Explicit caps. Each overrides the plan catalog value when set, which is
+   * how a user can correct a stale catalog entry without a code change.
+   */
   readonly monthlyCreditsUsd?: number
   readonly fiveHourCapUsd?: number
   readonly weeklyCapUsd?: number
+  /**
+   * When set, every pool is treated as having no window ceiling of the given
+   * kind, regardless of what the catalog says. Used to model a plan that has
+   * advertised the removal of a window.
+   */
+  readonly ignoreFiveHourWindow?: boolean
+  readonly ignoreWeeklyWindow?: boolean
   /** Optional explicit credential file for a read-only quota probe. */
   readonly credentialPath?: string
   /**
@@ -409,6 +510,14 @@ export interface RoutingSettings {
   readonly preferSameProvider: boolean
   /** Reject a prompt when the current model is unqualified and no eligible route exists. */
   readonly failClosed: boolean
+  /**
+   * Refuse to route a task to a model funded from a pool reserved for
+   * escalation while a design-plan-funded model can serve it. This keeps a
+   * plan-model pool from being drained by routine work.
+   */
+  readonly protectEscalationPool: boolean
+  /** Minimum model window considered adequate when a task needs long context. */
+  readonly longContextFloorTokens: number
 }
 
 export interface QuotaSettings {
@@ -424,6 +533,43 @@ export interface ContextHealthSettings {
   readonly enabled: boolean
   readonly warnAtTokens: number
   readonly recommendAtTokens: number
+}
+
+/**
+ * Router-driven context management.
+ *
+ * `compactAtTokens` is only consulted in `budget-optimized` mode. It exists so
+ * a budget-conscious user can set an explicit early threshold; it is
+ * deliberately ignored in the other two modes so a leftover value from an old
+ * configuration can never reintroduce eager compaction.
+ */
+export interface ContextManagementSettings {
+  readonly mode: ContextManagementMode
+  readonly enabled: boolean
+  readonly compactAtTokens: number
+  /** Minimum time between router-initiated compactions for one session. */
+  readonly cooldownMinutes: number
+  /**
+   * When `native` mode hits the verified window, allow one emergency
+   * compaction rather than failing the turn. Disabling it means the host's own
+   * handling is the only recovery.
+   */
+  readonly allowEmergencyCompaction: boolean
+}
+
+/** Measured-speed awareness in routing. */
+export interface SpeedSettings {
+  readonly enabled: boolean
+  /**
+   * How much a slow route is penalised relative to the fastest eligible one.
+   * Zero treats speed as irrelevant; one doubles the effective cost of a
+   * route that is twice as slow as the fastest.
+   */
+  readonly weightPct: number
+  /** Samples required before measured speed is trusted over a neutral prior. */
+  readonly minSamples: number
+  /** A route slower than this multiple of the fastest is heavily penalised. */
+  readonly slowRouteMultiple: number
 }
 
 export interface UiSettings {
@@ -484,6 +630,8 @@ export interface RouterSettings {
   readonly routing: RoutingSettings
   readonly quota: QuotaSettings
   readonly contextHealth: ContextHealthSettings
+  readonly contextManagement: ContextManagementSettings
+  readonly speed: SpeedSettings
   readonly ui: UiSettings
   readonly logging: LoggingSettings
   readonly models: ModelSettings

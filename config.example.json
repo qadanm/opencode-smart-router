@@ -5,7 +5,7 @@
   "providers": {
     "opencode-go": {
       "enabled": true,
-      "plan": "go-plus",
+      "plan": "go",
       "reserveMonthlyPct": 10,
       "reserveWeeklyPct": 15,
       "reserveFiveHourPct": 10,
@@ -23,6 +23,18 @@
       "monthlyCreditsUsd": 70,
       "fiveHourCapUsd": 14,
       "weeklyCapUsd": 35
+    },
+    "opendesign": {
+      "enabled": true,
+      "plan": "pro",
+      "reserveMonthlyPct": 5,
+      "reserveWeeklyPct": 10,
+      "reserveFiveHourPct": 0,
+      "allowExtraUsage": false,
+      "probeUsage": true,
+      "subscriptionOnly": true,
+      "providerScopedQuota": true,
+      "ignoreFiveHourWindow": true
     }
   },
   "privacy": {
@@ -44,11 +56,14 @@
     "largeContextHysteresisPct": 35,
     "maxEscalationsPerTask": 2,
     "preferSameProvider": true,
-    "failClosed": true
+    "failClosed": true,
+    "protectEscalationPool": true,
+    "longContextFloorTokens": 1000000
   },
   "quota": {
     "probeOpenCodeGo": true,
     "probeCommandCode": true,
+    "probeOpenDesign": true,
     "probeIntervalMinutes": 5,
     "bootstrapSessions": 100,
     "bootstrapDays": 31
@@ -57,6 +72,24 @@
     "enabled": true,
     "warnAtTokens": 400000,
     "recommendAtTokens": 700000
+  },
+  "contextManagement": {
+    "mode": "native",
+    "enabled": true,
+    "compactAtTokens": 0,
+    "cooldownMinutes": 10,
+    "allowEmergencyCompaction": true
+  },
+  "speed": {
+    "enabled": true,
+    "weightPct": 15,
+    "minSamples": 3,
+    "slowRouteMultiple": 2.5
+  },
+  "ui": {
+    "titleIndicator": true,
+    "notifications": true,
+    "compactMode": false
   },
   "logging": {
     "storePromptText": false,
@@ -68,9 +101,5 @@
     "excluded": [],
     "tierOverrides": {},
     "definitions": []
-  },
-  "ui": {
-    "titleIndicator": true,
-    "notifications": true
   }
 }

@@ -58,20 +58,48 @@ export const quotaStateLabel = (snapshot: ProviderQuotaSnapshot): string => {
  * Render a provider quota line.
  *
  * OpenDesign is reported in Design Plan credits, which are USD-equivalent.
+ * A plan with more than one funding pool prints one line per pool rather
+ * than a summed balance: the pools have different rules, and adding them
+ * would suggest the total can be spent in one go.
+ *
  * The purchased wallet balance is always shown separately so a non-zero
  * balance can never be mistaken for permission to spend it.
  */
 export const formatQuotaLines = (snapshot: ProviderQuotaSnapshot): string[] => {
-  const lines = [
-    `${snapshot.label}: 5h ${percent(snapshot.rolling.usedPct)} · weekly ${percent(snapshot.weekly.usedPct)} · monthly ${percent(snapshot.monthly.usedPct)} (${quotaStateLabel(snapshot)})`,
-  ]
+  const pools = snapshot.pools ?? []
+  const lines: string[] = []
+  if (pools.length > 1) {
+    lines.push(`${snapshot.label} (${quotaStateLabel(snapshot)}):`)
+    for (const pool of pools) {
+      const windows: string[] = []
+      if (pool.fiveHourUsd !== undefined && pool.fiveHourUsedPct !== undefined) {
+        windows.push(`5h ${percent(pool.fiveHourUsedPct)} of ${usd(pool.fiveHourUsd)}`)
+      }
+      if (pool.weeklyUsd !== undefined && pool.weeklyUsedPct !== undefined) {
+        windows.push(`7d ${percent(pool.weeklyUsedPct)} of ${usd(pool.weeklyUsd)}`)
+      }
+      const windowText = windows.length > 0 ? ` · ${windows.join(" · ")}` : " · no usage windows"
+      lines.push(
+        `  ${pool.label}: ${usd(pool.remainingUsd)} of ${usd(pool.monthlyUsd)} remaining${windowText}`,
+      )
+    }
+    lines.push("  The pools are separate allowances and are never added together.")
+  } else {
+    const windows =
+      snapshot.rolling.source === "unknown" && snapshot.weekly.source === "unknown"
+        ? "no usage windows"
+        : `5h ${percent(snapshot.rolling.usedPct)} · weekly ${percent(snapshot.weekly.usedPct)}`
+    lines.push(
+      `${snapshot.label}: ${windows} · monthly ${percent(snapshot.monthly.usedPct)} (${quotaStateLabel(snapshot)})`,
+    )
+  }
   if (snapshot.providerID === "opendesign") {
     const purchased = snapshot.extraCredits?.purchasedUsd ?? 0
     lines.push(
-      `  Design Plan credits, USD-equivalent. Purchased wallet ${usd(purchased)} is never spent automatically.`,
+      `  Purchased wallet ${usd(purchased)} is separate from both allowances and is never spent automatically.`,
     )
     if (snapshot.monthlyRemainingUsd !== undefined) {
-      lines.push(`  Monthly allowance remaining ${usd(snapshot.monthlyRemainingUsd)}.`)
+      lines.push(`  Design Plan allowance remaining ${usd(snapshot.monthlyRemainingUsd)}.`)
     }
   }
   if (snapshot.error) lines.push(`  ${snapshot.error}`)

@@ -1,5 +1,6 @@
 import type { CostTier, ModelRecord, RouterSettings } from "../types.js"
 import { modelKey } from "../util.js"
+import { modelMonthlyAllowanceUsd, resolvePlan } from "../plans/catalog.js"
 import { SEED_MODELS, type SeedModel } from "./seed.js"
 
 export interface LiveModel {
@@ -53,6 +54,7 @@ const fromSeed = (seed: SeedModel): ModelRecord => ({
   design: seed.design,
   designEvidence: seed.designEvidence ?? "curated",
   ...(seed.creditMultiplier && seed.creditMultiplier > 0 ? { creditMultiplier: seed.creditMultiplier } : {}),
+  ...(seed.escalationOnly ? { escalationOnly: true } : {}),
   premium: seed.premium ?? false,
   training: seed.training ?? false,
   free: seed.free ?? false,
@@ -135,9 +137,15 @@ export class ModelRegistry {
       const isExcluded = excluded.has(key)
       const providerEnabled = input.settings.providers[record.providerID]?.enabled ?? true
       const approvedBySeed = record.approvalSource === "seed" && record.approved
+      // The plan catalog is authoritative for a plan-metered allowance. A
+      // seed value is a fallback for a provider with no catalog entry, so a
+      // plan change is a configuration change rather than a code change.
+      const plan = resolvePlan(record.providerID, input.settings.providers[record.providerID]?.plan)
+      const catalogAllowance = plan ? modelMonthlyAllowanceUsd(plan, record.modelID) : 0
       this.records.set(key, {
         ...record,
         tier: tierOverride ?? record.tier,
+        monthlyAllowanceUsd: catalogAllowance > 0 ? catalogAllowance : record.monthlyAllowanceUsd,
         approved: providerEnabled && !isExcluded && (explicitlyApproved || approvedBySeed),
         approvalSource: explicitlyApproved ? "user" : record.approvalSource,
       })

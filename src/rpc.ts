@@ -90,6 +90,7 @@ export const SmartRouterRpc = Rpc.define({
     }),
     refreshQuota: method(emptyInput),
     report: method(emptyInput),
+    usage: method(emptyInput),
     getConfig: method(emptyInput),
     resetOverrides: method(emptyInput),
     resetMetrics: method(emptyInput),

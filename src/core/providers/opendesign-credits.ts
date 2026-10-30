@@ -14,7 +14,13 @@
  * estimate of credits, and the caller must label it as such.
  */
 
-/** Credit multiplier published for each Design Plan model. */
+/**
+ * Credit multiplier published for each Design Plan model.
+ *
+ * Multipliers apply to Design Plan credits only. A request funded from plan
+ * model credits is billed at the plain usage value, so callers must pass
+ * `multiplierApplies: false` for that pool. See the plan catalog.
+ */
 export const OPENDESIGN_CREDIT_MULTIPLIERS: Readonly<Record<string, number>> = {
   "deepseek-v4.1-flash": 0.5,
   "mimo-v2.6-flash": 1,
@@ -140,15 +146,21 @@ export interface OpenDesignPlanCaps {
   readonly designPlanMonthlyUsd: number
   /** Plan-model credits outside the Design Plan group. Zero on Go. */
   readonly planModelCreditsUsd: number
-  /** Maximum Design Plan credits per five-hour window. */
-  readonly fiveHourCapUsd: number
-  /** Maximum Design Plan credits per seven-day window. */
-  readonly weeklyCapUsd: number
+  /**
+   * Maximum Design Plan credits per five-hour window, or undefined when the
+   * plan has no such window. Plus, Pro and Max have none.
+   */
+  readonly fiveHourCapUsd?: number
+  /** Maximum Design Plan credits per seven-day window. Nested, never additional. */
+  readonly weeklyCapUsd?: number
 }
 
 /**
- * Published Go plan shape. The five-hour and seven-day values are nested
- * limits inside `designPlanMonthlyUsd`, never additional credit.
+ * Published Go plan shape, retained so the Go tier stays describable.
+ *
+ * The catalog in `plans/catalog.ts` is authoritative for routing; this
+ * constant exists for callers that need the Go numbers without importing the
+ * catalog, and for documentation of the tier the router used to target.
  */
 export const OPENDESIGN_GO_PLAN: OpenDesignPlanCaps = {
   plan: "go",
@@ -157,6 +169,21 @@ export const OPENDESIGN_GO_PLAN: OpenDesignPlanCaps = {
   planModelCreditsUsd: 0,
   fiveHourCapUsd: 10,
   weeklyCapUsd: 30,
+}
+
+/**
+ * Published Pro plan shape.
+ *
+ * Pro has a seven-day Design Plan window and deliberately no five-hour
+ * window. It also carries a separate plan model pool whose credits have no
+ * usage windows at all and reset per billing cycle.
+ */
+export const OPENDESIGN_PRO_PLAN: OpenDesignPlanCaps = {
+  plan: "pro",
+  monthlyPriceUsd: 100,
+  designPlanMonthlyUsd: 360,
+  planModelCreditsUsd: 120,
+  weeklyCapUsd: 90,
 }
 
 /**

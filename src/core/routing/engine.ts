@@ -37,12 +37,26 @@ export interface EngineInput {
   readonly cooldowns?: Readonly<Record<string, number>>
   /** Provider id to the epoch millisecond when its outage backoff ends. */
   readonly providerCooldowns?: Readonly<Record<string, number>>
+  /**
+   * Measured generation speed per model, in output tokens per second. Only
+   * consulted once a model has enough samples to be meaningful.
+   */
+  readonly speed?: Readonly<Record<string, { tokensPerSecond: number; samples: number }>>
 }
 
 export interface EngineResult {
   readonly decision: RoutingDecision
   readonly chosenModel?: ModelRecord
   readonly premiumDecision: PremiumDecision
+}
+
+interface Evaluated {
+  model: ModelRecord
+  eligibility: ReturnType<typeof evaluateEligibility>
+  estimate: CostEstimate
+  probability: number
+  pressure: number
+  candidate: CandidateEvaluation
 }
 
 const outputPerStep: Record<TaskKind, number> = {
@@ -207,6 +221,44 @@ export const estimateSuccess = (input: {
 
 const premiumState = (input: EngineInput): PremiumState => input.premium
 
+/**
+ * Speed penalty for a candidate, as a multiplier on its effective cost.
+ *
+ * Speed is measured as output tokens per second, which is the only figure
+ * that separates a slow provider from a model that simply reasons for longer:
+ * a model that emits 3,000 reasoning tokens before answering is not "slow" in
+ * the same sense as one that takes four times as long to emit the same
+ * answer.
+ *
+ * With no samples the penalty is neutral. Once a model has been measured it
+ * is compared against the fastest eligible route rather than against an
+ * absolute number, so the penalty adapts as providers change.
+ */
+const speedPenalty = (
+  input: EngineInput,
+  key: string,
+  fastestTokensPerSecond: number,
+): number => {
+  if (!input.settings.speed.enabled) return 1
+  const measure = input.speed?.[key]
+  if (!measure || measure.samples < input.settings.speed.minSamples) return 1
+  if (measure.tokensPerSecond <= 0 || fastestTokensPerSecond <= 0) return 1
+  const ratio = measure.tokensPerSecond / fastestTokensPerSecond
+  // A route at the fastest observed speed is unpenalised. Below that the
+  // configured weight scales the shortfall, so a route half as fast costs
+  // more than one at parity but never becomes ineligible.
+  const shortfall = Math.max(0, 1 - ratio)
+  const weight = input.settings.speed.weightPct / 100
+  const penalty = 1 + shortfall * weight * 2
+  // A route far slower than the fastest is penalised harder, because the
+  // owner's stated preference puts responsiveness ahead of shaving pennies.
+  const multiple = ratio > 0 ? 1 / ratio : input.settings.speed.slowRouteMultiple
+  if (multiple >= input.settings.speed.slowRouteMultiple) {
+    return penalty * (1 + weight)
+  }
+  return penalty
+}
+
 const providerFor = (quota: ReadonlyArray<ProviderQuotaSnapshot>, providerID: string) =>
   quota.find((snapshot) => snapshot.providerID === providerID)
 
@@ -223,8 +275,9 @@ const candidateFor = (
   probability: number,
   pressure: number,
   currentModelKey: string | undefined,
+  speedFactor = 1,
 ): CandidateEvaluation => {
-  const expectedTotal = (estimate.usd * (1 + (1 - probability) * 2)) * pressure
+  const expectedTotal = (estimate.usd * (1 + (1 - probability) * 2)) * pressure * speedFactor
   return {
     model: { providerID: model.providerID, modelID: model.modelID },
     name: model.name,
@@ -238,6 +291,7 @@ const candidateFor = (
     quotaPressure: pressure,
     retained: keyOfRef(input.current) === modelKey(model.providerID, model.modelID),
     creditMultiplier: estimate.creditMultiplier,
+    speedFactor,
   }
 }
 
@@ -314,8 +368,25 @@ export const routeTask = (input: EngineInput): EngineResult => {
   const evaluate = (designRelaxation: 0 | 1 | 2) => {
     const taskForEvaluation =
       designRelaxation === 1 ? { ...input.task, sophisticatedDesign: false } : input.task
-    const results: Array<{ model: ModelRecord; eligibility: ReturnType<typeof evaluateEligibility>; estimate: CostEstimate; probability: number; pressure: number; candidate: CandidateEvaluation }> = []
+    // The fastest measured eligible model sets the reference point for the
+    // speed penalty, so the comparison is always against what this account
+    // can actually achieve right now.
+    let fastestTokensPerSecond = 0
     for (const model of input.models) {
+      const measure = input.speed?.[modelKey(model.providerID, model.modelID)]
+      if (!measure || measure.samples < input.settings.speed.minSamples) continue
+      if (measure.tokensPerSecond > fastestTokensPerSecond) fastestTokensPerSecond = measure.tokensPerSecond
+    }
+
+    /**
+     * Pass one evaluates every candidate without the escalation-pool guard.
+     * The guard is only applied once an ordinary-allowance route is known to
+     * be available: otherwise a task that genuinely needs escalation would be
+     * blocked outright instead of being escalated.
+     */
+    const run = (protectEscalation: boolean) => {
+      const out: Evaluated[] = []
+      for (const model of input.models) {
       const provider = providerFor(input.quota, model.providerID)
       const modelQuota = modelQuotaFor(provider, model)
       const key = modelKey(model.providerID, model.modelID)
@@ -356,26 +427,38 @@ export const routeTask = (input: EngineInput): EngineResult => {
         currentModelKey: currentKey,
         allowDesignRelaxation: designRelaxation === 2,
         projectedUsd: estimate.usd,
+        escalationPoolProtected: protectEscalation,
       })
-      if (!eligibility.eligible) continue
-      const eligibleReason =
-        designRelaxation === 1 && input.task.sophisticatedDesign
-          ? `Standard design route: design ${model.design} is below the sophisticated ${input.settings.routing.sophisticatedDesignFloor} threshold`
-          : eligibility.reason
-      const displayedEligibility = eligibleReason === eligibility.reason ? eligibility : { ...eligibility, reason: eligibleReason }
-      const probability = estimateSuccess({
-        model,
-        task: input.task,
-        contextTokens: input.contextTokens,
-        session: input.session,
-        currentModelKey: currentKey,
-        history: input.modelHistory?.[modelKey(model.providerID, model.modelID)],
-      })
-      const pressure = providerPressure(provider) * modelPressure(modelQuota)
-      const candidate = candidateFor(input, model, displayedEligibility, estimate, probability, pressure, currentKey)
-      results.push({ model, eligibility: displayedEligibility, estimate, probability, pressure, candidate })
+        if (!eligibility.eligible) continue
+        const eligibleReason =
+          designRelaxation === 1 && input.task.sophisticatedDesign
+            ? `Standard design route: design ${model.design} is below the sophisticated ${input.settings.routing.sophisticatedDesignFloor} threshold`
+            : eligibility.reason
+        const displayedEligibility = eligibleReason === eligibility.reason ? eligibility : { ...eligibility, reason: eligibleReason }
+        const probability = estimateSuccess({
+          model,
+          task: input.task,
+          contextTokens: input.contextTokens,
+          session: input.session,
+          currentModelKey: currentKey,
+          history: input.modelHistory?.[modelKey(model.providerID, model.modelID)],
+        })
+        const pressure = providerPressure(provider) * modelPressure(modelQuota)
+        const speedFactor = speedPenalty(input, modelKey(model.providerID, model.modelID), fastestTokensPerSecond)
+        const candidate = candidateFor(input, model, displayedEligibility, estimate, probability, pressure, currentKey, speedFactor)
+        out.push({ model, eligibility: displayedEligibility, estimate, probability, pressure, candidate })
+      }
+      return out.sort((a, b) => a.candidate.effectiveCost - b.candidate.effectiveCost)
     }
-    return results.sort((a, b) => a.candidate.effectiveCost - b.candidate.effectiveCost)
+
+    const unprotected = run(false)
+    if (!input.settings.routing.protectEscalationPool) return unprotected
+    // Only protect the escalation pool when an ordinary-allowance route can
+    // actually serve the task. A task that needs escalation must still be
+    // able to escalate.
+    const ordinaryAvailable = unprotected.some((entry) => !entry.model.escalationOnly && !entry.model.premium)
+    if (!ordinaryAvailable) return unprotected
+    return run(true)
   }
 
   let evaluated = evaluate(0)

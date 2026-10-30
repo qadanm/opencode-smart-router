@@ -2,6 +2,7 @@ import type {
   FailureClass,
   Ledger,
   Metrics,
+  ModelMetrics,
   ModelQuotaSnapshot,
   ModelRecord,
   ModelRef,
@@ -9,7 +10,9 @@ import type {
   ProviderSettings,
   RoutingDecision,
   SessionState,
+  UsageBucket,
   UsageEvent,
+  UsageRollup,
 } from "../types.js"
 import { clamp, keyOfRef, modelKey, monthKey, nowId, pct, safeError } from "../util.js"
 
@@ -31,10 +34,22 @@ export const PROVIDER_BACKOFF_MS = 3 * 60_000
 const MAX_USAGE_EVENTS = 2_000
 const MAX_DECISIONS = 120
 const MAX_SESSIONS = 250
+/**
+ * How long raw per-request events are kept before they are folded into hourly
+ * buckets. Raw events are what the per-request detail is built from; beyond
+ * this horizon the aggregates are all that any consumer needs, and they cost
+ * three orders of magnitude less space.
+ */
+const RAW_EVENT_HORIZON_MS = 48 * 60 * 60 * 1000
+/** Retention for the hourly aggregates. 400 days covers a yearly comparison. */
+const ROLLUP_RETENTION_MS = 400 * 24 * 60 * 60 * 1000
+/** Upper bound on hourly buckets kept in the ledger. */
+const MAX_BUCKETS = 400 * 24 * 4
 const RETENTION_MS = 40 * 24 * 60 * 60 * 1000
 const FIVE_HOURS_MS = 5 * 60 * 60 * 1000
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000
 const MONTH_MS = 30 * 24 * 60 * 60 * 1000
+const HOUR_MS = 60 * 60 * 1000
 
 const emptyFailureCounts = (): Record<FailureClass, number> => ({
   context_overflow: 0,
@@ -70,6 +85,21 @@ export const emptyMetrics = (now = Date.now()): Metrics => ({
   latencySamples: 0,
   failures: emptyFailureCounts(),
   byModel: {},
+  timeouts: 0,
+})
+
+const emptyModelMetrics = (): ModelMetrics => ({
+  requests: 0,
+  input: 0,
+  output: 0,
+  cacheRead: 0,
+  cacheWrite: 0,
+  usd: 0,
+  failures: 0,
+  outputTokensPerSecond: 0,
+  latencyMsTotal: 0,
+  latencySamples: 0,
+  timeoutFailures: 0,
 })
 
 export const emptyLedger = (now = Date.now()): Ledger => ({
@@ -117,8 +147,71 @@ const asUsageEvent = (value: unknown): UsageEvent | undefined => {
   }
 }
 
-const asSessionState = (value: unknown): SessionState | undefined => {
-  if (!isRecord(value) || typeof value.sessionID !== "string") return undefined
+const asUsageBucket = (value: unknown): UsageBucket | undefined => {
+  if (!isRecord(value)) return undefined
+  if (typeof value.providerID !== "string" || typeof value.modelID !== "string") return undefined
+  const hour = finite(value.hour)
+  if (hour <= 0) return undefined
+  return {
+    hour: Math.floor(hour / HOUR_MS) * HOUR_MS,
+    providerID: value.providerID,
+    modelID: value.modelID,
+    periodID: typeof value.periodID === "string" ? value.periodID : "",
+    requests: Math.max(0, finite(value.requests)),
+    input: Math.max(0, finite(value.input)),
+    output: Math.max(0, finite(value.output)),
+    cacheRead: Math.max(0, finite(value.cacheRead)),
+    cacheWrite: Math.max(0, finite(value.cacheWrite)),
+    usd: Math.max(0, finite(value.usd)),
+    failures: Math.max(0, finite(value.failures)),
+    latencyMsTotal: Math.max(0, finite(value.latencyMsTotal)),
+    latencySamples: Math.max(0, finite(value.latencySamples)),
+  }
+}
+
+const bucketKeyOf = (bucket: { hour: number; providerID: string; modelID: string; periodID: string }) =>
+  `${bucket.hour}:${bucket.providerID}:${bucket.modelID}:${bucket.periodID}`
+
+/**
+ * Fold an event into an hourly bucket. `periodID` separates consecutive
+ * billing periods, so usage from a previous plan period is never re-read as
+ * if it had been spent against the current one's limits.
+ */
+const foldEventInto = (
+  buckets: Map<string, UsageBucket>,
+  event: UsageEvent,
+  periodID: string,
+): void => {
+  const hour = Math.floor(event.at / HOUR_MS) * HOUR_MS
+  const key = bucketKeyOf({ hour, providerID: event.providerID, modelID: event.modelID, periodID })
+  const existing = buckets.get(key)
+  if (existing) {
+    existing.requests += 1
+    existing.input += event.input
+    existing.output += event.output
+    existing.cacheRead += event.cacheRead
+    existing.cacheWrite += event.cacheWrite
+    existing.usd += event.usd
+    return
+  }
+  buckets.set(key, {
+    hour,
+    providerID: event.providerID,
+    modelID: event.modelID,
+    periodID,
+    requests: 1,
+    input: event.input,
+    output: event.output,
+    cacheRead: event.cacheRead,
+    cacheWrite: event.cacheWrite,
+    usd: event.usd,
+    failures: 0,
+    latencyMsTotal: 0,
+    latencySamples: 0,
+  })
+}
+
+const asSessionState = (value: unknown): SessionState | undefined => {  if (!isRecord(value) || typeof value.sessionID !== "string") return undefined
   return {
     sessionID: value.sessionID,
     ...(typeof value.parentID === "string" ? { parentID: value.parentID } : {}),
@@ -173,6 +266,10 @@ export const hydrateLedger = (value: unknown): { ledger: Ledger; warnings: strin
         cacheWrite: Math.max(0, finite(entry.cacheWrite)),
         usd: Math.max(0, finite(entry.usd)),
         failures: Math.max(0, finite(entry.failures)),
+        outputTokensPerSecond: Math.max(0, finite(entry.outputTokensPerSecond)),
+        latencyMsTotal: Math.max(0, finite(entry.latencyMsTotal)),
+        latencySamples: Math.max(0, finite(entry.latencySamples)),
+        timeoutFailures: Math.max(0, finite(entry.timeoutFailures)),
       }
     }
   }
@@ -216,6 +313,15 @@ export const hydrateLedger = (value: unknown): { ledger: Ledger; warnings: strin
     }
   }
 
+  const buckets: UsageBucket[] = []
+  const rollupInput = isRecord(value.usageRollup) ? value.usageRollup : undefined
+  if (rollupInput && Array.isArray(rollupInput.buckets)) {
+    for (const entry of rollupInput.buckets) {
+      const bucket = asUsageBucket(entry)
+      if (bucket) buckets.push(bucket)
+    }
+  }
+
   const failures = emptyFailureCounts()
   if (isRecord(metrics.failures)) {
     for (const key of Object.keys(failures) as FailureClass[]) {
@@ -230,6 +336,16 @@ export const hydrateLedger = (value: unknown): { ledger: Ledger; warnings: strin
     cooldowns,
     providerCooldowns,
     usage: usage.slice(-MAX_USAGE_EVENTS),
+    ...(buckets.length > 0
+      ? {
+          usageRollup: {
+            version: 1 as const,
+            buckets,
+            recent: usage.slice(-MAX_USAGE_EVENTS),
+            updatedAt: finite(rollupInput?.updatedAt, now),
+          },
+        }
+      : {}),
     premiumSpend: Array.isArray(value.premiumSpend)
       ? value.premiumSpend
           .filter(isRecord)
@@ -259,6 +375,7 @@ export const hydrateLedger = (value: unknown): { ledger: Ledger; warnings: strin
       lastLatencyMs: typeof metrics.lastLatencyMs === "number" ? metrics.lastLatencyMs : undefined,
       failures,
       byModel,
+      timeouts: Math.max(0, finite(metrics.timeouts)),
     },
     updatedAt: now,
   }
@@ -464,21 +581,28 @@ export class LedgerStore {
       this.ledger.metrics.lastLatencyMs = Math.max(0, input.latencyMs)
     }
     const key = modelKey(input.model.providerID, input.model.id)
-    const modelMetrics = (this.ledger.metrics.byModel[key] ??= {
-      requests: 0,
-      input: 0,
-      output: 0,
-      cacheRead: 0,
-      cacheWrite: 0,
-      usd: 0,
-      failures: 0,
-    })
+    const modelMetrics = (this.ledger.metrics.byModel[key] ??= emptyModelMetrics())
     modelMetrics.requests += 1
     modelMetrics.input += event.input
     modelMetrics.output += event.output
     modelMetrics.cacheRead += event.cacheRead
     modelMetrics.cacheWrite += event.cacheWrite
     modelMetrics.usd += event.usd
+    if (input.latencyMs !== undefined && Number.isFinite(input.latencyMs) && input.latencyMs > 0) {
+      const latency = Math.max(0, input.latencyMs)
+      modelMetrics.latencySamples += 1
+      modelMetrics.latencyMsTotal += latency
+      // Generation speed is the only figure that separates a slow provider
+      // from a model that simply reasons for longer: dividing by the tokens
+      // actually produced normalises for reasoning depth.
+      if (event.output > 0) {
+        const seconds = latency / 1000
+        const instant = event.output / Math.max(0.001, seconds)
+        // A cumulative mean keeps the metric stable without storing history.
+        const previous = modelMetrics.outputTokensPerSecond
+        modelMetrics.outputTokensPerSecond = previous > 0 ? previous * 0.7 + instant * 0.3 : instant
+      }
+    }
     if (input.premium) this.addPremiumSpend(event.usd)
 
     const session = this.ensureSession(input.sessionID)
@@ -553,16 +677,12 @@ export class LedgerStore {
     // interrupt must never make the router distrust a healthy model.
     if (model && options.countAgainstModel !== false) {
       const key = modelKey(model.providerID, model.id)
-      const metrics = (this.ledger.metrics.byModel[key] ??= {
-        requests: 0,
-        input: 0,
-        output: 0,
-        cacheRead: 0,
-        cacheWrite: 0,
-        usd: 0,
-        failures: 0,
-      })
+      const metrics = (this.ledger.metrics.byModel[key] ??= emptyModelMetrics())
       metrics.failures += 1
+      if (failureClass === "context_overflow" || failureClass === "rate_limit") {
+        metrics.timeoutFailures += 1
+        this.ledger.metrics.timeouts += 1
+      }
       const cooldownMs = options.cooldownMs ?? 0
       if (cooldownMs > 0) {
         // Repeated faults extend the cooldown, so a model that keeps dropping
@@ -751,13 +871,186 @@ export class LedgerStore {
     return this.ledger.usage
   }
 
-  prune(now = Date.now()) {
-    const cutoff = now - RETENTION_MS
-    if (this.ledger.usage.length > MAX_USAGE_EVENTS * 0.8) {
-      this.ledger.usage = this.ledger.usage.filter((event) => event.at >= cutoff).slice(-MAX_USAGE_EVENTS)
-    } else {
-      this.ledger.usage = this.ledger.usage.filter((event) => event.at >= cutoff)
+  /**
+   * Fold aged usage events into hourly buckets instead of discarding them.
+   *
+   * The previous implementation truncated the event array, so a heavy
+   * afternoon silently erased the start of the week and no weekly or monthly
+   * forecast was possible. Folding keeps every token accounted for at a tiny
+   * fraction of the storage cost.
+   */
+  private foldUsage(now: number) {
+    const rollup: UsageRollup = (this.ledger.usageRollup ??= {
+      version: 1,
+      buckets: [],
+      recent: [],
+      updatedAt: now,
+    })
+    const byKey = new Map<string, UsageBucket>()
+    for (const bucket of rollup.buckets) byKey.set(bucketKeyOf(bucket), bucket)
+
+    const rawCutoff = now - RAW_EVENT_HORIZON_MS
+    const kept: UsageEvent[] = []
+    // When the raw array is above the cap, the oldest events are folded even
+    // if they are still inside the horizon. That keeps the in-memory array
+    // bounded without losing a single token from the totals.
+    const overflow = Math.max(0, this.ledger.usage.length - MAX_USAGE_EVENTS * 0.8)
+    let folded = 0
+    for (const event of this.ledger.usage) {
+      const shouldFold = event.at < rawCutoff || folded < overflow
+      if (!shouldFold) {
+        kept.push(event)
+        continue
+      }
+      folded += 1
+      foldEventInto(byKey, event, this.periodIDFor(event.at))
     }
+    this.ledger.usage = kept
+
+    const bucketCutoff = now - ROLLUP_RETENTION_MS
+    const buckets = [...byKey.values()].filter((bucket) => bucket.hour >= bucketCutoff)
+    buckets.sort((a, b) => a.hour - b.hour)
+    rollup.buckets =
+      buckets.length > MAX_BUCKETS ? buckets.slice(buckets.length - MAX_BUCKETS) : buckets
+    rollup.recent = kept
+    rollup.updatedAt = now
+  }
+
+  /**
+   * Billing period key for an instant.
+   *
+   * This is a calendar month boundary, which is exact for providers whose
+   * allowance resets per billing cycle and a deliberate approximation for
+   * providers whose period starts on a subscription anniversary. It exists to
+   * keep two *different* billing periods from being summed as one, which is
+   * the failure that matters here.
+   */
+  periodIDFor(at: number): string {
+    return monthKey(at)
+  }
+
+  /** Totals over an arbitrary window, combining folded buckets and raw events. */
+  aggregate(input: {
+    providerID?: string
+    modelID?: string
+    since: number
+    until?: number
+  }): {
+    since: number
+    until: number
+    requests: number
+    input: number
+    output: number
+    cacheRead: number
+    cacheWrite: number
+    usd: number
+    failures: number
+    latencyMsTotal: number
+    latencySamples: number
+  } {
+    const until = input.until ?? Date.now()
+    const totals = {
+      requests: 0,
+      input: 0,
+      output: 0,
+      cacheRead: 0,
+      cacheWrite: 0,
+      usd: 0,
+      failures: 0,
+      latencyMsTotal: 0,
+      latencySamples: 0,
+    }
+    const matches = (providerID: string, modelID: string) =>
+      (!input.providerID || providerID === input.providerID) && (!input.modelID || modelID === input.modelID)
+
+    for (const bucket of this.ledger.usageRollup?.buckets ?? []) {
+      if (bucket.hour < input.since || bucket.hour > until) continue
+      if (!matches(bucket.providerID, bucket.modelID)) continue
+      totals.requests += bucket.requests
+      totals.input += bucket.input
+      totals.output += bucket.output
+      totals.cacheRead += bucket.cacheRead
+      totals.cacheWrite += bucket.cacheWrite
+      totals.usd += bucket.usd
+      totals.failures += bucket.failures
+      totals.latencyMsTotal += bucket.latencyMsTotal
+      totals.latencySamples += bucket.latencySamples
+    }
+    for (const event of this.ledger.usage) {
+      if (event.at < input.since || event.at > until) continue
+      if (!matches(event.providerID, event.modelID)) continue
+      totals.requests += 1
+      totals.input += event.input
+      totals.output += event.output
+      totals.cacheRead += event.cacheRead
+      totals.cacheWrite += event.cacheWrite
+      totals.usd += event.usd
+    }
+    return { ...totals, since: input.since, until }
+  }
+
+  /** Usage grouped by provider and model over a window. */
+  usageByModel(input: { since: number; until?: number }): Array<{
+    providerID: string
+    modelID: string
+    requests: number
+    input: number
+    output: number
+    cacheRead: number
+    cacheWrite: number
+    usd: number
+  }> {
+    const grouped = new Map<string, {
+      providerID: string
+      modelID: string
+      requests: number
+      input: number
+      output: number
+      cacheRead: number
+      cacheWrite: number
+      usd: number
+    }>()
+    const until = input.until ?? Date.now()
+    const add = (
+      providerID: string,
+      modelID: string,
+      row: { requests: number; input: number; output: number; cacheRead: number; cacheWrite: number; usd: number },
+    ) => {
+      const key = modelKey(providerID, modelID)
+      let entry = grouped.get(key)
+      if (!entry) {
+        entry = {
+          providerID,
+          modelID,
+          requests: 0,
+          input: 0,
+          output: 0,
+          cacheRead: 0,
+          cacheWrite: 0,
+          usd: 0,
+        }
+        grouped.set(key, entry)
+      }
+      entry.requests += row.requests
+      entry.input += row.input
+      entry.output += row.output
+      entry.cacheRead += row.cacheRead
+      entry.cacheWrite += row.cacheWrite
+      entry.usd += row.usd
+    }
+    for (const bucket of this.ledger.usageRollup?.buckets ?? []) {
+      if (bucket.hour < input.since || bucket.hour > until) continue
+      add(bucket.providerID, bucket.modelID, bucket)
+    }
+    for (const event of this.ledger.usage) {
+      if (event.at < input.since || event.at > until) continue
+      add(event.providerID, event.modelID, { ...event, requests: 1 })
+    }
+    return [...grouped.values()].sort((a, b) => b.usd - a.usd)
+  }
+
+  prune(now = Date.now()) {
+    this.foldUsage(now)
     if (this.ledger.decisions.length > MAX_DECISIONS) this.ledger.decisions = this.ledger.decisions.slice(0, MAX_DECISIONS)
     const sessions = Object.values(this.ledger.sessions)
     if (sessions.length > MAX_SESSIONS) {

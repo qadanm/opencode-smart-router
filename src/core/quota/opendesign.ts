@@ -1,4 +1,10 @@
-import type { ProviderQuotaSnapshot, ProviderSettings, QuotaWindow, UsageEvent } from "../types.js"
+import type {
+  CreditPoolSnapshot,
+  ProviderQuotaSnapshot,
+  ProviderSettings,
+  QuotaWindow,
+  UsageEvent,
+} from "../types.js"
 import { clamp, pct, redact } from "../util.js"
 import {
   OPENDESIGN_DEFAULT_CONTROL_BASE_URL,
@@ -9,7 +15,8 @@ import {
   type FetchLike,
 } from "../providers/opendesign.js"
 import { OPEN_DESIGN_MODEL_BY_ID } from "../providers/opendesign-models.js"
-import { OPENDESIGN_GO_PLAN, creditMultiplierFor } from "../providers/opendesign-credits.js"
+import { OPENDESIGN_DESIGN_PLAN_POOL, OPENDESIGN_PLAN_MODEL_POOL, isEscalationOnlyPool, resolvePlan } from "../plans/catalog.js"
+import { creditMultiplierFor } from "../providers/opendesign-credits.js"
 
 /**
  * OpenDesign quota integration.
@@ -72,7 +79,6 @@ const WEEK_MS = 7 * 24 * 60 * 60 * 1000
 const MONTH_MS = 30 * 24 * 60 * 60 * 1000
 
 const unknownWindow: QuotaWindow = { usedPct: 0, remainingPct: 100, source: "unknown" }
-
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value)
 
@@ -100,6 +106,11 @@ const timeValue = (value: unknown): number | undefined => {
  * This converts token counts into credits using the curated vendor list price
  * for the model and the published Design Plan multiplier. It is an estimate of
  * the underlying usage value, never an observed provider charge.
+ *
+ * `multiplierApplies` is false for a request funded from plan model credits:
+ * OpenDesign documents that Design Plan model multipliers do not
+ * automatically apply to that second pool, so applying one would understate
+ * its real cost.
  */
 export const estimateDesignPlanCredits = (input: {
   readonly modelID: string
@@ -109,6 +120,7 @@ export const estimateDesignPlanCredits = (input: {
   readonly cacheWrite?: number
   readonly multiplierOverrides?: Readonly<Record<string, number>>
   readonly now?: number
+  readonly multiplierApplies?: boolean
 }): { creditsUsd: number; multiplier: number; evidence: string } => {
   const spec = OPEN_DESIGN_MODEL_BY_ID.get(input.modelID)
   const tier = spec?.cost?.[0]
@@ -116,8 +128,10 @@ export const estimateDesignPlanCredits = (input: {
     now: input.now,
     ...(input.multiplierOverrides ? { overrides: input.multiplierOverrides } : {}),
   })
+  const applies = input.multiplierApplies !== false
+  const effectiveMultiplier = applies ? multiplier.multiplier : 1
   if (!tier) {
-    return { creditsUsd: 0, multiplier: multiplier.multiplier, evidence: "no-price" }
+    return { creditsUsd: 0, multiplier: effectiveMultiplier, evidence: "no-price" }
   }
   const price = (tier.input * Math.max(0, input.input) +
     tier.output * Math.max(0, input.output) +
@@ -125,9 +139,9 @@ export const estimateDesignPlanCredits = (input: {
     (tier.cache?.write ?? 0) * Math.max(0, input.cacheWrite ?? 0)) /
     1_000_000
   return {
-    creditsUsd: Math.max(0, price) * multiplier.multiplier,
-    multiplier: multiplier.multiplier,
-    evidence: multiplier.evidence,
+    creditsUsd: Math.max(0, price) * effectiveMultiplier,
+    multiplier: effectiveMultiplier,
+    evidence: applies ? multiplier.evidence : "configured",
   }
 }
 
@@ -136,13 +150,29 @@ interface LocalWindowTotals {
   readonly weeklyUsd: number
   readonly monthlyUsd: number
   readonly observedRequests: number
+  /** Credits per pool, so the two allowances are never conflated. */
+  readonly byPool: Readonly<Record<string, {
+    readonly rollingUsd: number
+    readonly weeklyUsd: number
+    readonly monthlyUsd: number
+  }>>
 }
 
+/**
+ * Estimate local usage, split by the pool that funded each request.
+ *
+ * A Design Plan model is billed at its Design Plan multiplier while that pool
+ * has credit, then at the plain rate from plan model credits. The estimate
+ * applies the pool that the model draws from first, which is the correct
+ * attribution for forecasting: it asks "which allowance is this consuming?"
+ * rather than "what is the cheapest rate this model ever gets?".
+ */
 const localTotals = (
   usage: ReadonlyArray<UsageEvent>,
   providerID: string,
   now: number,
   marginPct: number,
+  plan: ReturnType<typeof resolvePlan>,
   multiplierOverrides?: Readonly<Record<string, number>>,
 ): LocalWindowTotals => {
   const rollingCutoff = now - FIVE_HOURS_MS
@@ -152,8 +182,25 @@ const localTotals = (
   let weeklyUsd = 0
   let monthlyUsd = 0
   let observedRequests = 0
+  const pools: Record<string, { rollingUsd: number; weeklyUsd: number; monthlyUsd: number }> = {}
+  const bucket = (poolID: string) =>
+    (pools[poolID] ??= { rollingUsd: 0, weeklyUsd: 0, monthlyUsd: 0 })
+
   for (const event of usage) {
     if (event.providerID !== providerID) continue
+    const designPlan = plan
+      ? plan.pools.find((pool) => pool.id === OPENDESIGN_DESIGN_PLAN_POOL)
+      : undefined
+    const planModels = plan
+      ? plan.pools.find((pool) => pool.id === OPENDESIGN_PLAN_MODEL_POOL)
+      : undefined
+    const inDesignPlan = Boolean(designPlan) && !isEscalationOnlyPool(plan!, event.modelID)
+    const poolID = inDesignPlan
+      ? OPENDESIGN_DESIGN_PLAN_POOL
+      : planModels
+        ? OPENDESIGN_PLAN_MODEL_POOL
+        : OPENDESIGN_DESIGN_PLAN_POOL
+
     const credits = estimateDesignPlanCredits({
       modelID: event.modelID,
       input: event.input,
@@ -161,20 +208,42 @@ const localTotals = (
       cacheRead: event.cacheRead,
       cacheWrite: event.cacheWrite,
       now,
+      multiplierApplies: poolID === OPENDESIGN_DESIGN_PLAN_POOL,
       ...(multiplierOverrides ? { multiplierOverrides } : {}),
     }).creditsUsd
     if (credits <= 0) continue
     observedRequests += 1
-    if (event.at >= rollingCutoff) rollingUsd += credits
-    if (event.at >= weekCutoff) weeklyUsd += credits
-    if (event.at >= monthCutoff) monthlyUsd += credits
+    const target = bucket(poolID)
+    if (event.at >= rollingCutoff) {
+      rollingUsd += credits
+      target.rollingUsd += credits
+    }
+    if (event.at >= weekCutoff) {
+      weeklyUsd += credits
+      target.weeklyUsd += credits
+    }
+    if (event.at >= monthCutoff) {
+      monthlyUsd += credits
+      target.monthlyUsd += credits
+    }
   }
   const margin = 1 + Math.max(0, marginPct) / 100
+  const scaled = (value: number) => value * margin
   return {
-    rollingUsd: rollingUsd * margin,
-    weeklyUsd: weeklyUsd * margin,
-    monthlyUsd: monthlyUsd * margin,
+    rollingUsd: scaled(rollingUsd),
+    weeklyUsd: scaled(weeklyUsd),
+    monthlyUsd: scaled(monthlyUsd),
     observedRequests,
+    byPool: Object.fromEntries(
+      Object.entries(pools).map(([poolID, totals]) => [
+        poolID,
+        {
+          rollingUsd: scaled(totals.rollingUsd),
+          weeklyUsd: scaled(totals.weeklyUsd),
+          monthlyUsd: scaled(totals.monthlyUsd),
+        },
+      ]),
+    ),
   }
 }
 
@@ -202,33 +271,54 @@ const baseSnapshot = (
   error?: string,
   retryAfterMs?: number,
   notes: ReadonlyArray<string> = [],
-): ProviderQuotaSnapshot => ({
-  providerID: "opendesign",
-  label: "OpenDesign Go",
-  plan: input.settings.plan || OPENDESIGN_GO_PLAN.plan,
-  source: "unknown",
-  fetchedAt: now,
-  stale: false,
-  rolling: unknownWindow,
-  weekly: unknownWindow,
-  monthly: unknownWindow,
-  models: {},
-  notes: [...notes],
-  ...(error ? { error } : {}),
-  ...(retryAfterMs !== undefined ? { retryAfterMs } : {}),
-})
+): ProviderQuotaSnapshot => {
+  const plan = resolvePlan("opendesign", input.settings.plan)
+  return {
+    providerID: "opendesign",
+    label: plan?.label ?? "OpenDesign",
+    plan: plan?.planID ?? input.settings.plan ?? "pro",
+    source: "unknown",
+    fetchedAt: now,
+    stale: false,
+    rolling: unknownWindow,
+    weekly: unknownWindow,
+    monthly: unknownWindow,
+    models: {},
+    notes: [...notes],
+    ...(error ? { error } : {}),
+    ...(retryAfterMs !== undefined ? { retryAfterMs } : {}),
+  }
+}
 
-const capsFor = (settings: ProviderSettings) => ({
-  monthly: settings.monthlyCreditsUsd && settings.monthlyCreditsUsd > 0
+/**
+ * The caps a plan exposes, honouring explicit overrides and any advertised
+ * removal of a window.
+ *
+ * OpenDesign Pro has a seven-day Design Plan window and no five-hour window.
+ * An explicit `fiveHourCapUsd` from an older Go configuration must not
+ * reintroduce the window the user's plan does not have, which is why the
+ * plan shape is consulted before the override.
+ */
+const capsFor = (settings: ProviderSettings) => {
+  const plan = resolvePlan("opendesign", settings.plan)
+  const designPlan = plan?.pools.find((pool) => pool.id === OPENDESIGN_DESIGN_PLAN_POOL)
+  const planModels = plan?.pools.find((pool) => pool.id === OPENDESIGN_PLAN_MODEL_POOL)
+  const monthly = settings.monthlyCreditsUsd && settings.monthlyCreditsUsd > 0
     ? settings.monthlyCreditsUsd
-    : OPENDESIGN_GO_PLAN.designPlanMonthlyUsd,
-  weekly: settings.weeklyCapUsd && settings.weeklyCapUsd > 0
-    ? settings.weeklyCapUsd
-    : OPENDESIGN_GO_PLAN.weeklyCapUsd,
-  rolling: settings.fiveHourCapUsd && settings.fiveHourCapUsd > 0
-    ? settings.fiveHourCapUsd
-    : OPENDESIGN_GO_PLAN.fiveHourCapUsd,
-})
+    : designPlan?.monthlyUsd ?? 0
+  const weeklyFromPlan = settings.ignoreWeeklyWindow ? undefined : designPlan?.weeklyUsd
+  const fiveFromPlan = settings.ignoreFiveHourWindow ? undefined : designPlan?.fiveHourUsd
+  return {
+    monthly,
+    weekly: weeklyFromPlan ?? (settings.ignoreWeeklyWindow ? undefined : settings.weeklyCapUsd),
+    rolling: fiveFromPlan ?? (settings.ignoreFiveHourWindow ? undefined : settings.fiveHourCapUsd),
+    planModelsMonthly: planModels?.monthlyUsd ?? 0,
+    hasPlanModelPool: Boolean(planModels),
+    hasFiveHourWindow: fiveFromPlan !== undefined,
+    hasWeeklyWindow: weeklyFromPlan !== undefined,
+    plan,
+  }
+}
 
 interface ControlFetchResult {
   readonly ok: boolean
@@ -321,6 +411,80 @@ const parseControlWindows = (value: unknown): ControlWindow[] => {
     out.push({ kind, usedCredits, limitCredits, remainingCredits, ...(resetsAt !== undefined ? { resetsAt } : {}) })
   }
   return out
+}
+
+/**
+ * Build one snapshot per funding pool.
+ *
+ * The pools are reported side by side rather than summed. A plan card that
+ * advertises "$480 total" is advertising two allowances with different rules,
+ * so adding them into a single balance would tell a user they can spend it in
+ * one go, which is not true.
+ */
+const buildPoolSnapshots = (input: {
+  caps: ReturnType<typeof capsFor>
+  used: Readonly<Record<string, { rollingUsd: number; weeklyUsd: number; monthlyUsd: number }>>
+  source: "provider" | "estimate"
+  creditsPerUsd: number
+  resetsAt?: number
+}): CreditPoolSnapshot[] => {
+  const { caps, used, source } = input
+  const out: CreditPoolSnapshot[] = []
+  const designUsed = used[OPENDESIGN_DESIGN_PLAN_POOL] ?? { rollingUsd: 0, weeklyUsd: 0, monthlyUsd: 0 }
+  if (caps.monthly > 0) {
+    out.push({
+      id: OPENDESIGN_DESIGN_PLAN_POOL,
+      label: "Design Plan credits",
+      source,
+      monthlyUsd: caps.monthly,
+      usedUsd: designUsed.monthlyUsd,
+      remainingUsd: Math.max(0, caps.monthly - designUsed.monthlyUsd),
+      usedPct: pct(designUsed.monthlyUsd, caps.monthly),
+      ...(caps.weekly !== undefined
+        ? { weeklyUsd: caps.weekly, weeklyUsedPct: pct(designUsed.weeklyUsd, caps.weekly) }
+        : {}),
+      ...(caps.rolling !== undefined
+        ? { fiveHourUsd: caps.rolling, fiveHourUsedPct: pct(designUsed.rollingUsd, caps.rolling) }
+        : {}),
+      resetKind: "rolling-7-day",
+      ...(input.resetsAt !== undefined ? { resetsAt: input.resetsAt } : {}),
+      note: caps.hasFiveHourWindow
+        ? "Five-hour and seven-day ceilings nest inside the monthly maximum."
+        : "Seven-day ceiling nests inside the monthly maximum. This plan has no five-hour window.",
+    })
+  }
+  if (caps.hasPlanModelPool && caps.planModelsMonthly > 0) {
+    const planUsed = used[OPENDESIGN_PLAN_MODEL_POOL] ?? { rollingUsd: 0, weeklyUsd: 0, monthlyUsd: 0 }
+    out.push({
+      id: OPENDESIGN_PLAN_MODEL_POOL,
+      label: "Plan model credits",
+      source,
+      monthlyUsd: caps.planModelsMonthly,
+      usedUsd: planUsed.monthlyUsd,
+      remainingUsd: Math.max(0, caps.planModelsMonthly - planUsed.monthlyUsd),
+      usedPct: pct(planUsed.monthlyUsd, caps.planModelsMonthly),
+      resetKind: "billing-cycle",
+      ...(input.resetsAt !== undefined ? { resetsAt: input.resetsAt } : {}),
+      note: "No five-hour or seven-day window. Design Plan multipliers do not apply to this pool.",
+    })
+  }
+  return out
+}
+
+const planNotes = (caps: ReturnType<typeof capsFor>): string[] => {
+  const notes: string[] = []
+  if (caps.plan) notes.push(`Plan: ${caps.plan.label}.`)
+  notes.push(
+    caps.hasFiveHourWindow
+      ? "This plan has a five-hour Design Plan window."
+      : "This plan has no five-hour Design Plan window.",
+  )
+  if (caps.hasPlanModelPool && caps.planModelsMonthly > 0) {
+    notes.push(
+      `A separate plan model pool of $${caps.planModelsMonthly}/month is reported independently and is never added to the Design Plan allowance.`,
+    )
+  }
+  return notes
 }
 
 /**
@@ -426,8 +590,8 @@ const probeVerified = async (
     }
   }
 
-  const rolling = toWindow(find("rolling"), caps.rolling)
-  const weekly = toWindow(find("weekly"), caps.weekly)
+  const rolling = toWindow(find("rolling"), caps.rolling ?? 0)
+  const weekly = toWindow(find("weekly"), caps.weekly ?? 0)
   const monthlyWindow = find("monthly")
   const monthly = monthlyWindow
     ? toWindow(monthlyWindow, caps.monthly)
@@ -445,10 +609,32 @@ const probeVerified = async (
       ? subscriptionCredits / creditsPerUsd
       : undefined
 
+  const pools = buildPoolSnapshots({
+    caps,
+    used: {
+      [OPENDESIGN_DESIGN_PLAN_POOL]: {
+        rollingUsd: rolling.usedUsd ?? 0,
+        weeklyUsd: weekly.usedUsd ?? 0,
+        monthlyUsd: monthly.usedUsd ?? 0,
+      },
+      [OPENDESIGN_PLAN_MODEL_POOL]: {
+        rollingUsd: 0,
+        weeklyUsd: 0,
+        // The control surface reports Design Plan consumption; plan model
+        // credits are reported as a remaining balance only.
+        monthlyUsd: Math.max(0, caps.planModelsMonthly - subscriptionCredits / creditsPerUsd),
+      },
+    },
+    source: "provider",
+    creditsPerUsd,
+    ...(periodEnd !== undefined ? { resetsAt: periodEnd } : {}),
+  })
+
   const notes = [
     "Provider-reported OpenDesign coding-plan usage.",
     "Read-only probe; no inference request is made.",
     `Workspace ${workspaceId}.`,
+    ...planNotes(caps),
   ]
   if (purchasedUsd > 0) {
     notes.push(
@@ -458,8 +644,8 @@ const probeVerified = async (
 
   const snapshot: ProviderQuotaSnapshot = {
     providerID: "opendesign",
-    label: "OpenDesign Go",
-    plan: input.settings.plan || OPENDESIGN_GO_PLAN.plan,
+    label: caps.plan?.label ?? "OpenDesign",
+    plan: caps.plan?.planID ?? input.settings.plan ?? "pro",
     source: "provider",
     fetchedAt: now,
     stale: false,
@@ -473,6 +659,7 @@ const probeVerified = async (
       freeUsd: 0,
       totalUsd: purchasedUsd,
     },
+    pools,
     planStatus: typeof summaryBody?.membershipTier === "string" ? summaryBody.membershipTier : undefined,
     ...(periodStart !== undefined ? { periodStart } : {}),
     ...(periodEnd !== undefined ? { periodEnd } : {}),
@@ -494,23 +681,38 @@ const probeEstimated = (input: OpenDesignQuotaInput, now: number): OpenDesignQuo
     "opendesign",
     now,
     marginPct,
+    caps.plan,
     input.multiplierOverrides,
   )
-  const rolling = windowFrom(totals.rollingUsd, caps.rolling, undefined, "estimate")
-  const weekly = windowFrom(totals.weeklyUsd, caps.weekly, undefined, "estimate")
+  // A window the plan does not have is never reported as a measured 0%.
+  // Reporting "0% of a five-hour window" would imply a ceiling that could be
+  // hit, when the plan has no such limit.
+  const rolling = caps.rolling !== undefined
+    ? windowFrom(totals.rollingUsd, caps.rolling, undefined, "estimate")
+    : { ...unknownWindow, usedUsd: totals.rollingUsd }
+  const weekly = caps.weekly !== undefined
+    ? windowFrom(totals.weeklyUsd, caps.weekly, undefined, "estimate")
+    : { ...unknownWindow, usedUsd: totals.weeklyUsd }
   const monthly = windowFrom(totals.monthlyUsd, caps.monthly, undefined, "estimate")
+  const pools = buildPoolSnapshots({
+    caps,
+    used: totals.byPool,
+    source: "estimate",
+    creditsPerUsd: OPENDESIGN_DEFAULT_CREDITS_PER_USD,
+  })
   const notes = [
     "Estimated from this router's own OpenDesign usage. OpenDesign publishes no quota API for an inference key.",
     `A ${marginPct}% safety margin is applied. Usage from the OpenDesign app or other clients on the same subscription is not visible, so this is a lower bound.`,
     "Wallet balance is not included and is never used for automatic routing.",
+    ...planNotes(caps),
   ]
   if (totals.observedRequests === 0) {
     notes.push("No OpenDesign requests have been routed through this router yet, so the estimate starts at zero.")
   }
   const snapshot: ProviderQuotaSnapshot = {
     providerID: "opendesign",
-    label: "OpenDesign Go",
-    plan: input.settings.plan || OPENDESIGN_GO_PLAN.plan,
+    label: caps.plan?.label ?? "OpenDesign",
+    plan: caps.plan?.planID ?? input.settings.plan ?? "pro",
     source: "estimate",
     fetchedAt: now,
     stale: false,
@@ -519,10 +721,11 @@ const probeEstimated = (input: OpenDesignQuotaInput, now: number): OpenDesignQuo
     monthly,
     monthlyGrantUsd: caps.monthly,
     monthlyRemainingUsd: Math.max(0, caps.monthly - totals.monthlyUsd),
+    pools,
     models: {},
     notes,
   }
-  const exhausted = Boolean(rolling.exceeded || weekly.exceeded || monthly.exceeded)
+  const exhausted = Boolean(monthly.exceeded || weekly.exceeded)
   return { snapshot, state: exhausted ? "exhausted" : "estimated" }
 }
 

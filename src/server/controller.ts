@@ -13,6 +13,9 @@ import type {
 } from "../core/types.js"
 import { classifyTask, type ClassifierFile } from "../core/classify/classifier.js"
 import { computeContextHealth } from "../core/context-health.js"
+import { decideCompaction, describeMode } from "../core/context/strategy.js"
+import { buildProviderUsageReport } from "../core/quota/report.js"
+import { resolvePlan } from "../core/plans/catalog.js"
 import { loadSettings, type SettingsLoadResult } from "../core/config.js"
 import { classifyFailure } from "../core/failures.js"
 import { buildRegistry } from "../core/models/registry.js"
@@ -72,14 +75,14 @@ const FAULT_DEDUPE_WINDOW_MS = 30_000
 
 /**
  * How long the router waits after triggering a compaction before it may
- * trigger another for the same session. Compaction is cheap, but it must
- * never loop: one pass either makes the session fit again or it does not.
+ * trigger another for the same session. The strategy's configured cooldown
+ * supersedes this; it is retained as the documented upper bound.
  */
 const ROUTER_COMPACT_COOLDOWN_MS = 10 * 60_000
 
 /**
- * The eligibility margin the router grants a model before its context
- * disqualifies it. Mirrors the check in the eligibility policy.
+ * Fallbacks for the context constants. The strategy module owns the real
+ * values; these names are kept so existing call sites read the same way.
  */
 const CONTEXT_ELIGIBILITY_MARGIN_TOKENS = 20_000
 const CONTEXT_SAFE_WINDOW_FRACTION = 0.95
@@ -203,6 +206,11 @@ export class RouterController {
   private readonly modelsSeen = new Map<string, Set<string>>()
   /** When the router last triggered a compaction, per session. */
   private readonly routerCompactAt = new Map<string, number>()
+  /** Last context-management decision per session, for diagnostics. */
+  private readonly lastCompactionDecision = new Map<
+    string,
+    ReturnType<typeof decideCompaction>
+  >()
   private readonly inflight = new Set<string>()
   private readonly promptSeen = new Set<string>()
   private readonly created = new Map<string, number>()
@@ -614,8 +622,25 @@ export class RouterController {
     )
   }
 
-  private premiumState(session?: SessionState): PremiumState {
-    const spent = this.ledger.premiumSpent()
+  /**
+   * Measured generation speed per model, for the routing engine.
+   *
+   * Only models with enough samples are passed; the engine applies its own
+   * minimum, so a single fast request cannot promote a model on noise.
+   */
+  private speedSnapshot(): Record<string, { tokensPerSecond: number; samples: number }> {
+    const out: Record<string, { tokensPerSecond: number; samples: number }> = {}
+    for (const [key, metrics] of Object.entries(this.ledger.snapshotMetrics().byModel)) {
+      if (metrics.outputTokensPerSecond <= 0 || metrics.latencySamples <= 0) continue
+      out[key] = {
+        tokensPerSecond: metrics.outputTokensPerSecond,
+        samples: metrics.latencySamples,
+      }
+    }
+    return out
+  }
+
+  private premiumState(session?: SessionState): PremiumState {    const spent = this.ledger.premiumSpent()
     const budget = this.settings.premium.monthlyBudgetUsd
     return {
       mode: this.settings.premium.mode,
@@ -916,6 +941,7 @@ export class RouterController {
       modelHistory: this.ledger.snapshotMetrics().byModel,
       cooldowns: this.ledger.cooldowns(),
       providerCooldowns: this.ledger.providerCooldowns(),
+      speed: this.speedSnapshot(),
     })
     if (session.lastModel) this.rememberModel(sessionID, session.lastModel.providerID, session.lastModel.id)
 
@@ -1221,19 +1247,25 @@ export class RouterController {
   }
 
   /**
-   * Compact an idle session before it outgrows the cheapest provider that can
-   * serve it.
+   * Router-driven conversation compaction.
    *
-   * The router already prefers the cheapest qualified route on every prompt.
-   * The only thing that pushes a session off it is size: once the context
-   * crosses the model's safe window the cheap route becomes ineligible and
-   * the work moves to a costlier provider for no reason other than the
-   * conversation's length. Compaction is the one lever that fixes that, and
-   * on the cheapest provider it costs a fraction of a cent.
+   * Compaction is destructive: it replaces the transcript with a summary and
+   * the detail is gone. It was introduced when OpenDesign Go's $10 allowance
+   * made a long session on the cheapest provider unaffordable, and it is now
+   * governed by `contextManagement.mode`:
+   *
+   *  - `native` (default) never compacts except to avoid a verified overflow.
+   *  - `conservative` compacts only to prevent a real overflow.
+   *  - `budget-optimized` preserves the old early-compaction behaviour for
+   *    small plans and small-window models.
+   *
+   * In every mode the effective window is the one the provider actually
+   * accepts, never a theoretical maximum.
    */
   private maybeCompactForCost(sessionID: string) {
     const settings = this.settings
     if (!settings.enabled || this.runtime.paused === true) return
+    if (!settings.contextManagement.enabled) return
     const session = this.ledger.getSession(sessionID)
     const model = session?.lastModel
     if (!model) return
@@ -1243,12 +1275,28 @@ export class RouterController {
     const contextTokens = session?.contextTokens ?? 0
     if (contextTokens <= 0) return
     const now = Date.now()
+    const cooldownMs = settings.contextManagement.cooldownMinutes * 60_000
     const last = this.routerCompactAt.get(sessionID)
-    if (typeof last === "number" && now - last < ROUTER_COMPACT_COOLDOWN_MS) return
+    if (typeof last === "number" && now - last < cooldownMs) return
 
-    const target = this.cheapestVariantContext(record.modelID) || record.context
-    const required = contextTokens + CONTEXT_ELIGIBILITY_MARGIN_TOKENS
-    if (required <= target * CONTEXT_SAFE_WINDOW_FRACTION) return
+    // The window that matters is the one the *current* model accepts. The
+    // cheapest variant's window is only relevant to the budget-optimized
+    // strategy, which trades context for staying on the cheapest route.
+    const effectiveWindow = record.context
+    const cheapestWindow =
+      settings.contextManagement.mode === "budget-optimized"
+        ? this.cheapestVariantContext(record.modelID) || record.context
+        : effectiveWindow
+
+    const decision = decideCompaction({
+      mode: settings.contextManagement.mode,
+      settings: settings.contextManagement,
+      contextTokens,
+      effectiveWindow,
+      cheapestWindow,
+    })
+    this.lastCompactionDecision.set(sessionID, decision)
+    if (!decision.compact) return
 
     if (typeof this.ctx.session.compact !== "function") return
     this.routerCompactAt.set(sessionID, now)
@@ -1262,7 +1310,8 @@ export class RouterController {
         void this.emit("status", {
           sessionID,
           summary: {
-            note: `Auto-compacted at ${(contextTokens / 1000).toFixed(0)}k tokens to keep the session inside ${(target / 1000).toFixed(0)}k cheap window`,
+            note: `${decision.hardLimit ? "Protected context limit" : "Compacted"}: ${decision.reason} (${(contextTokens / 1000).toFixed(0)}k to fit ${((decision.targetTokens ?? effectiveWindow) / 1000).toFixed(0)}k)`,
+            contextManagement: settings.contextManagement.mode,
           },
         })
       })
@@ -1678,6 +1727,7 @@ export class RouterController {
         return summary
       },
       report: async () => this.report(),
+      usage: async () => this.usageReport(),
       getConfig: async () => ({
         settings: (() => {
           const copy = this.safe(this.settings)
@@ -2112,6 +2162,66 @@ export class RouterController {
       quota: this.quotaSnapshots(),
       decisions: this.ledger.decisions(20),
       status: this.statusFor(),
+    }
+  }
+
+  /**
+   * Durable usage report: per-provider, per-model, per-window, with forecasts.
+   *
+   * A provider that meters a five-hour window reports it; one that does not
+   * reports an empty row, so a dashboard can distinguish "unused" from "not
+   * applicable" instead of showing a limit that cannot be hit.
+   */
+  private usageReport() {
+    const now = Date.now()
+    const quota = this.quotaSnapshots()
+    const providers = Object.entries(this.settings.providers)
+      .filter(([, settings]) => settings.enabled)
+      .map(([providerID, settings]) => {
+        const snapshot = quota.find((entry) => entry.providerID === providerID)
+        const plan = resolvePlan(providerID, settings.plan)
+        const designPlan = plan?.pools.find((pool) => pool.id === "design-plan")
+        const hasFiveHourWindow = Boolean(
+          !settings.ignoreFiveHourWindow && designPlan?.fiveHourUsd !== undefined,
+        )
+        const hasWeeklyWindow = Boolean(
+          !settings.ignoreWeeklyWindow &&
+            (designPlan?.weeklyUsd !== undefined ||
+              plan?.perModelWindowRule !== undefined),
+        )
+        return buildProviderUsageReport({
+          providerID,
+          label: snapshot?.label ?? plan?.label ?? providerID,
+          plan: plan?.planID ?? settings.plan,
+          source: snapshot?.source ?? "unknown",
+          ...(snapshot?.quotaState ? { quotaState: snapshot.quotaState } : {}),
+          now,
+          source_: {
+            aggregate: (window) => this.ledger.aggregate(window),
+            usageByModel: (window) => this.ledger.usageByModel(window),
+            usageEvents: this.ledger.usageEvents(),
+          },
+          hasFiveHourWindow,
+          hasWeeklyWindow,
+          ...(snapshot?.monthlyRemainingUsd !== undefined
+            ? { remainingMonthlyUsd: snapshot.monthlyRemainingUsd }
+            : {}),
+          notes: snapshot?.notes ?? [],
+        })
+      })
+    return {
+      generatedAt: now,
+      providers,
+      speed: this.speedSnapshot(),
+      contextManagement: {
+        mode: this.settings.contextManagement.mode,
+        description: describeMode(this.settings.contextManagement.mode),
+        enabled: this.settings.contextManagement.enabled,
+      },
+      retention: {
+        rawEventHorizonHours: 48,
+        note: "Events older than the horizon are folded into hourly aggregates, so nothing is discarded.",
+      },
     }
   }
 

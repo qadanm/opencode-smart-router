@@ -1,5 +1,6 @@
 import type { CostTier, ModelRecord, PeakPricing } from "../types.js"
 import { OPENDESIGN_MODELS } from "../providers/opendesign-models.js"
+import { OPENDESIGN_DESIGN_PLAN_MODELS, modelMonthlyAllowanceUsd, resolvePlan } from "../plans/catalog.js"
 
 export interface SeedModel {
   key: string
@@ -17,6 +18,8 @@ export interface SeedModel {
   designEvidence?: ModelRecord["designEvidence"]
   /** Credit multiplier applied to usage value. One for plain USD billing. */
   creditMultiplier?: number
+  /** True when the model is funded from a pool reserved for escalation. */
+  escalationOnly?: boolean
   premium?: boolean
   training?: boolean
   free?: boolean
@@ -47,8 +50,11 @@ const tieredCost = (
 /**
  * Command Code documents these DeepSeek models at off-peak rates and charges
  * 2x from 01:00-04:00 and 06:00-10:00 UTC, Monday-Friday.
+ *
+ * OpenCode Go publishes the identical peak schedule for DeepSeek V4.1 Flash
+ * and V4 Pro, so the same shape is reused rather than duplicated.
  */
-const COMMAND_CODE_DEEPSEEK_PEAK: PeakPricing = {
+const DEEPSEEK_PEAK_PRICING: PeakPricing = {
   multiplier: 2,
   windowsUtc: [
     { startHour: 1, endHour: 4 },
@@ -56,6 +62,8 @@ const COMMAND_CODE_DEEPSEEK_PEAK: PeakPricing = {
   ],
   weekdaysOnly: true,
 }
+
+const COMMAND_CODE_DEEPSEEK_PEAK = DEEPSEEK_PEAK_PRICING
 
 /**
  * Curated seed. Intelligence values come from Command Code's published model
@@ -67,7 +75,7 @@ const COMMAND_CODE_DEEPSEEK_PEAK: PeakPricing = {
  */
 const BASE_SEED_MODELS: ReadonlyArray<SeedModel> = [
   // ---------------------------------------------------------------------------
-  // OpenCode Go Plus: economy
+  // OpenCode Go: economy
   // ---------------------------------------------------------------------------
   {
     key: "opencode-go/gpt-6-luna",
@@ -135,7 +143,7 @@ const BASE_SEED_MODELS: ReadonlyArray<SeedModel> = [
   },
 
   // ---------------------------------------------------------------------------
-  // OpenCode Go Plus: standard
+  // OpenCode Go: standard
   // ---------------------------------------------------------------------------
   {
     key: "opencode-go/deepseek-v4.1-flash",
@@ -146,12 +154,14 @@ const BASE_SEED_MODELS: ReadonlyArray<SeedModel> = [
     maxOutput: 384_000,
     input: ["text", "image"],
     cost: cost(0.15, 0.6, 0.003),
+    peakPricing: DEEPSEEK_PEAK_PRICING,
     intelligence: 39.5,
     design: 65,
     designEvidence: "observed",
     tier: 2,
-    monthlyAllowanceUsd: 160,
-    notes: "Approved standard floor. Strong general coding value and native image input.",
+    monthlyAllowanceUsd: 80,
+    notes:
+      "Approved standard floor. Strong general coding value and native image input. Off-peak list price; 2x during 01-04 and 06-10 UTC Mon-Fri.",
   },
   {
     key: "opencode-go/glm-5.3-flash",
@@ -166,7 +176,7 @@ const BASE_SEED_MODELS: ReadonlyArray<SeedModel> = [
     design: 65,
     designEvidence: "curated",
     tier: 2,
-    monthlyAllowanceUsd: 180,
+    monthlyAllowanceUsd: 60,
   },
   {
     key: "opencode-go/minimax-m3.1-flash",
@@ -181,7 +191,7 @@ const BASE_SEED_MODELS: ReadonlyArray<SeedModel> = [
     design: 60,
     designEvidence: "curated",
     tier: 2,
-    monthlyAllowanceUsd: 80,
+    monthlyAllowanceUsd: 20,
   },
   {
     key: "opencode-go/claude-haiku-5-5",
@@ -196,7 +206,7 @@ const BASE_SEED_MODELS: ReadonlyArray<SeedModel> = [
     design: 70,
     designEvidence: "curated",
     tier: 2,
-    monthlyAllowanceUsd: 60,
+    monthlyAllowanceUsd: 15,
   },
   {
     key: "opencode-go/mimo-v2.6-pro",
@@ -211,12 +221,12 @@ const BASE_SEED_MODELS: ReadonlyArray<SeedModel> = [
     design: 62,
     designEvidence: "curated",
     tier: 2,
-    monthlyAllowanceUsd: 60,
+    monthlyAllowanceUsd: 15,
     notes: "High intelligence for its price. Narrow monthly allowance.",
   },
 
   // ---------------------------------------------------------------------------
-  // OpenCode Go Plus: premium
+  // OpenCode Go: premium
   // ---------------------------------------------------------------------------
   {
     key: "opencode-go/glm-5.3",
@@ -232,7 +242,7 @@ const BASE_SEED_MODELS: ReadonlyArray<SeedModel> = [
     designEvidence: "curated",
     premium: true,
     tier: 3,
-    monthlyAllowanceUsd: 120,
+    monthlyAllowanceUsd: 15,
     notes: "Premium. Text only, so it can never receive screenshots.",
   },
   {
@@ -249,7 +259,7 @@ const BASE_SEED_MODELS: ReadonlyArray<SeedModel> = [
     designEvidence: "curated",
     premium: true,
     tier: 3,
-    monthlyAllowanceUsd: 60,
+    monthlyAllowanceUsd: 15,
   },
   {
     key: "opencode-go/grok-4.7",
@@ -265,7 +275,7 @@ const BASE_SEED_MODELS: ReadonlyArray<SeedModel> = [
     designEvidence: "curated",
     premium: true,
     tier: 3,
-    monthlyAllowanceUsd: 60,
+    monthlyAllowanceUsd: 15,
   },
   {
     key: "opencode-go/qwen3.8-max",
@@ -281,7 +291,7 @@ const BASE_SEED_MODELS: ReadonlyArray<SeedModel> = [
     designEvidence: "curated",
     premium: true,
     tier: 3,
-    monthlyAllowanceUsd: 60,
+    monthlyAllowanceUsd: 15,
   },
   {
     key: "opencode-go/step-5-preview",
@@ -297,7 +307,7 @@ const BASE_SEED_MODELS: ReadonlyArray<SeedModel> = [
     designEvidence: "curated",
     premium: true,
     tier: 3,
-    monthlyAllowanceUsd: 60,
+    monthlyAllowanceUsd: 15,
   },
 
   // ---------------------------------------------------------------------------
@@ -692,12 +702,16 @@ const BASE_SEED_MODELS: ReadonlyArray<SeedModel> = [
 ]
 
 /**
- * OpenDesign Go: the Design Plan group served by the OpenDesign gateway.
+ * OpenDesign: the models served by the OpenDesign gateway.
  *
  * These entries are generated from the provider catalog so the published
  * credit multipliers live in exactly one place. The gateway's `GET /v1/models`
  * response is authoritative for entitlement and for the usable context window,
  * and the discovery adapter merges it over these values at runtime.
+ *
+ * Which funding pool a model draws from is decided by the plan catalog. A
+ * Design Plan model carries its multiplier; a plan model does not, because
+ * the multiplier does not follow it into the plan model pool.
  */
 const OPENDESIGN_SEED_MODELS: ReadonlyArray<SeedModel> = OPENDESIGN_MODELS.map((model) => ({
   key: `opendesign/${model.modelID}`,
@@ -709,13 +723,17 @@ const OPENDESIGN_SEED_MODELS: ReadonlyArray<SeedModel> = OPENDESIGN_MODELS.map((
   input: [...model.input],
   tools: true,
   cost: model.cost.map((tier) => ({ ...tier, cache: { ...tier.cache } })),
-  creditMultiplier: model.creditMultiplier,
+  // The multiplier only applies to the Design Plan pool. A plan model is
+  // billed at plain usage value from the separate plan model pool, so it
+  // must not carry a Design Plan multiplier into cost estimation.
+  ...(OPENDESIGN_DESIGN_PLAN_MODELS.has(model.modelID) ? { creditMultiplier: model.creditMultiplier } : {}),
+  escalationOnly: !OPENDESIGN_DESIGN_PLAN_MODELS.has(model.modelID),
   intelligence: model.intelligence,
   design: model.design,
   designEvidence: model.designEvidence,
   tier: model.tier,
   approved: model.approved,
-  // The Design Plan allowance is one shared provider-level pool, so no model
+  // Every OpenDesign allowance is a shared provider-level pool, so no model
   // carries its own monthly allowance.
   monthlyAllowanceUsd: 0,
   notes: model.notes,

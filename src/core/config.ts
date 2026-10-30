@@ -35,7 +35,9 @@ export const DEFAULT_SETTINGS: RouterSettings = {
   mode: "balanced",
   dryRun: false,
   providers: {
-    "opencode-go": providerDefaults("go-plus"),
+    // OpenCode Go: per-model monthly allowances. The plan catalog holds the
+    // per-model table; the provider settings only carry policy.
+    "opencode-go": providerDefaults("go"),
     commandcode: providerDefaults("goat", {
       probeUsage: true,
       monthlyCreditsUsd: 70,
@@ -44,18 +46,21 @@ export const DEFAULT_SETTINGS: RouterSettings = {
     }),
     // OpenDesign is optional and disabled by default. A user without
     // OpenDesign credentials sees no behavior change at all.
-    opendesign: providerDefaults("go", {
+    //
+    // Pro is the default assumed tier because it is the only tier with a
+    // separate plan-model pool; the catalog is authoritative for the numbers
+    // and the live gateway is authoritative for entitlement.
+    opendesign: providerDefaults("pro", {
       enabled: false,
       probeUsage: true,
-      monthlyCreditsUsd: 120,
-      fiveHourCapUsd: 10,
-      weeklyCapUsd: 30,
       reserveMonthlyPct: 5,
       reserveWeeklyPct: 10,
       reserveFiveHourPct: 0,
       allowExtraUsage: false,
       subscriptionOnly: true,
       providerScopedQuota: true,
+      // Pro has no five-hour Design Plan window.
+      ignoreFiveHourWindow: true,
     }),
   },
   privacy: {
@@ -78,6 +83,8 @@ export const DEFAULT_SETTINGS: RouterSettings = {
     maxEscalationsPerTask: 2,
     preferSameProvider: true,
     failClosed: true,
+    protectEscalationPool: true,
+    longContextFloorTokens: 1_000_000,
   },
   quota: {
     probeOpenCodeGo: true,
@@ -91,6 +98,21 @@ export const DEFAULT_SETTINGS: RouterSettings = {
     enabled: true,
     warnAtTokens: 400_000,
     recommendAtTokens: 700_000,
+  },
+  // Preserve full context by default. Compaction is a destructive operation
+  // that only ever existed to survive a small allowance.
+  contextManagement: {
+    mode: "native",
+    enabled: true,
+    compactAtTokens: 0,
+    cooldownMinutes: 10,
+    allowEmergencyCompaction: true,
+  },
+  speed: {
+    enabled: true,
+    weightPct: 15,
+    minSamples: 3,
+    slowRouteMultiple: 2.5,
   },
   ui: {
     titleIndicator: true,
@@ -247,6 +269,14 @@ const validateProvider = (
       value.providerScopedQuota === undefined
         ? base.providerScopedQuota
         : asBoolean(value.providerScopedQuota, base.providerScopedQuota ?? false, warnings, `${path}.providerScopedQuota`),
+    ignoreFiveHourWindow:
+      value.ignoreFiveHourWindow === undefined
+        ? base.ignoreFiveHourWindow
+        : asBoolean(value.ignoreFiveHourWindow, base.ignoreFiveHourWindow ?? false, warnings, `${path}.ignoreFiveHourWindow`),
+    ignoreWeeklyWindow:
+      value.ignoreWeeklyWindow === undefined
+        ? base.ignoreWeeklyWindow
+        : asBoolean(value.ignoreWeeklyWindow, base.ignoreWeeklyWindow ?? false, warnings, `${path}.ignoreWeeklyWindow`),
   }
 }
 
@@ -483,6 +513,20 @@ export const validateSettings = (input: unknown, base: RouterSettings = DEFAULT_
       "routing.preferSameProvider",
     ),
     failClosed: asBoolean(routingInput.failClosed, base.routing.failClosed, warnings, "routing.failClosed"),
+    protectEscalationPool: asBoolean(
+      routingInput.protectEscalationPool,
+      base.routing.protectEscalationPool,
+      warnings,
+      "routing.protectEscalationPool",
+    ),
+    longContextFloorTokens: asNumber(
+      routingInput.longContextFloorTokens,
+      base.routing.longContextFloorTokens,
+      warnings,
+      "routing.longContextFloorTokens",
+      10_000,
+      10_000_000,
+    ),
   }
 
   const quotaInput = isRecord(input.quota) ? input.quota : {}
@@ -558,6 +602,61 @@ export const validateSettings = (input: unknown, base: RouterSettings = DEFAULT_
     diagnostics: asBoolean(loggingInput.diagnostics, base.logging.diagnostics, warnings, "logging.diagnostics"),
   }
 
+  const contextInput = isRecord(input.contextManagement) ? input.contextManagement : {}
+  const contextManagement = {
+    mode: asEnum(
+      contextInput.mode,
+      ["native", "conservative", "budget-optimized"] as const,
+      base.contextManagement.mode,
+      warnings,
+      "contextManagement.mode",
+    ),
+    enabled: asBoolean(contextInput.enabled, base.contextManagement.enabled, warnings, "contextManagement.enabled"),
+    compactAtTokens: asNumber(
+      contextInput.compactAtTokens,
+      base.contextManagement.compactAtTokens,
+      warnings,
+      "contextManagement.compactAtTokens",
+      0,
+      10_000_000,
+    ),
+    cooldownMinutes: asNumber(
+      contextInput.cooldownMinutes,
+      base.contextManagement.cooldownMinutes,
+      warnings,
+      "contextManagement.cooldownMinutes",
+      1,
+      1440,
+    ),
+    allowEmergencyCompaction: asBoolean(
+      contextInput.allowEmergencyCompaction,
+      base.contextManagement.allowEmergencyCompaction,
+      warnings,
+      "contextManagement.allowEmergencyCompaction",
+    ),
+  }
+
+  const speedInput = isRecord(input.speed) ? input.speed : {}
+  const speed = {
+    enabled: asBoolean(speedInput.enabled, base.speed.enabled, warnings, "speed.enabled"),
+    weightPct: asNumber(speedInput.weightPct, base.speed.weightPct, warnings, "speed.weightPct", 0, 100),
+    minSamples: asNumber(speedInput.minSamples, base.speed.minSamples, warnings, "speed.minSamples", 1, 500),
+    slowRouteMultiple: asNumber(
+      speedInput.slowRouteMultiple,
+      base.speed.slowRouteMultiple,
+      warnings,
+      "speed.slowRouteMultiple",
+      1,
+      20,
+    ),
+  }
+
+  if (contextManagement.mode === "budget-optimized" && contextManagement.compactAtTokens <= 0) {
+    warnings.push(
+      "contextManagement.mode is budget-optimized but compactAtTokens is 0; only the cheapest route's verified window will trigger compaction",
+    )
+  }
+
   const settings: RouterSettings = {
     enabled: asBoolean(input.enabled, base.enabled, warnings, "enabled"),
     mode: asEnum(input.mode, ["efficiency", "balanced", "premium"] as const, base.mode, warnings, "mode"),
@@ -570,6 +669,8 @@ export const validateSettings = (input: unknown, base: RouterSettings = DEFAULT_
     routing,
     quota,
     contextHealth,
+    contextManagement,
+    speed,
     ui,
     logging,
     models: validateModels(input.models, base.models, warnings),

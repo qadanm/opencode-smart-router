@@ -68,6 +68,12 @@ export interface EligibilityInput {
   readonly allowDesignRelaxation?: boolean
   /** Estimated cost of the request, used by the subscription-only guard. */
   readonly projectedUsd?: number
+  /**
+   * True when an ordinary-allowance route can serve this task. A model funded
+   * from an escalation pool is then refused, so routine work cannot drain the
+   * capacity reserved for hard problems.
+   */
+  readonly escalationPoolProtected?: boolean
 }
 
 export interface EligibilityResult {
@@ -259,6 +265,18 @@ export const evaluateEligibility = (input: EligibilityInput): EligibilityResult 
     }
     if (task.tier < 3 && !task.constraints.requestPremium) {
       return { eligible: false, reason: "Premium models are reserved for premium-tier work", warnings }
+    }
+  }
+
+  // An escalation pool is capacity, not routine allowance. When an
+  // ordinary-allowance route can already serve the task, spending the
+  // escalation pool on it converts a cheap request into a scarce one.
+  if (model.escalationOnly && input.escalationPoolProtected) {
+    return {
+      eligible: false,
+      reason:
+        "This model is funded from an escalation pool, and an ordinary-allowance route can serve this task",
+      warnings,
     }
   }
 

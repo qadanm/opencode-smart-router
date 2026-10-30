@@ -21,6 +21,7 @@ import {
 } from "../src/core/providers/opendesign.js"
 import {
   OPENDESIGN_GO_PLAN,
+  OPENDESIGN_PRO_PLAN,
   creditMultiplierFor,
   designPlanCreditsFor,
 } from "../src/core/providers/opendesign-credits.js"
@@ -329,10 +330,19 @@ describe("OpenDesign credit semantics", () => {
   })
 
   it("treats the nested windows as limits inside one monthly maximum", () => {
-    expect(OPENDESIGN_GO_PLAN.fiveHourCapUsd + OPENDESIGN_GO_PLAN.weeklyCapUsd).toBeLessThan(
+    expect((OPENDESIGN_GO_PLAN.fiveHourCapUsd ?? 0) + (OPENDESIGN_GO_PLAN.weeklyCapUsd ?? 0)).toBeLessThan(
       OPENDESIGN_GO_PLAN.designPlanMonthlyUsd,
     )
     expect(OPENDESIGN_GO_PLAN.planModelCreditsUsd).toBe(0)
+  })
+
+  it("describes Pro with a seven-day window, no five-hour window, and a separate plan-model pool", () => {
+    expect(OPENDESIGN_PRO_PLAN.designPlanMonthlyUsd).toBe(360)
+    expect(OPENDESIGN_PRO_PLAN.weeklyCapUsd).toBe(90)
+    expect(OPENDESIGN_PRO_PLAN.fiveHourCapUsd).toBeUndefined()
+    expect(OPENDESIGN_PRO_PLAN.planModelCreditsUsd).toBe(120)
+    // The advertised total is two pools, not one spendable balance.
+    expect(OPENDESIGN_PRO_PLAN.designPlanMonthlyUsd + OPENDESIGN_PRO_PLAN.planModelCreditsUsd).toBe(480)
   })
 
   it("estimates credits from token counts", () => {
