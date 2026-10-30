@@ -401,6 +401,35 @@ MUTATIONS = [
         "if (streak >= 1) {",
         "test/provider-scope.test.ts",
     ),
+    # --------------------------------------------------------- quota expiry
+    Mutation(
+        "expiring quota is never discounted",
+        "src/core/policy/eligibility.ts",
+        "return 1 + (base - 1) * quotaExpiryDiscount(snapshot, now)",
+        "return 1 + (base - 1)",
+        "test/quota-expiry.test.ts",
+    ),
+    Mutation(
+        "a nearly-dry pool is still chased for its last percent",
+        "src/core/policy/eligibility.ts",
+        "if (window.remainingPct <= EXPIRY_MIN_REMAINING_PCT) continue",
+        "if (window.remainingPct <= 0) continue",
+        "test/quota-expiry.test.ts",
+    ),
+    Mutation(
+        "a pool that has not been touched counts as expiring waste",
+        "src/core/policy/eligibility.ts",
+        "const commitment = Math.min(1, window.usedPct / 100)",
+        "const commitment = 1",
+        "test/quota-expiry.test.ts",
+    ),
+    Mutation(
+        "the tightest window no longer dominates",
+        "src/core/policy/eligibility.ts",
+        "best = Math.min(best, 1 - discount)",
+        "best = Math.max(best, 1 - discount)",
+        "test/quota-expiry.test.ts",
+    ),
 ]
 
 def run_tests(test: str) -> bool:

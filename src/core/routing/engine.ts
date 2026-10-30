@@ -544,7 +544,7 @@ export const routeTask = (input: EngineInput): EngineResult => {
           history: input.modelHistory?.[modelKey(model.providerID, model.modelID)],
           intelligenceFloor: floor,
         })
-        const pressure = providerPressure(provider) * modelPressure(modelQuota)
+        const pressure = providerPressure(provider, now) * modelPressure(modelQuota)
         const speedFactor = speedPenalty(input, modelKey(model.providerID, model.modelID), fastestTokensPerSecond)
         const candidate = candidateFor(input, model, displayedEligibility, estimate, probability, pressure, currentKey, speedFactor)
         out.push({ model, eligibility: displayedEligibility, estimate, probability, pressure, candidate })
@@ -622,7 +622,7 @@ export const routeTask = (input: EngineInput): EngineResult => {
           history: input.modelHistory?.[modelKey(model.providerID, model.modelID)],
           intelligenceFloor: floor,
         })
-        const pressure = providerPressure(provider) * modelPressure(modelQuota)
+        const pressure = providerPressure(provider, now) * modelPressure(modelQuota)
         return { model, eligibility, estimate, probability, pressure, candidate: candidateFor(input, model, eligibility, estimate, probability, pressure, currentKey) }
       })
       .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry))

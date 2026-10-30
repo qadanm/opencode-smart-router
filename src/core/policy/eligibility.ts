@@ -385,7 +385,82 @@ export const evaluateEligibility = (input: EligibilityInput): EligibilityResult 
   return { eligible: true, reason: "Meets every hard requirement", warnings }
 }
 
-export const providerPressure = (snapshot: ProviderQuotaSnapshot | undefined): number => {
+/**
+ * How much a pool's pressure is reduced because its allowance is about to be
+ * lost rather than spent.
+ *
+ * Prepaid subscription credits are a sunk cost. Once the money is committed, the
+ * only question a router can answer is which committed money to use before it
+ * expires, and unused allowance at reset is worth exactly nothing. Ranking such
+ * a pool as if a request there cost fresh money overstates the cost of spending
+ * it, which is what made every prompt go to the provider with the larger
+ * unspent pool while a nearly-full window with hours left on it went unused.
+ *
+ * Three deliberate limits:
+ *
+ * - A pool with almost nothing left gets no discount. There is not enough
+ *   headroom to finish real work, and chasing the last percent would strand a
+ *   task halfway through it. Expiring quota is only worth spending when it can
+ *   still carry the request.
+ * - An untouched pool gets no discount. Nothing has been committed yet, so
+ *   there is nothing to waste.
+ * - The discount is bounded well below the full cost. Spending down expiring
+ *   quota is cheaper than losing it, not free.
+ */
+const EXPIRY_DISCOUNT_MAX = 0.35
+/** Only windows this close to resetting are treated as about to be lost. */
+const EXPIRY_HORIZON_MS = 24 * 60 * 60 * 1000
+
+/** Below this much headroom, expiring allowance is not worth chasing. */
+const EXPIRY_MIN_REMAINING_PCT = 5
+
+/**
+ * The multiplier applied to this provider's pressure for expiring allowance.
+ *
+ * Returns a number <= 1 which the caller divides into pressure. One means no
+ * discount, which is the case for every provider that did not report a reset
+ * time.
+ */
+export const quotaExpiryDiscount = (
+  snapshot: ProviderQuotaSnapshot | undefined,
+  now: number,
+): number => {
+  if (!snapshot) return 1
+  // The tightest window is the one whose loss actually hurts: a monthly pool
+  // with room in it does not save a weekly window that is about to reset.
+  const windows = [snapshot.rolling, snapshot.weekly, snapshot.monthly]
+    .filter((window) => window.source !== "unknown")
+    .filter((window) => typeof window.resetsAt === "number")
+  if (windows.length === 0) return 1
+
+  let best = 1
+  for (const window of windows) {
+    const resetsAt = window.resetsAt as number
+    const remainingMs = resetsAt - now
+    if (remainingMs <= 0) continue
+    // Not a reward for running dry. At 2% left there is not enough headroom to
+    // serve real work, so chasing it would strand a task mid-way for the sake of
+    // credits that are about to vanish anyway.
+    if (window.remainingPct <= EXPIRY_MIN_REMAINING_PCT) continue
+
+    // Closer to reset means more of it is about to be lost, and more of it
+    // already spent means more has been committed to this pool.
+    //
+    // No extra guard is needed for a reset that is far away, or for a pool
+    // nobody has used yet: urgency goes negative beyond the horizon, and
+    // commitment is zero when nothing has been spent, so both produce a
+    // discount of zero or less and the clamp below discards them. Adding those
+    // branches would be untestable code that changes no behaviour.
+    const timeUrgency = 1 - remainingMs / EXPIRY_HORIZON_MS
+    const commitment = Math.min(1, window.usedPct / 100)
+    const discount = EXPIRY_DISCOUNT_MAX * timeUrgency * commitment
+    // The tightest window dominates, so the strongest discount wins.
+    best = Math.min(best, 1 - discount)
+  }
+  return best
+}
+
+export const providerPressure = (snapshot: ProviderQuotaSnapshot | undefined, now = Date.now()): number => {
   if (!snapshot) return 1.5
   const allUnknown =
     snapshot.monthly.source === "unknown" && snapshot.weekly.source === "unknown" && snapshot.rolling.source === "unknown"
@@ -393,13 +468,15 @@ export const providerPressure = (snapshot: ProviderQuotaSnapshot | undefined): n
   const monthly = snapshot.monthly.source === "unknown" ? 0 : snapshot.monthly.usedPct
   const weekly = snapshot.weekly.source === "unknown" ? 0 : snapshot.weekly.usedPct
   const rolling = snapshot.rolling.source === "unknown" ? 0 : snapshot.rolling.usedPct
-  return (
+  const base =
     1 +
     1.5 * (monthly / 100) ** 2 +
     2.5 * (weekly / 100) ** 2 +
     2.5 * (rolling / 100) ** 2 +
     (snapshot.stale ? 0.15 : 0)
-  )
+  // Applied only to the part above 1, so the discount reduces the pressure this
+  // pool carries without ever driving it below an untouched provider's.
+  return 1 + (base - 1) * quotaExpiryDiscount(snapshot, now)
 }
 
 export const modelPressure = (quota: ModelQuotaSnapshot | undefined): number => {
