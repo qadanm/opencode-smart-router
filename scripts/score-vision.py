@@ -20,6 +20,7 @@ import argparse
 import base64
 import json
 import os
+import subprocess
 import sys
 import time
 import urllib.request
@@ -94,6 +95,16 @@ def found_faults(text):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--reasoning", choices=["none", "default"], default="none")
+    # Repeat runs matter because a vision verdict from one sample is noise: the
+    # same image can score differently across runs, and a single lucky answer is
+    # not evidence that the model can be trusted with a real screenshot.
+    parser.add_argument("--runs", type=int, default=1)
+    # A raw simulator capture is far too tall to send whole: at 3000px the model
+    # receives a heavily downscaled image and misses defects that are obvious at
+    # working size. `--size` renders the fixture at the height the screenshot
+    # workflow actually uses, so the score describes the product and not a
+    # resolution the user will never send.
+    parser.add_argument("--size", type=int, default=0, help="resize fixtures to this height before sending")
     args = parser.parse_args()
 
     broken = os.path.join(FIXTURES, "layout-broken.png")
@@ -101,28 +112,52 @@ def main():
     for path in (broken, clean):
         if not os.path.exists(path):
             sys.exit(f"missing fixture: {path}\nrun scripts/make-vision-fixtures.py first")
+    if args.size:
+        for path in (broken, clean):
+            scaled = path.replace(".png", f"-h{args.size}.png")
+            subprocess.run(
+                ["sips", "-Z", str(args.size), path, "--out", scaled],
+                capture_output=True,
+            )
+            if not os.path.exists(scaled):
+                sys.exit(f"failed to resize {path}")
+        broken = broken.replace(".png", f"-h{args.size}.png")
+        clean = clean.replace(".png", f"-h{args.size}.png")
 
-    print(f"model={MODEL} reasoning={args.reasoning}")
+    print(f"model={MODEL} reasoning={args.reasoning} size={args.size or 'native'} runs={args.runs}")
     print()
 
-    b = ask(broken, args.reasoning)
+    b_runs = [ask(broken, args.reasoning) for _ in range(max(1, args.runs))]
+    b = b_runs[0]
     print(f"=== broken image ({b['wall']:.1f}s, {b['prompt_tokens']} prompt tok, "
           f"{b['completion_tokens']} out, finish={b['finish']}) ===")
-    print(b["text"].strip() or "(empty)")
+    for index, run in enumerate(b_runs, 1):
+        label = f"run {index}" if len(b_runs) > 1 else "answer"
+        print(f"[{label}] {run['text'].strip() or '(empty)'}")
     print()
-    b_hits = found_faults(b["text"])
+    # Recall across repeats: a defect counts as found if any run found it, and
+    # the per-run spread is reported so a flaky detector cannot look reliable.
+    b_hits = set()
+    for run in b_runs:
+        b_hits |= found_faults(run["text"])
+    per_run = [sorted(found_faults(run["text"])) for run in b_runs]
     print(f"recall: {len(b_hits)}/{len(FAULTS)} -> {sorted(b_hits)}")
     missed = sorted(set(FAULTS) - b_hits)
     if missed:
         print(f"missed: {missed}")
     print()
 
-    c = ask(clean, args.reasoning)
+    c_runs = [ask(clean, args.reasoning) for _ in range(max(1, args.runs))]
+    c = c_runs[0]
     print(f"=== clean image ({c['wall']:.1f}s, {c['prompt_tokens']} prompt tok, "
           f"{c['completion_tokens']} out, finish={c['finish']}) ===")
-    print(c["text"].strip() or "(empty)")
+    for index, run in enumerate(c_runs, 1):
+        label = f"run {index}" if len(c_runs) > 1 else "answer"
+        print(f"[{label}] {run['text'].strip() or '(empty)'}")
     print()
-    c_hits = found_faults(c["text"])
+    c_hits = set()
+    for run in c_runs:
+        c_hits |= found_faults(run["text"])
     # On the clean image any confident fault claim is a false positive. Mentions
     # of a category in a "no X visible" form are not.
     # A fault named on the clean image is a false positive, unless the answer
@@ -144,6 +179,7 @@ def main():
             invented.add(name)
     print(f"false positives on clean image: {sorted(invented) if invented else 'none'}")
     print()
+    print(f"per-run recall: {per_run}")
     print(f"summary: recall {len(b_hits)}/{len(FAULTS)}, "
           f"false_positive_categories {len(invented)}, "
           f"avg_wall {(b['wall'] + c['wall']) / 2:.1f}s, "

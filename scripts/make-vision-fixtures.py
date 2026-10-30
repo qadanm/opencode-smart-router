@@ -21,11 +21,12 @@ that reports defects on the clean image is inventing them.
 """
 
 import os
+import shutil
 import subprocess
 import sys
 
 WIDTH = 1170
-HEIGHT = 2700
+HEIGHT = 3000
 
 HEADER = """<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}">
@@ -72,9 +73,12 @@ def build(broken: bool) -> str:
     # Fault 2: two labels drawn on top of each other.
     out.append(rect(60, 760, WIDTH - 120, 260))
     if broken:
-        out.append(text(100, 850, "Weekly total", 34, "#9aa4b2"))
-        # Same baseline area, offset by only 14px, so the two lines collide.
-        out.append(text(100, 864, "1,284 pts", 34, "#f2f4f8"))
+        out.append(text(100, 850, "Weekly total", 40, "#9aa4b2"))
+        # A 34px overlap: the two lines genuinely collide and the upper one's
+        # descenders are covered. A smaller offset survives the render but not a
+        # normal screenshot downscale, which would make this fixture measure its
+        # own resize path instead of the model's vision.
+        out.append(text(100, 884, "1,284 pts", 40, "#f2f4f8"))
     else:
         out.append(text(100, 850, "Weekly total", 34, "#9aa4b2"))
         out.append(text(100, 910, "1,284 pts", 40, "#f2f4f8", weight="700"))
@@ -100,40 +104,58 @@ def build(broken: bool) -> str:
     out.append(rect(60, third_y, WIDTH - 120, 220))
     out.append(text(100, third_y + 80, "Card C", 36, weight="600"))
 
-    # Reserve 260px of empty space below the last element, so nothing touches
-    # the image boundary on the clean fixture.
+    # Reserve 420px of empty space below the last element. Any less invites
+    # "cut off at the bottom edge" on a clean image, which is a false positive
+    # caused by the fixture rather than by the model.
     out.append("</svg>\n")
     return "".join(out)
 
 
 def render(svg: str, png_path: str) -> bool:
+    """Render the SVG to a PNG at exactly WIDTH x HEIGHT.
+
+    `rsvg-convert` is the only renderer here that honours a tall viewBox at its
+    true aspect ratio, so it goes first. `qlmanage` is kept as a last resort but
+    is known to squash a tall document into a square thumbnail and crop the
+    bottom, which silently deletes the very defects this fixture exists to test
+    and makes the clean image look broken at the edge. It is not used first for
+    that reason.
+    """
     svg_path = png_path.replace(".png", ".svg")
     with open(svg_path, "w", encoding="utf-8") as handle:
         handle.write(svg)
-    # qlmanage ships with macOS and renders SVG without extra tooling.
-    # qlmanage always renders a square thumbnail, which crops a tall layout and
-    # would silently remove the very faults this fixture exists to test. Render
-    # large and then resize to the true aspect ratio with sips.
-    result = subprocess.run(
-        ["qlmanage", "-t", "-s", str(HEIGHT), "-o", os.path.dirname(png_path), svg_path],
-        capture_output=True,
-        text=True,
-    )
-    produced = os.path.join(os.path.dirname(png_path), os.path.basename(svg_path) + ".png")
-    if os.path.exists(produced):
-        os.replace(produced, png_path)
-        subprocess.run(["sips", "-z", str(HEIGHT), str(WIDTH), png_path], capture_output=True)
-        return True
-    # Fall back to rsvg-convert if present.
-    for tool in ("rsvg-convert", "magick", "convert"):
-        if subprocess.run(["which", tool], capture_output=True).returncode == 0:
-            out = [tool, svg_path, "-o", png_path] if tool != "rsvg-convert" else [tool, "-o", png_path, svg_path]
-            if tool == "rsvg-convert":
-                out = [tool, svg_path, "-o", png_path]
-            subprocess.run(out, capture_output=True)
+
+    if shutil.which("rsvg-convert"):
+        result = subprocess.run(
+            ["rsvg-convert", "-w", str(WIDTH), "-h", str(HEIGHT), "-o", png_path, svg_path],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode == 0 and os.path.exists(png_path):
+            return True
+        print(result.stderr[:400], file=sys.stderr)
+
+    for tool, args in (
+        ("magick", ["magick", "svg:" + svg_path, "-resize", f"{WIDTH}x{HEIGHT}!", png_path]),
+        ("convert", ["convert", "svg:" + svg_path, "-resize", f"{WIDTH}x{HEIGHT}!", png_path]),
+    ):
+        if shutil.which(tool):
+            subprocess.run(args, capture_output=True)
             if os.path.exists(png_path):
                 return True
-    print(result.stderr[:400], file=sys.stderr)
+
+    if shutil.which("qlmanage"):
+        result = subprocess.run(
+            ["qlmanage", "-t", "-s", str(HEIGHT), "-o", os.path.dirname(png_path), svg_path],
+            capture_output=True,
+            text=True,
+        )
+        produced = os.path.join(os.path.dirname(png_path), os.path.basename(svg_path) + ".png")
+        if os.path.exists(produced):
+            os.replace(produced, png_path)
+            subprocess.run(["sips", "-z", str(HEIGHT), str(WIDTH), png_path], capture_output=True)
+            return True
+        print(result.stderr[:400], file=sys.stderr)
     return False
 
 
