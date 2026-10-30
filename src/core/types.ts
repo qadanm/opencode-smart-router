@@ -163,6 +163,11 @@ export interface CandidateEvaluation {
   readonly creditMultiplier?: number
   /** Multiplier applied for measured generation speed. One when neutral. */
   readonly speedFactor?: number
+  /**
+   * Multiplier applied to the price because the provider's prepaid allowance is
+   * expiring. One when the allowance is fresh money that will be consumed.
+   */
+  readonly marginalPriceFactor?: number
 }
 
 export interface QuotaWindow {

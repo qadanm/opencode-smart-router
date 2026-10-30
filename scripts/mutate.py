@@ -460,6 +460,35 @@ MUTATIONS = [
         "  const cachedShare = CACHE_REUSE_SHARE",
         "test/switch-penalty.test.ts",
     ),
+    # ------------------------------------------- expiring allowance pricing
+    Mutation(
+        "expiring allowance is priced as fresh money, ignoring the burn rate",
+        "src/core/policy/eligibility.ts",
+        "  if (waste <= 0) return 1\n  // Bounded well below one so expiring quota is cheap, never free.\n  return 1 - MARGINAL_PRICE_DISCOUNT_MAX * waste",
+        "  if (waste <= 0) return 1\n  return 1",
+        "test/quota-waste.test.ts",
+    ),
+    Mutation(
+        "the marginal price is applied to pressure instead of to price",
+        "src/core/routing/engine.ts",
+        "    (estimate.usd * marginalPriceFactor * (1 + (1 - probability) * 2)) * pressure * speedFactor",
+        "    (estimate.usd * (1 + (1 - probability) * 2)) * pressure * speedFactor",
+        "test/quota-waste-safety.test.ts",
+    ),
+    Mutation(
+        "waste ignores the burn rate and reads the window as already abandoned",
+        "src/core/policy/eligibility.ts",
+        "    const projectedSpend = burnPerMs * remainingMs",
+        "    const projectedSpend = 0",
+        "test/quota-waste.test.ts",
+    ),
+    Mutation(
+        "an untouched pool counts as expiring waste",
+        "src/core/policy/eligibility.ts",
+        "    if (window.usedPct <= 0) continue",
+        "    if (window.usedPct < 0) continue",
+        "test/quota-waste.test.ts",
+    ),
     Mutation(
         "the tightest window no longer dominates",
         "src/core/policy/eligibility.ts",

@@ -15,7 +15,14 @@ import type {
   TaskKind,
 } from "../types.js"
 import { keyOfRef, modelKey, nowId, safeError, thousands, usd } from "../util.js"
-import { decidePremium, evaluateEligibility, modelPressure, providerPressure, type PremiumDecision } from "../policy/eligibility.js"
+import {
+  decidePremium,
+  evaluateEligibility,
+  modelPressure,
+  providerPressure,
+  quotaMarginalPriceFactor,
+  type PremiumDecision,
+} from "../policy/eligibility.js"
 import { mayUseProvider, type InferenceMode } from "../offline/mode.js"
 
 export interface EngineInput {
@@ -315,8 +322,15 @@ const candidateFor = (
   pressure: number,
   currentModelKey: string | undefined,
   speedFactor = 1,
+  marginalPriceFactor = 1,
 ): CandidateEvaluation => {
-  const expectedTotal = (estimate.usd * (1 + (1 - probability) * 2)) * pressure * speedFactor
+  // Expiring prepaid allowance is priced at the probability it will be wasted,
+  // not treated as fresh money. This is applied to the price rather than folded
+  // into `pressure` because pressure is a multiplier on an already-ranked cost:
+  // no pressure figure can close a large price gap, so quota urgency expressed
+  // that way could never change a decision.
+  const expectedTotal =
+    (estimate.usd * marginalPriceFactor * (1 + (1 - probability) * 2)) * pressure * speedFactor
   return {
     model: { providerID: model.providerID, modelID: model.modelID },
     name: model.name,
@@ -331,6 +345,7 @@ const candidateFor = (
     retained: keyOfRef(input.current) === modelKey(model.providerID, model.modelID),
     creditMultiplier: estimate.creditMultiplier,
     speedFactor,
+    marginalPriceFactor,
   }
 }
 
@@ -564,7 +579,18 @@ export const routeTask = (input: EngineInput): EngineResult => {
         })
         const pressure = providerPressure(provider, now) * modelPressure(modelQuota)
         const speedFactor = speedPenalty(input, modelKey(model.providerID, model.modelID), fastestTokensPerSecond)
-        const candidate = candidateFor(input, model, displayedEligibility, estimate, probability, pressure, currentKey, speedFactor)
+        const marginalPriceFactor = quotaMarginalPriceFactor(provider, now)
+        const candidate = candidateFor(
+          input,
+          model,
+          displayedEligibility,
+          estimate,
+          probability,
+          pressure,
+          currentKey,
+          speedFactor,
+          marginalPriceFactor,
+        )
         out.push({ model, eligibility: displayedEligibility, estimate, probability, pressure, candidate })
       }
       return out.sort((a, b) => a.candidate.effectiveCost - b.candidate.effectiveCost)
@@ -641,7 +667,25 @@ export const routeTask = (input: EngineInput): EngineResult => {
           intelligenceFloor: floor,
         })
         const pressure = providerPressure(provider, now) * modelPressure(modelQuota)
-        return { model, eligibility, estimate, probability, pressure, candidate: candidateFor(input, model, eligibility, estimate, probability, pressure, currentKey) }
+        const marginalPriceFactor = quotaMarginalPriceFactor(provider, now)
+        return {
+          model,
+          eligibility,
+          estimate,
+          probability,
+          pressure,
+          candidate: candidateFor(
+            input,
+            model,
+            eligibility,
+            estimate,
+            probability,
+            pressure,
+            currentKey,
+            1,
+            marginalPriceFactor,
+          ),
+        }
       })
       .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry))
       .sort((a, b) => a.candidate.effectiveCost - b.candidate.effectiveCost)

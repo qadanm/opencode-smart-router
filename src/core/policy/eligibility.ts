@@ -415,6 +415,104 @@ const EXPIRY_HORIZON_MS = 24 * 60 * 60 * 1000
 const EXPIRY_MIN_REMAINING_PCT = 5
 
 /**
+ * Nominal duration of each quota window, used to turn "spent so far" into a
+ * burn rate.
+ *
+ * The providers report a reset time but not the window's start, so elapsed time
+ * is derived from the window's own length: a weekly pool that resets in 21 hours
+ * has been running for 147. This is a modelling assumption and it is the reason
+ * the waste estimate is a fraction rather than a certainty.
+ */
+const WINDOW_LENGTH_MS: Readonly<Record<"rolling" | "weekly" | "monthly", number>> = {
+  rolling: 5 * 60 * 60 * 1000,
+  weekly: 7 * 24 * 60 * 60 * 1000,
+  monthly: 30 * 24 * 60 * 60 * 1000,
+}
+
+/**
+ * The fraction of a pool's remaining allowance that is on track to expire unused.
+ *
+ * Zero means the window is being consumed fast enough that the next request
+ * displaces real work. One means the window will reset having used none of what
+ * it has left, so spending it costs nothing that was not already lost.
+ *
+ * Derived from the burn rate rather than from fill level alone. A pool at 87%
+ * with 21 hours left is not "about to waste its last 13%" if it has been burning
+ * 13% every 21 hours; a pool at 50% with three hours left of a week is.
+ */
+export const quotaWasteFraction = (
+  snapshot: ProviderQuotaSnapshot | undefined,
+  now: number,
+): number => {
+  if (!snapshot) return 0
+  let worst = 0
+  for (const key of ["rolling", "weekly", "monthly"] as const) {
+    const window = snapshot[key]
+    if (!window || window.source === "unknown") continue
+    if (typeof window.resetsAt !== "number") continue
+    const remainingMs = window.resetsAt - now
+    // Already reset, or so far out that nothing is at risk today.
+    if (remainingMs <= 0 || remainingMs > EXPIRY_HORIZON_MS) continue
+    // Nothing has been committed to this pool, so there is nothing to recover.
+    if (window.usedPct <= 0) continue
+    // Without a dollar figure there is no burn rate to read, and guessing one
+    // from the percentage alone would assume a window length we were not told.
+    if (typeof window.usedUsd !== "number" || typeof window.capUsd !== "number" || window.capUsd <= 0) continue
+
+    const lengthMs = WINDOW_LENGTH_MS[key]
+    const elapsedMs = Math.max(0, lengthMs - remainingMs)
+    // Too early in the window for a burn rate to mean anything: a single request
+    // in the first minute would project to an absurd rate.
+    if (elapsedMs < 0.05 * lengthMs) continue
+
+    // This also covers a pool that is already out: with nothing left there is no
+    // marginal price to lower, and chasing the last percent would strand a task.
+    const remainingUsd = Math.max(0, window.capUsd - window.usedUsd)
+    if (remainingUsd <= 0) continue
+    const burnPerMs = window.usedUsd / elapsedMs
+    const projectedSpend = burnPerMs * remainingMs
+    worst = Math.max(worst, Math.min(1, Math.max(0, 1 - projectedSpend / remainingUsd)))
+  }
+  return worst
+}
+
+/**
+ * The factor to apply to an estimate for spending expiring prepaid allowance,
+ * where one means "this is fresh money and costs full price".
+ *
+ * This is the near-zero marginal pricing the flat pressure discount could not
+ * express. A dollar of prepaid allowance that is on track to be abandoned is
+ * worth about its own probability of being lost, so a provider about to waste
+ * its pool becomes genuinely competitive against a cheaper provider with no
+ * deadline.
+ *
+ * It is a floor rather than a zero on purpose: a provider priced at nothing
+ * would win every comparison regardless of how little headroom it had left, and
+ * a request that runs the pool dry mid-task is worse than paying full price
+ * elsewhere.
+ */
+export const quotaMarginalPriceFactor = (
+  snapshot: ProviderQuotaSnapshot | undefined,
+  now: number,
+): number => {
+  if (!snapshot) return 1
+  // The pool must be able to carry real work. Where a window has headroom
+  // recorded, refuse to treat the last few percent as a bargain.
+  const tightest = [snapshot.rolling, snapshot.weekly, snapshot.monthly]
+    .filter((window) => window.source !== "unknown" && typeof window.resetsAt === "number")
+  if (tightest.length === 0) return 1
+  const usable = tightest.some((window) => window.remainingPct > EXPIRY_MIN_REMAINING_PCT)
+  if (!usable) return 1
+  const waste = quotaWasteFraction(snapshot, now)
+  if (waste <= 0) return 1
+  // Bounded well below one so expiring quota is cheap, never free.
+  return 1 - MARGINAL_PRICE_DISCOUNT_MAX * waste
+}
+
+/** The most of an estimate that can be forgiven for expiring allowance. */
+const MARGINAL_PRICE_DISCOUNT_MAX = 0.95
+
+/**
  * The multiplier applied to this provider's pressure for expiring allowance.
  *
  * Returns a number <= 1 which the caller divides into pressure. One means no
