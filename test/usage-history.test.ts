@@ -347,3 +347,68 @@ describe("speed telemetry", () => {
     expect(metrics.latencySamples).toBe(1)
   })
 })
+
+/**
+ * The OpenDesign quota window is estimated from this router's own recorded
+ * usage, because OpenDesign publishes no quota API for an inference key. That
+ * estimate is only as good as the history it reads.
+ *
+ * It used to read `usageEvents()`, which returns the raw array alone. Once the
+ * raw array overflows, the oldest events are folded into hourly buckets and
+ * leave that array, so the estimate silently shrank as history aged. On a real
+ * account the 7-day figure read $3.19 while the ledger had recorded $6.72, and
+ * the router described a two-thirds-unused subscription as almost untouched
+ * while every prompt was routed to it on that basis.
+ */
+describe("the quota estimate reads folded history, not just raw events", () => {
+  it("reports the same total from the event stream as the aggregate does", () => {
+    // Enough events over ten days to force the overflow fold.
+    const events = Array.from({ length: 4_000 }, (_, i) => event((i / 4_000) * 10 * DAY, i))
+    const s = store(events)
+    s.prune(NOW)
+
+    const aggregated = s.aggregate({ since: NOW - 7 * DAY, until: NOW })
+    const streamed = s.usageEvents({ since: NOW - 7 * DAY, until: NOW })
+      .filter((e) => e.providerID === "opendesign")
+      .reduce((sum, e) => sum + e.usd, 0)
+
+    // The two must agree. Raw-only history under-reports by whatever was folded.
+    expect(streamed).toBeCloseTo(aggregated.usd, 6)
+  })
+
+  it("still accounts for history older than the raw horizon", () => {
+    const events = Array.from({ length: 3_000 }, (_, i) => event((i / 3_000) * 10 * DAY, i))
+    const s = store(events)
+    s.prune(NOW)
+    const rawOnly = (s as any).ledger.usage
+      .filter((e: UsageEvent) => e.at >= NOW - 7 * DAY)
+      .reduce((sum: number, e: UsageEvent) => sum + e.usd, 0)
+    const streamed = s
+      .usageEvents({ since: NOW - 7 * DAY, until: NOW })
+      .reduce((sum, e) => sum + e.usd, 0)
+    // If folding were ignored the stream would match rawOnly and lose history.
+    expect(streamed).toBeGreaterThan(rawOnly)
+    expect(streamed).toBeCloseTo(s.aggregate({ since: NOW - 7 * DAY, until: NOW }).usd, 6)
+  })
+
+  it("preserves per-model attribution for folded history", () => {
+    const events = Array.from({ length: 3_000 }, (_, i) =>
+      event((i / 3_000) * 10 * DAY, i, {
+        modelID: i % 2 === 0 ? "deepseek-v4.1-flash" : "glm-5.3-flash",
+      }),
+    )
+    const s = store(events)
+    s.prune(NOW)
+    const streamed = s.usageEvents({ since: NOW - 7 * DAY, until: NOW })
+    const models = new Set(streamed.map((e) => e.modelID))
+    // Both models must survive the fold; collapsing them would misattribute
+    // pools, since Design Plan and plan-model credits are separate.
+    expect(models.has("deepseek-v4.1-flash")).toBe(true)
+    expect(models.has("glm-5.3-flash")).toBe(true)
+  })
+
+  it("keeps the raw path unchanged when no folding has happened", () => {
+    const s = store([event(HOUR, 0), event(2 * HOUR, 1)])
+    expect(s.usageEvents({ since: NOW - DAY, until: NOW })).toHaveLength(2)
+  })
+})

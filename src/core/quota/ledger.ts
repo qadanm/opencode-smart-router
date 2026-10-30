@@ -920,8 +920,50 @@ export class LedgerStore {
    * Raw usage events, used by providers whose allowance must be modelled from
    * local activity rather than read from a provider endpoint.
    */
-  usageEvents(): ReadonlyArray<UsageEvent> {
-    return this.ledger.usage
+  /**
+   * Usage events over a window, including history that has been folded.
+   *
+   * This returns the raw event array when no window is given, which is the
+   * cheapest thing to do and what callers that only need recent detail want.
+   *
+   * A windowed call must not return the raw array alone. Once usage overflows
+   * the raw cap the oldest events are folded into hourly buckets and leave that
+   * array, so a raw-only answer shrinks as history ages. Anything estimating a
+   * weekly or monthly allowance from usage would then under-report spend on a
+   * busy account, which is the opposite of failing safe: the busier the week,
+   * the more the estimate says is left.
+   *
+   * Buckets are expanded back into synthetic events carrying the hour they
+   * belong to. Attribution is per model, so pool assignment still works, but
+   * the individual request detail inside a folded hour is gone by design.
+   */
+  usageEvents(window?: { since: number; until?: number }): ReadonlyArray<UsageEvent> {
+    if (!window) return this.ledger.usage
+    const { since } = window
+    const until = window.until ?? Date.now()
+    const raw = this.ledger.usage.filter((event) => event.at >= since && event.at <= until)
+    const buckets = this.ledger.usageRollup?.buckets
+    if (!buckets || buckets.length === 0) return raw
+
+    const folded: UsageEvent[] = []
+    for (const bucket of buckets) {
+      if (bucket.hour < since || bucket.hour > until) continue
+      folded.push({
+        id: `folded_${bucket.hour}_${bucket.providerID}_${bucket.modelID}`,
+        at: bucket.hour,
+        providerID: bucket.providerID,
+        modelID: bucket.modelID,
+        usd: bucket.usd,
+        input: bucket.input,
+        output: bucket.output,
+        cacheRead: bucket.cacheRead,
+        cacheWrite: bucket.cacheWrite,
+        source: "step",
+      })
+    }
+    // A bucket and a raw event never cover the same request: folding removes
+    // the event from the raw array as it creates the bucket.
+    return [...folded, ...raw].sort((a, b) => a.at - b.at)
   }
 
   /**

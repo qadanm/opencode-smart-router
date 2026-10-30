@@ -159,7 +159,7 @@ class SharedCore {
       this.quota = new QuotaService({
         getSettings: () => (this.getSettings?.().providers ?? {}) as any,
         getCredentials: () => this.getCredentials?.() ?? Promise.resolve({}),
-        getUsageEvents: () => this.ledger.usageEvents(),
+        getUsageEvents: (window) => this.ledger.usageEvents(window),
         probeIntervalMinutes: this.getSettings?.().quota.probeIntervalMinutes ?? 5,
         initial: this.quotaInitial,
         onSnapshot: (snapshot) => {
@@ -182,7 +182,7 @@ class SharedCore {
       this.quota = new QuotaService({
         getSettings: () => (this.getSettings?.().providers ?? {}) as any,
         getCredentials: () => this.getCredentials?.() ?? Promise.resolve({}),
-        getUsageEvents: () => this.ledger.usageEvents(),
+        getUsageEvents: (window) => this.ledger.usageEvents(window),
         probeIntervalMinutes: this.getSettings?.().quota.probeIntervalMinutes ?? 5,
         initial: this.quotaInitial,
         onSnapshot: () => {
@@ -356,8 +356,8 @@ class SharedCore {
   }
 
   /** Local usage events, used by providers whose quota must be modelled locally. */
-  usageEvents(): ReadonlyArray<UsageEvent> {
-    return this.ledger.usageEvents()
+  usageEvents(window?: { since: number; until?: number }): ReadonlyArray<UsageEvent> {
+    return this.ledger.usageEvents(window)
   }
 
   ownerOf(sessionID: string): string | undefined {

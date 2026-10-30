@@ -423,6 +423,28 @@ MUTATIONS = [
         "const commitment = 1",
         "test/quota-expiry.test.ts",
     ),
+    # --------------------------------------------- folded usage history
+    Mutation(
+        "the quota probe reads raw events only, ignoring folded history",
+        "src/core/quota/ledger.ts",
+        "    return [...folded, ...raw].sort((a, b) => a.at - b.at)",
+        "    return raw",
+        "test/usage-history.test.ts",
+    ),
+    Mutation(
+        "folded buckets are dropped when a window is requested",
+        "src/core/quota/ledger.ts",
+        "    const buckets = this.ledger.usageRollup?.buckets",
+        "    const buckets = undefined as typeof this.ledger.usageRollup.buckets",
+        "test/usage-history.test.ts",
+    ),
+    Mutation(
+        "the quota probe asks for no window, so folded history is invisible",
+        "src/core/quota/service.ts",
+        "        usage: this.options.getUsageEvents?.({ since: now - OPENDESIGN_MONTH_MS, until: now }) ?? [],",
+        "        usage: this.options.getUsageEvents?.() ?? [],",
+        "test/quota-service.test.ts",
+    ),
     Mutation(
         "the tightest window no longer dominates",
         "src/core/policy/eligibility.ts",

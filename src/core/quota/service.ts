@@ -1,7 +1,7 @@
 import type { ProviderQuotaSnapshot, ProviderSettings, QuotaWindow, UsageEvent } from "../types.js"
 import { probeCommandCodeQuota, type FetchLike } from "./commandcode.js"
 import { probeOpenCodeGoQuota } from "./opencode-go.js"
-import { probeOpenDesignQuota } from "./opendesign.js"
+import { probeOpenDesignQuota, OPENDESIGN_MONTH_MS } from "./opendesign.js"
 
 export interface QuotaCredentials {
   readonly goAccessToken?: string
@@ -21,8 +21,16 @@ export interface QuotaServiceOptions {
   readonly now?: () => number
   readonly onSnapshot?: (snapshot: ProviderQuotaSnapshot) => void
   readonly initial?: ReadonlyArray<ProviderQuotaSnapshot>
-  /** Local usage events, used by providers whose quota must be modelled. */
-  readonly getUsageEvents?: () => ReadonlyArray<UsageEvent>
+  /**
+   * Local usage events, used by providers whose quota must be modelled.
+   *
+   * The argument is the window the probe needs, not a hint. A provider that
+   * models a 30-day allowance cannot be handed fewer than 30 days of history:
+   * history that has aged out of the raw event array has been folded into
+   * hourly buckets, and a caller that ignores the window returns the raw array
+   * alone and under-reports spend exactly when the account is busiest.
+   */
+  readonly getUsageEvents?: (window?: { since: number; until?: number }) => ReadonlyArray<UsageEvent>
 }
 
 /** Providers the router can probe. Order does not imply preference. */
@@ -203,11 +211,15 @@ export class QuotaService {
       return result.snapshot
     }
     if (providerID === "opendesign") {
+      // Ask for the widest window the model uses. Without it the estimator
+      // receives only the raw event array, and every hour of history that has
+      // been folded into a bucket stops counting.
+      const now = this.options.now?.() ?? Date.now()
       const result = await probeOpenDesignQuota({
         settings,
         apiKey: credentials.openDesignApiKey,
         controlKey: credentials.openDesignControlKey,
-        usage: this.options.getUsageEvents?.() ?? [],
+        usage: this.options.getUsageEvents?.({ since: now - OPENDESIGN_MONTH_MS, until: now }) ?? [],
         fetchImpl: this.options.fetchImpl,
         now: this.options.now,
         ...(settings.controlBaseURL ? { controlBaseURL: settings.controlBaseURL } : {}),

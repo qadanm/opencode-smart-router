@@ -80,7 +80,15 @@ export const OPENDESIGN_DEFAULT_UNCERTAINTY_MARGIN_PCT = 20
 
 const FIVE_HOURS_MS = 5 * 60 * 60 * 1000
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000
-const MONTH_MS = 30 * 24 * 60 * 60 * 1000
+/**
+ * The widest window this module models.
+ *
+ * Exported because the caller has to hand back at least this much history for
+ * the estimate to be complete. Keeping the number in one place stops the two
+ * from drifting into a silent under-count.
+ */
+export const OPENDESIGN_MONTH_MS = 30 * 24 * 60 * 60 * 1000
+const MONTH_MS = OPENDESIGN_MONTH_MS
 
 const unknownWindow: QuotaWindow = { usedPct: 0, remainingPct: 100, source: "unknown" }
 const isRecord = (value: unknown): value is Record<string, unknown> =>

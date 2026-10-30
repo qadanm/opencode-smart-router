@@ -76,4 +76,66 @@ describe("quota service", () => {
     await service.refresh("opencode-go")
     expect(calls).toBe(0)
   })
+
+/**
+ * The OpenDesign quota estimate is only as honest as the history the probe is
+ * given, and that history is not whatever the caller happens to hold in memory.
+ *
+ * Once the raw event array overflows, older events are folded into hourly
+ * buckets. A caller that asks for no window receives the raw array alone, so
+ * the estimate shrinks as history ages and the router describes a busy paid
+ * subscription as nearly untouched. That is a fail-open measurement: the more
+ * you have spent, the more headroom it claims you have.
+ *
+ * These pin the request, not just the summing, because the summing was already
+ * correct and the bug lived entirely in what the caller asked for.
+ */
+describe("the quota probe requests enough history to be complete", () => {
+  it("asks for a window wide enough to cover the longest modelled allowance", async () => {
+    let asked: { since: number; until?: number } | undefined
+    const now = Date.UTC(2026, 9, 30, 12, 0, 0)
+    const service = new QuotaService({
+      getSettings: () =>
+        ({
+          ...DEFAULT_SETTINGS.providers,
+          opendesign: { ...(DEFAULT_SETTINGS.providers as any).opendesign, enabled: true },
+        }) as any,
+      getCredentials: async () => ({}),
+      getUsageEvents: (window) => {
+        asked = window
+        return []
+      },
+      probeIntervalMinutes: 5,
+      fetchImpl: async () => json({}),
+      now: () => now,
+    })
+
+    await service.refresh("opendesign")
+    expect(asked).toBeDefined()
+    // Thirty days is the widest window the estimator models. Asking for less
+    // silently drops folded history from the monthly total.
+    const spanDays = (now - (asked as any).since) / 86_400_000
+    expect(spanDays).toBeGreaterThanOrEqual(30)
+    expect((asked as any).until).toBe(now)
+  })
+
+  it("does not ask for any history when the provider does not model it", async () => {
+    let asked = 0
+    const service = new QuotaService({
+      getSettings: () => DEFAULT_SETTINGS.providers as any,
+      getCredentials: async () => ({ goAccessToken: "token" }),
+      getUsageEvents: () => {
+        asked += 1
+        return []
+      },
+      probeIntervalMinutes: 5,
+      fetchImpl: async () =>
+        json({ usage: { rolling: { percent: 8 }, weekly: { percent: 39 }, monthly: { percent: 69 } } }),
+      now: () => Date.UTC(2026, 9, 30, 12, 0, 0),
+    })
+    await service.refresh("opencode-go")
+    // Provider-reported quotas do not read local history at all.
+    expect(asked).toBe(0)
+  })
+})
 })
