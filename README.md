@@ -285,16 +285,23 @@ See [docs/LIMITATIONS.md](docs/LIMITATIONS.md). The ones that matter most:
 ## Tests
 
 ```bash
-npm run typecheck
-npm test
+npm run verify    # clean room: fresh install, typecheck, tests, both builds
+npm test          # the suite only
+npm run mutate    # prove the safety tests fail when their properties break
 ```
 
-330 tests across 26 files cover classification, eligibility, quota parsing,
+347 tests across 28 files cover classification, eligibility, quota parsing,
 credential discovery and its security properties, ledger accounting, monthly pool
 reconciliation, documented peak pricing, cache-aware routing, premium protection,
 purchased-credit blocking, manual overrides, failure classification,
-configuration guardrails, context policy, the portable allowance API, and
-controller integration.
+configuration guardrails, context policy, OpenDesign quota honesty, the portable
+allowance API, and controller integration.
+
+Two commands exist because passing tests prove less than they appear to.
+`npm run verify` repeats the whole thing in a clean room with an empty `HOME`, so
+a pass cannot depend on this machine's config or credentials. `npm run mutate`
+reverts each of 27 safety properties in turn and fails if the suite still passes,
+which is the only way to know a test is guarding anything.
 
 `npx vitest run` for the suite, `npx tsc --noEmit` for types, and
 `npm run build:allowance` for the standalone core. Live evidence is in

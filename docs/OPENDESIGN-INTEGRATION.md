@@ -13,7 +13,7 @@ not change the behavior of the two existing providers.
 
 | Area | Change |
 |---|---|
-| Provider adapter | `src/core/providers/opendesign.ts` : base URL handling, protocol selection, read-only model discovery, error and size normalisation |
+| Provider adapter | `src/core/providers/opendesign.ts` : base URL handling, protocol selection, read-only model discovery, error and size normalization |
 | Model catalog | `src/core/providers/opendesign-models.ts` : the 39 models the gateway serves, with credit multipliers and curated quality scores |
 | Credit semantics | `src/core/providers/opendesign-credits.ts` : published multipliers, promotion handling, credit conversion |
 | Quota integration | `src/core/quota/opendesign.ts` : verified / estimated / unknown / exhausted states |

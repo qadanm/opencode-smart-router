@@ -199,7 +199,7 @@ cmp with the lab plugin       = byte-identical
 | 20-project memory footprint | Medium | Host baseline 398 MB; plugin adds ~120 MB steady, transient reload spikes |
 | Quota endpoints are undocumented | Medium | Read-only, bounded, stale-aware, but provider changes possible |
 | SDK v2 behavior may change | Medium | Pin the host version; keep the bridge thin |
-| Licence undecided | Low | No `LICENSE` file added without the owner’s decision |
+| License undecided | Low | Resolved on 2026-10-29: MIT `LICENSE` added with the owner's decision |
 
 ## 9. Proposed canary scope
 

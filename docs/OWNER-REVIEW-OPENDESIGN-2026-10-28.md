@@ -14,7 +14,7 @@ default**. With no OpenDesign credentials configured, nothing changes.
 
 Implemented and working:
 
-- Provider adapter with base URL normalisation, protocol selection, read-only
+- Provider adapter with base URL normalization, protocol selection, read-only
   model discovery, and error and request-size handling.
 - Model catalog for the 13 models the gateway serves, with credit multipliers.
 - Quota integration with verified, estimated, stale, unknown, exhausted and
@@ -84,7 +84,7 @@ validation was a read-only `GET /v1/models`, which performs no inference and
 consumes no credits.
 
 A separate account-control key can be supplied for verified quota. The router
-never obtains one, never requests device authorisation, and never reads a
+never obtains one, never requests device authorization, and never reads a
 browser session. It is used only if you point `controlKeyPath` at a file you
 created.
 
