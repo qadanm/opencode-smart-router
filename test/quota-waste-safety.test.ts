@@ -161,3 +161,51 @@ describe("a discount on expiring allowance is not permission to overspend", () =
     }
   })
 })
+
+describe("routing acts on expiring allowance", () => {
+  const twoPools = (commandCodeResetsIn: number) => [
+    snapshot({
+      providerID: "commandcode",
+      weekly: { usedPct: 50, remainingPct: 50, usedUsd: 17.5, capUsd: 35, resetsAt: NOW + commandCodeResetsIn },
+      monthly: { usedPct: 20, remainingPct: 80, usedUsd: 14, capUsd: 70 },
+    }),
+    snapshot({
+      providerID: "opendesign",
+      weekly: { usedPct: 2, remainingPct: 98, usedUsd: 1.8, capUsd: 90 },
+      monthly: { usedPct: 2, remainingPct: 98, usedUsd: 1.8, capUsd: 360 },
+    }),
+  ]
+
+  it("spends a pool whose allowance is about to be lost", () => {
+    // Half of $35 unspent with ninety minutes left: at the observed burn rate
+    // that money is headed for the bin, so using it costs almost nothing.
+    const decision: any = route(twoPools(1.5 * H), 20_000)
+    expect(`${decision.chosen?.providerID}`).toBe("commandcode")
+  })
+
+  it("leaves the cheaper pool alone once the expiring one is on track", () => {
+    // The same pool with three days left is being consumed at a rate that will
+    // use it, so there is nothing to recover and ordinary price should rule.
+    const decision: any = route(twoPools(72 * H), 20_000)
+    expect(`${decision.chosen?.providerID}`).toBe("opendesign")
+  })
+
+  it("does not chase a pool that would run dry mid-request", () => {
+    // $0.30 left and expiring in minutes. Spending it cannot carry a 200k-token
+    // request, so the router must pay full price where there is room.
+    const nearlyDry = [
+      snapshot({
+        providerID: "commandcode",
+        weekly: { usedPct: 99.1, remainingPct: 0.9, usedUsd: 34.7, capUsd: 35, resetsAt: NOW + 0.25 * H },
+        monthly: { usedPct: 20, remainingPct: 80, usedUsd: 14, capUsd: 70 },
+      }),
+      snapshot({
+        providerID: "opendesign",
+        weekly: { usedPct: 2, remainingPct: 98, usedUsd: 1.8, capUsd: 90 },
+        monthly: { usedPct: 2, remainingPct: 98, usedUsd: 1.8, capUsd: 360 },
+      }),
+    ]
+    const decision: any = route(nearlyDry, 200_000)
+    expect(`${decision.chosen?.providerID}`).toBe("opendesign")
+  })
+})
