@@ -126,3 +126,34 @@ The intelligence floor and design thresholds are planning inputs, not guarantees
 - No third-party classification service receives prompts, code, or screenshots.
 - No provider billing settings, credentials, or model connections were changed.
 - No project configuration outside the router's optional project override was modified.
+
+## 11. Why a session may stop using your default model
+
+Two independent reasons can move a session off DeepSeek V4.1 Flash, and both are
+correct behavior rather than faults.
+
+**The transcript outgrew the window.** DeepSeek V4.1 Flash has a 328k window, and
+presence in a request requires about 20k of headroom inside 95% of it, so it
+stops being eligible at roughly 291,600 tokens of transcript. Past that point the
+router names the model it dropped, both token counts, and the fact that a new
+session restores it.
+
+**Another model is genuinely cheaper right now.** A session can sit inside a
+model's window and still lose on cost, because credit multipliers and peak
+pricing differ per model. On OpenDesign, Minimax M3.1 Flash carries a neutral
+multiplier while DeepSeek's is 0.5, and DeepSeek doubles during 01:00 to 04:00
+and 06:00 to 10:00 UTC on weekdays. At a 309k transcript on a weekday, MiniMax
+can therefore be about 1.3x cheaper, and the router picks it on merit. In that
+case the context warning is deliberately silent, because nothing was displaced:
+the model never would have won.
+
+Observed live on 2026-10-30, which is worth recording because it looks like a
+regression and is not. A 309,321-token session selected
+`opendesign/minimax-m3.1-flash`. Three checks explain it:
+
+- OpenCode Go was at 90% of a 10% monthly reserve, so it was blocked.
+- Command Code was at 86% of a 15% weekly reserve, so it was blocked.
+- On OpenDesign, DeepSeek needed 329,321 tokens against a 328,000 window.
+
+MiniMax was the only eligible route. None of the three conditions is a bug, and
+each is separately asserted by tests.
