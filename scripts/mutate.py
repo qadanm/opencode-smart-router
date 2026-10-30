@@ -265,6 +265,28 @@ MUTATIONS = [
         '    const fb = DEFAULT_PLAN_ID[providerID]\n    return { plan: fb ? PLAN_BY_KEY.get(`${providerID}/${fb}`) : undefined, resolution: "unknown", planID: fb }',
         "test/go-to-pro-migration.test.ts",
     ),
+    # --------------------------------------------------- shared context ceiling
+    Mutation(
+        "routing gate reverts to hardcoded 20k margin and 0.95 fraction",
+        "src/core/policy/eligibility.ts",
+        "Math.max(input.contextTokens, task.scope.promptTokens) + CONTEXT_ELIGIBILITY_MARGIN_TOKENS",
+        "Math.max(input.contextTokens, task.scope.promptTokens) + 20_000",
+        "test/context-ceiling-contract.test.ts",
+    ),
+    Mutation(
+        "reply margin silently shrinks toward the provider limit",
+        "src/core/context/strategy.ts",
+        "export const CONTEXT_ELIGIBILITY_MARGIN_TOKENS = 20_000",
+        "export const CONTEXT_ELIGIBILITY_MARGIN_TOKENS = 5_000",
+        "test/context-ceiling-contract.test.ts",
+    ),
+    Mutation(
+        "safety fraction silently rises toward the provider limit",
+        "src/core/context/strategy.ts",
+        "export const CONTEXT_SAFE_WINDOW_FRACTION = 0.95",
+        "export const CONTEXT_SAFE_WINDOW_FRACTION = 0.999",
+        "test/context-ceiling-contract.test.ts",
+    ),
 ]
 
 def run_tests(test: str) -> bool:

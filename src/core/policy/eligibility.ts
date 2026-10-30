@@ -10,6 +10,10 @@ import type {
   TaskClass,
 } from "../types.js"
 import { keyOfRef, modelKey, pct } from "../util.js"
+import {
+  CONTEXT_ELIGIBILITY_MARGIN_TOKENS,
+  CONTEXT_SAFE_WINDOW_FRACTION,
+} from "../context/strategy.js"
 
 export interface PremiumDecision {
   readonly allowed: boolean
@@ -232,8 +236,17 @@ export const evaluateEligibility = (input: EligibilityInput): EligibilityResult 
     return { eligible: false, reason: "Model does not support tool calling", warnings }
   }
 
-  const requiredContext = Math.max(input.contextTokens, task.scope.promptTokens) + 20_000
-  if (model.context > 0 && requiredContext > model.context * 0.95) {
+  // The margin and the safety fraction are shared with the compaction strategy
+  // rather than repeated as literals. They used to be written out here as
+  // `20_000` and `0.95`, which meant editing the constants in strategy.ts would
+  // move the compaction threshold while leaving this routing gate behind, so a
+  // session would compact at a different size than the router refuses to route
+  // at. For DeepSeek V4.1 Flash that boundary is 975,600 of an advertised
+  // 1,048,000 window, and the remaining 72,400 tokens are deliberate headroom
+  // for the reply, tokenizer differences, and transcript growth mid-loop.
+  const requiredContext =
+    Math.max(input.contextTokens, task.scope.promptTokens) + CONTEXT_ELIGIBILITY_MARGIN_TOKENS
+  if (model.context > 0 && requiredContext > model.context * CONTEXT_SAFE_WINDOW_FRACTION) {
     return {
       eligible: false,
       reason: `Context requirement ${requiredContext.toLocaleString()} exceeds this model's safe window`,
