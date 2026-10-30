@@ -170,3 +170,31 @@ regression and is not. A 309,321-token session selected
 
 MiniMax was the only eligible route. None of the three conditions is a bug, and
 each is separately asserted by tests.
+
+### OpenDesign's context budget is lower than the vendor window
+
+DeepSeek V4.1 Flash shows a 328,000-token context limit in the router while the
+vendor window is 1,048,000. That is not a bug and not a router default. The
+gateway publishes both numbers, and the router uses the smaller one on purpose:
+
+```
+context_limit:  1,048,000   vendor window
+context_budget:   328,000   advertised usable input
+output_budget:    128,000   reserved for the reply
+```
+
+The budget is a capability tier, not arithmetic. Across the 44 models the gateway
+serves it takes one of a few round values (228k, 232k, 264k, 304k, 328k, 400k),
+with ratios to the vendor window from 22% to 100%. Muse Spark 1.3 is the only
+model with no reduction.
+
+Whether the gateway enforces that gap is **untested**. No request here has ever
+sent a transcript between 328k and 1,048k, because doing so costs real allowance
+and a failure would be an opaque rejection mid-session. The router therefore
+assumes the advertised budget is binding, which is the safe direction to be wrong
+in: when a session outgrows it, the router switches models deliberately instead
+of discovering the limit through an error.
+
+This is not a practical constraint. `minimax-m3.1-flash` advertises a full
+1,000,000-token window on the same subscription at a lower effective cost, and
+the router already routes long sessions there.

@@ -126,3 +126,68 @@ describe("OpenDesign context window when the gateway reports no budget", () => {
     expect(live[0]?.limit.context).toBe(640_000)
   })
 })
+
+describe("the advertised budget is a policy limit, not arithmetic", () => {
+  /**
+   * This distinction was documented incorrectly once, which sent readers
+   * looking for a subtraction that does not exist. `context_budget` is chosen
+   * by the gateway as a capability tier; it is not `context_limit` minus
+   * `output_budget`.
+   *
+   * Verified against the live gateway on 2026-10-30: DeepSeek V4.1 Flash
+   * reports limit 1,048,000 / budget 328,000 / output 128,000, and
+   * 1,048,000 - 128,000 is 920,000. Across all 44 models the budget takes one
+   * of a few round values (228k to 1.048M) with ratios from 22% to 100%, which
+   * no subtraction produces.
+   */
+  it("does not derive the budget from limit minus output", () => {
+    const live = toLiveModels([
+      {
+        id: "deepseek-v4.1-flash",
+        name: "deepseek-v4.1-flash",
+        contextLimit: 1_048_000,
+        contextBudget: 328_000,
+        outputBudget: 128_000,
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+      },
+    ] as never)
+    const model = live[0]!
+    expect(model.limit.context).toBe(328_000)
+    // The subtraction that the old documentation implied would give 920,000.
+    expect(model.limit.context).not.toBe(1_048_000 - 128_000)
+    // And the router keeps the reserved output budget as reported.
+    expect(model.limit.output).toBe(128_000)
+  })
+
+  it("keeps a full-window model at its full window", () => {
+    // Muse Spark 1.3 is the one model the gateway does not reduce; the router
+    // must not clamp it to a tier value.
+    const live = toLiveModels([
+      {
+        id: "muse-spark-1.3",
+        name: "muse-spark-1.3",
+        contextLimit: 1_048_000,
+        contextBudget: 1_048_000,
+        outputBudget: 32_000,
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+      },
+    ] as never)
+    expect(live[0]!.limit.context).toBe(1_048_000)
+  })
+
+  it("never lets a reported budget exceed the vendor limit", () => {
+    const live = toLiveModels([
+      {
+        id: "some-model",
+        name: "some-model",
+        contextLimit: 500_000,
+        contextBudget: 900_000,
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+      },
+    ] as never)
+    expect(live[0]!.limit.context).toBe(500_000)
+  })
+})

@@ -27,7 +27,35 @@ OpenDesign's gateway reports two context numbers per model:
 | Field | Meaning |
 |---|---|
 | `context_limit` | the vendor's total context window |
-| `context_budget` | the usable **input** budget, after reserved output is subtracted |
+| `context_budget` | a per-model cap on usable input, well below the vendor window |
+
+An earlier version of this document said `context_budget` was `context_limit`
+minus reserved output. That was wrong, and re-reading the live metadata on
+2026-10-30 shows why: `deepseek-v4.1-flash` reports `limit 1,048,000`,
+`budget 328,000`, `output_budget 128,000`, and `1,048,000 - 128,000` is
+`920,000`, not `328,000`.
+
+The real pattern is a capability tier. Across the 44 models the gateway serves,
+the budget is one of a few round numbers rather than a subtraction:
+
+| `context_budget` | Models |
+|---|---|
+| 232,000 | most standard-tier models |
+| 264,000 | Gemini 3.8 Flash, Gemini 4 Argon |
+| 304,000 | GPT-5.6 and GPT-6 family |
+| 328,000 | DeepSeek V4.1 Flash, DeepSeek V4 Pro, Claude Sonnet/Opus 5.5, Grok 4.7 |
+| 400,000 | GPT-6 Luna, Astra, GPT-6.1 Sol |
+| 1,048,000 | Muse Spark 1.3 (the one model with no reduction) |
+
+The ratio varies from 22% to 100%, which no subtraction would produce. So this
+is a deliberate policy limit, and the router treats it as the real ceiling: it
+is what the gateway advertises as usable input, and routing against the vendor
+window instead would produce requests the gateway may reject.
+
+Whether the gateway *enforces* the budget is unverified. No request in this
+project's history has tested a transcript between the budget and the vendor
+limit, and doing so would cost real allowance. The router therefore assumes the
+advertised budget is binding, which is the safe direction to be wrong in.
 
 `minimax-m3.1-flash` reports `context_limit: 1000000` and **no**
 `context_budget` — the only one of 13 enabled models missing that field.

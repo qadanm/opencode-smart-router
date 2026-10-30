@@ -222,6 +222,20 @@ MUTATIONS = [
         '    : windowFrom(totals.rollingUsd, 0, undefined, "estimate")',
         "test/opendesign-quota-honesty.test.ts",
     ),
+    Mutation(
+        "vendor limit used instead of the advertised budget",
+        "src/core/providers/opendesign.ts",
+        "    const reported = model.contextBudget ?? vendorLimit",
+        "    const reported = vendorLimit",
+        "test/opendesign-context-limit.test.ts",
+    ),
+    Mutation(
+        "budget allowed to exceed the vendor limit",
+        "src/core/providers/opendesign.ts",
+        "      reported > 0 && (vendorLimit === 0 || reported <= vendorLimit)",
+        "      reported > 0",
+        "test/opendesign-context-limit.test.ts",
+    ),
 ]
 
 def run_tests(test: str) -> bool:

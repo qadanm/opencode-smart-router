@@ -348,9 +348,12 @@ export interface OpenDesignLiveModel {
  * registry merges gateway metadata over the curated seed.
  *
  * The usable context is the gateway's `context_budget`, not its
- * `context_limit`. OpenDesign reports a vendor limit of up to 1.05M tokens but
- * a usable input budget of 228k-400k; routing against the vendor limit would
- * send requests the gateway rejects.
+ * `context_limit`. The two differ by design: across the 44 models the gateway
+ * serves, `context_limit` is 0.5M to 1.05M while `context_budget` is one of a
+ * few values from 228k to 1.048M, chosen by capability tier rather than
+ * computed. DeepSeek V4.1 Flash reports 1,048,000 and 328,000; Muse Spark 1.3
+ * reports 1,048,000 for both. Routing against the vendor limit would send
+ * requests the gateway may reject, so the budget is treated as binding.
  *
  * `context_budget` is not always present. `minimax-m3.1-flash` reports only
  * `context_limit: 1000000`. The fallback for that case used to be a
