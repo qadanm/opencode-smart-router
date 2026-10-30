@@ -914,7 +914,7 @@ export class RouterController {
         settings,
         mode: settings.mode,
         runtime,
-        models: this.registry.approved(),
+        models: this.routingModels(),
         current: session.lastModel,
         session,
         quota: this.quotaSnapshots(),
@@ -945,7 +945,7 @@ export class RouterController {
       settings,
       mode: effectiveMode,
       runtime,
-      models: this.registry.approved(),
+      models: this.routingModels(),
       current: session.lastModel,
       session,
       quota,
@@ -1245,6 +1245,19 @@ export class RouterController {
    * one, so that variant's window is the size the session needs to fit.
    * Ties prefer the larger window.
    */
+  /**
+   * The candidate list a routing decision may choose from.
+   *
+   * Offline mode replaces the approved-online list with the local models. The
+   * engine applies its own allow-list on top, so this is a convenience rather
+   * than the security boundary; the boundary is in `routeTask` and stays there
+   * even if a future caller passes the wrong list.
+   */
+  private routingModels() {
+    if (this.settings.offline?.enabled) return this.registry.modelsForOffline()
+    return this.registry.approved()
+  }
+
   private cheapestVariantContext(modelID: string): number {
     let best: { multiplier: number; context: number } | undefined
     for (const model of this.registry.approved()) {

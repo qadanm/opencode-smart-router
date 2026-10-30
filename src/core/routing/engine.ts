@@ -16,6 +16,7 @@ import type {
 } from "../types.js"
 import { keyOfRef, modelKey, nowId, safeError, thousands, usd } from "../util.js"
 import { decidePremium, evaluateEligibility, modelPressure, providerPressure, type PremiumDecision } from "../policy/eligibility.js"
+import { mayUseProvider, type InferenceMode } from "../offline/mode.js"
 
 export interface EngineInput {
   readonly task: TaskClass
@@ -313,6 +314,58 @@ export const routeTask = (input: EngineInput): EngineResult => {
     premium: input.premium,
   })
 
+  /**
+   * Offline mode narrows the candidate set to the local provider before any
+   * other evaluation runs.
+   *
+   * This is deliberately the first thing that happens and the only place the
+   * restriction is applied. Filtering here means quotas, escalation, premium
+   * approval and the cost model all operate on a list that cannot contain a
+   * hosted provider, so no later branch can reintroduce one. A refusal is
+   * explicit rather than a silent empty result: an offline session with no
+   * usable local model must say so.
+   */
+  const inferenceMode: InferenceMode = input.settings.offline?.enabled ? "offline" : "online"
+  let candidateModels = input.models
+  if (inferenceMode === "offline") {
+    candidateModels = input.models.filter((model) => mayUseProvider(model.providerID, inferenceMode))
+    const refused = input.models.filter((model) => !mayUseProvider(model.providerID, inferenceMode))
+    if (refused.length > 0) {
+      const providers = [...new Set(refused.map((model) => model.providerID))].sort()
+      warnings.push(
+        `Offline mode excluded ${refused.length} hosted model${refused.length === 1 ? "" : "s"} from ${providers.join(", ")}.`,
+      )
+    }
+    if (candidateModels.length === 0) {
+      const decision: RoutingDecision = {
+        id: nowId("dec"),
+        at: now,
+        sessionID: input.session?.sessionID ?? "unknown",
+        mode: input.mode,
+        dryRun: input.dryRun,
+        runtime: input.runtime,
+        task: input.task,
+        current: input.current,
+        switched: false,
+        switchReason:
+          "Offline mode has no local model available. No hosted provider will be used.",
+        reasons: ["Offline mode is enabled and no offline-capable model is in the registry."],
+        warnings: [
+          ...warnings,
+          "Offline mode fails closed: configure a local model, or run `opencode-online` to restore hosted routing.",
+        ],
+        candidates: [],
+        premium: premiumState(input),
+        quota: input.quota,
+        contextTokens: input.contextTokens,
+        cachedTokens: input.cachedTokens,
+        estimatedUsd: 0,
+        needsPremiumApproval: false,
+        manualOverride: false,
+      }
+      return { decision, premiumDecision }
+    }
+  }
   if (input.runtime === "paused") {
     const decision: RoutingDecision = {
       id: nowId("dec"),
@@ -382,7 +435,7 @@ export const routeTask = (input: EngineInput): EngineResult => {
     // speed penalty, so the comparison is always against what this account
     // can actually achieve right now.
     let fastestTokensPerSecond = 0
-    for (const model of input.models) {
+    for (const model of candidateModels) {
       const measure = input.speed?.[modelKey(model.providerID, model.modelID)]
       if (!measure || measure.samples < input.settings.speed.minSamples) continue
       if (measure.tokensPerSecond > fastestTokensPerSecond) fastestTokensPerSecond = measure.tokensPerSecond
@@ -396,7 +449,7 @@ export const routeTask = (input: EngineInput): EngineResult => {
      */
     const run = (protectEscalation: boolean) => {
       const out: Evaluated[] = []
-      for (const model of input.models) {
+      for (const model of candidateModels) {
       const provider = providerFor(input.quota, model.providerID)
       const modelQuota = modelQuotaFor(provider, model)
       const key = modelKey(model.providerID, model.modelID)
@@ -505,7 +558,7 @@ export const routeTask = (input: EngineInput): EngineResult => {
   let premiumFallback = false
   if (evaluated.length === 0 && input.task.tier === 3) {
     const relaxedPremium: PremiumDecision = { allowed: false, requiresApproval: premiumDecision.requiresApproval, reason: premiumDecision.reason }
-    const fallbackModels = input.models
+    const fallbackModels = candidateModels
       .filter((model) => !model.premium)
       .map((model) => {
         const provider = providerFor(input.quota, model.providerID)
@@ -612,7 +665,7 @@ export const routeTask = (input: EngineInput): EngineResult => {
     input.mode !== "efficiency"
 
   if (input.task.tier === 3 && !premiumDecision.allowed && input.mode !== "efficiency" && input.settings.premium.mode !== "off") {
-    const bestPremium = input.models
+    const bestPremium = candidateModels
       .filter((model) => model.premium && model.approved)
       .map((model) => {
         const provider = providerFor(input.quota, model.providerID)

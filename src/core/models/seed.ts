@@ -739,4 +739,50 @@ const OPENDESIGN_SEED_MODELS: ReadonlyArray<SeedModel> = OPENDESIGN_MODELS.map((
   notes: model.notes,
 }))
 
-export const SEED_MODELS: ReadonlyArray<SeedModel> = [...BASE_SEED_MODELS, ...OPENDESIGN_SEED_MODELS]
+/**
+ * Local models served by Ollama.
+ *
+ * These are deliberately *not* approved for automatic online routing. A 4B
+ * local model scoring in the high 30s would be competitive with the hosted
+ * standard floor on paper, and the router would happily send real work to it,
+ * which is not what the owner wants when connected. Offline mode reaches them
+ * through the offline allow-list instead, where the choice is explicit.
+ *
+ * Cost is zero and there is no allowance, because inference runs on hardware
+ * the owner already paid for. `free: true` would route them through the
+ * privacy guard for promotional models, which is the wrong concept, so it is
+ * left unset.
+ */
+const LOCAL_SEED_MODELS: ReadonlyArray<SeedModel> = [
+  {
+    key: "ollama/qwen3.5:4b-q4_K_M",
+    providerID: "ollama",
+    modelID: "qwen3.5:4b-q4_K_M",
+    name: "Qwen3.5 4B (local)",
+    // Matches offline.model.contextTokens. A larger declared window would let
+    // the router believe it can take a transcript the server is configured to
+    // truncate.
+    context: 8_192,
+    maxOutput: 2_048,
+    input: ["text", "image"],
+    tools: true,
+    cost: [{ input: 0, output: 0, cache: { read: 0, write: 0 } }],
+    // Scored below the hosted standard floor on purpose: these numbers describe
+    // real capability, and reporting them low keeps the model out of any online
+    // automatic decision even if someone approves it later.
+    intelligence: 30,
+    design: 40,
+    designEvidence: "unverified",
+    tier: 1,
+    approved: false,
+    monthlyAllowanceUsd: 0,
+    notes:
+      "Local Ollama model for offline development. Vision and tool calling. Not for online routing: the intelligence and design scores are deliberately below the hosted floor because a 4B model should not silently replace a hosted standard model when the network is available.",
+  },
+]
+
+export const SEED_MODELS: ReadonlyArray<SeedModel> = [
+  ...BASE_SEED_MODELS,
+  ...OPENDESIGN_SEED_MODELS,
+  ...LOCAL_SEED_MODELS,
+]

@@ -5,6 +5,8 @@
  * live OpenCode and provider metadata into these records.
  */
 
+import type { OfflineSettings } from "./offline/mode.js"
+
 export type Mode = "efficiency" | "balanced" | "premium"
 export type TaskTier = 0 | 1 | 2 | 3
 export type RuntimeMode = "automatic" | "manual" | "paused"
@@ -646,6 +648,13 @@ export interface RouterSettings {
   readonly ui: UiSettings
   readonly logging: LoggingSettings
   readonly models: ModelSettings
+  /**
+   * Offline development mode. Absent means the defaults, which keep it off.
+   *
+   * This is a separate top-level block rather than a field inside `routing`
+   * so that enabling offline mode cannot alter a single online routing value.
+   */
+  readonly offline?: OfflineSettings
 }
 
 export interface ContextHealth {

@@ -1,5 +1,11 @@
 import { existsSync, readFileSync } from "node:fs"
 import { homedir } from "node:os"
+import {
+  DEFAULT_OFFLINE_SETTINGS,
+  MINIMUM_OFFLINE_CONTEXT,
+  isLoopbackURL,
+  type OfflineSettings,
+} from "./offline/mode.js"
 import { join } from "node:path"
 import type {
   CostTier,
@@ -50,6 +56,10 @@ export const DEFAULT_SETTINGS: RouterSettings = {
     // Pro is the default assumed tier because it is the only tier with a
     // separate plan-model pool; the catalog is authoritative for the numbers
     // and the live gateway is authoritative for entitlement.
+    // Ollama is a local provider. It is enabled so offline mode can reach it,
+    // and its models stay unapproved so online routing never picks them. The
+    // provider being enabled is not the same as its models being approved.
+    ollama: providerDefaults("local", { probeUsage: false, allowExtraUsage: false }),
     opendesign: providerDefaults("pro", {
       enabled: false,
       probeUsage: true,
@@ -131,6 +141,10 @@ export const DEFAULT_SETTINGS: RouterSettings = {
     tierOverrides: {},
     definitions: [],
   },
+  // Offline mode is off unless explicitly enabled. It lives here so that a
+  // caller reading DEFAULT_SETTINGS can see the full shape without having to
+  // know that offline is optional.
+  offline: DEFAULT_OFFLINE_SETTINGS,
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -667,6 +681,8 @@ export const validateSettings = (input: unknown, base: RouterSettings = DEFAULT_
     )
   }
 
+  const offline = validateOffline(input.offline, base.offline, warnings)
+
   const settings: RouterSettings = {
     enabled: asBoolean(input.enabled, base.enabled, warnings, "enabled"),
     mode: asEnum(input.mode, ["efficiency", "balanced", "premium"] as const, base.mode, warnings, "mode"),
@@ -684,6 +700,7 @@ export const validateSettings = (input: unknown, base: RouterSettings = DEFAULT_
     ui,
     logging,
     models: validateModels(input.models, base.models, warnings),
+    offline,
   }
 
   if (settings.premium.mode === "allowed" && settings.premium.monthlyBudgetUsd <= 0) {
@@ -691,6 +708,103 @@ export const validateSettings = (input: unknown, base: RouterSettings = DEFAULT_
   }
 
   return { settings, warnings, sources: [] }
+}
+
+/**
+ * Validate the offline block.
+ *
+ * Kept separate from the main validator because offline mode has its own
+ * failure mode: a misconfigured endpoint or model store must be a loud warning
+ * rather than a silent default, since a silent default here is a model loaded
+ * onto the wrong disk or a session pointed at a hosted URL.
+ */
+const validateOffline = (
+  input: unknown,
+  base: OfflineSettings | undefined,
+  warnings: string[],
+): OfflineSettings => {
+  const resolved = base ?? DEFAULT_OFFLINE_SETTINGS
+  if (input === undefined) return resolved
+  if (!isRecord(input)) {
+    warnings.push("offline must be an object; using defaults")
+    return resolved
+  }
+  const modelInput = isRecord(input.model) ? input.model : {}
+  const modelBase = resolved.model
+
+  const baseURL = typeof modelInput.baseURL === "string" && modelInput.baseURL.trim()
+    ? modelInput.baseURL.trim()
+    : modelBase.baseURL
+  if (!isLoopbackURL(baseURL)) {
+    // A routable address here would expose prompts and model control to the
+    // local network, and would also mean the "local" endpoint might not be
+    // local at all. Refuse it and fall back to loopback.
+    warnings.push(
+      `offline.model.baseURL ${baseURL} is not a loopback address; using ${modelBase.baseURL}. Offline mode must not reach a routable endpoint.`,
+    )
+  }
+
+  const modelName = typeof modelInput.model === "string" && modelInput.model.trim()
+    ? modelInput.model.trim()
+    : modelBase.model
+
+  const contextTokens = asNumber(
+    modelInput.contextTokens,
+    modelBase.contextTokens,
+    warnings,
+    "offline.model.contextTokens",
+    1_024,
+    131_072,
+  )
+  if (contextTokens < MINIMUM_OFFLINE_CONTEXT) {
+    warnings.push(
+      `offline.model.contextTokens is ${contextTokens}, below the ${MINIMUM_OFFLINE_CONTEXT} needed for a screenshot-driven edit`,
+    )
+  }
+
+  const storeInput = input.modelStorePath
+  let modelStorePath: string | undefined
+  if (typeof storeInput === "string" && storeInput.trim()) {
+    modelStorePath = storeInput.trim()
+  } else if (storeInput !== undefined) {
+    warnings.push("offline.modelStorePath must be a non-empty string; ignored")
+  }
+
+  return {
+    enabled: asBoolean(input.enabled, resolved.enabled, warnings, "offline.enabled"),
+    ...(modelStorePath ? { modelStorePath } : {}),
+    model: {
+      model: modelName,
+      baseURL: isLoopbackURL(baseURL) ? baseURL : modelBase.baseURL,
+      contextTokens,
+      maxOutputTokens: asNumber(
+        modelInput.maxOutputTokens,
+        modelBase.maxOutputTokens,
+        warnings,
+        "offline.model.maxOutputTokens",
+        128,
+        32_768,
+      ),
+      concurrency: asNumber(
+        modelInput.concurrency,
+        modelBase.concurrency,
+        warnings,
+        "offline.model.concurrency",
+        1,
+        4,
+      ),
+      keepAliveMinutes: asNumber(
+        modelInput.keepAliveMinutes,
+        modelBase.keepAliveMinutes,
+        warnings,
+        "offline.model.keepAliveMinutes",
+        0,
+        120,
+      ),
+      vision: asBoolean(modelInput.vision, modelBase.vision, warnings, "offline.model.vision"),
+      tools: asBoolean(modelInput.tools, modelBase.tools, warnings, "offline.model.tools"),
+    },
+  }
 }
 
 /**

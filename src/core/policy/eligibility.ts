@@ -13,7 +13,9 @@ import { keyOfRef, modelKey, pct } from "../util.js"
 import {
   CONTEXT_ELIGIBILITY_MARGIN_TOKENS,
   CONTEXT_SAFE_WINDOW_FRACTION,
+  replyMarginFor,
 } from "../context/strategy.js"
+import { OFFLINE_PROVIDER_ID } from "../offline/mode.js"
 
 export interface PremiumDecision {
   readonly allowed: boolean
@@ -210,6 +212,18 @@ const unknownQuotaLimit = (
 }
 
 /**
+ * True when the online intelligence floor should be enforced for this model.
+ *
+ * Offline mode deliberately exempts local models: the owner has chosen to work
+ * with what runs on the machine, and no model small enough to fit alongside a
+ * simulator scores at the hosted standard floor.
+ */
+const substanceFloorApplies = (settings: RouterSettings, model: ModelRecord): boolean => {
+  if (settings.offline?.enabled !== true) return true
+  return model.providerID !== OFFLINE_PROVIDER_ID
+}
+
+/**
  * Hard-requirement gate. A model is eligible only when every requirement is
  * met; expected-cost ranking happens later and never overrides these rules.
  */
@@ -222,7 +236,20 @@ export const evaluateEligibility = (input: EligibilityInput): EligibilityResult 
     return { eligible: false, reason: "Provider authentication is failing; fix the connection before routing here", warnings }
   }
 
-  if (!model.approved) return { eligible: false, reason: "Model is unclassified or not approved", warnings }
+  /**
+   * Approval is an online-policy concept: it means "may this model serve paid
+   * work alongside the hosted floor". A local model is excluded from that list
+   * on purpose so it never competes with hosted models when the network is up.
+   *
+   * Offline mode therefore skips this check for local models. The candidate
+   * list has already been restricted to them, so this cannot admit a hosted
+   * model that would otherwise be refused; it only stops an unapproved local
+   * model from being rejected for a reason that does not apply to it.
+   */
+  const offlineLocal = settings.offline?.enabled === true && model.providerID === OFFLINE_PROVIDER_ID
+  if (!model.approved && !offlineLocal) {
+    return { eligible: false, reason: "Model is unclassified or not approved", warnings }
+  }
   if (model.training && !settings.privacy.allowTrainingModels) {
     return { eligible: false, reason: "Training-enabled model is blocked by privacy policy", warnings }
   }
@@ -245,7 +272,7 @@ export const evaluateEligibility = (input: EligibilityInput): EligibilityResult 
   // 1,048,000 window, and the remaining 72,400 tokens are deliberate headroom
   // for the reply, tokenizer differences, and transcript growth mid-loop.
   const requiredContext =
-    Math.max(input.contextTokens, task.scope.promptTokens) + CONTEXT_ELIGIBILITY_MARGIN_TOKENS
+    Math.max(input.contextTokens, task.scope.promptTokens) + replyMarginFor(model.context)
   if (model.context > 0 && requiredContext > model.context * CONTEXT_SAFE_WINDOW_FRACTION) {
     return {
       eligible: false,
@@ -260,7 +287,18 @@ export const evaluateEligibility = (input: EligibilityInput): EligibilityResult 
   }
 
   const substantive = task.tier >= 2
-  if (substantive && model.intelligence < settings.routing.intelligenceFloor) {
+  /**
+   * The intelligence floor exists so substantive work reaches a capable model.
+   * Offline mode is a deliberate exception: the owner has chosen to work with
+   * whatever runs locally, and enforcing the hosted floor would make offline
+   * mode permanently unusable, because no 4B model on this machine scores 39.5.
+   *
+   * The exception is scoped to local models only. A hosted model reached while
+   * offline is already refused upstream, so this cannot lower the floor for
+   * online routing.
+   */
+  const offlineFloorApplies = substanceFloorApplies(settings, model)
+  if (substantive && offlineFloorApplies && model.intelligence < settings.routing.intelligenceFloor) {
     return {
       eligible: false,
       reason: `Intelligence ${model.intelligence.toFixed(1)} is below the ${settings.routing.intelligenceFloor.toFixed(1)} floor for substantive work`,

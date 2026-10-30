@@ -2,6 +2,7 @@ import type { CostTier, ModelRecord, RouterSettings } from "../types.js"
 import { modelKey } from "../util.js"
 import { modelMonthlyAllowanceUsd, resolvePlan } from "../plans/catalog.js"
 import { SEED_MODELS, type SeedModel } from "./seed.js"
+import { OFFLINE_PROVIDER_ID } from "../offline/mode.js"
 
 export interface LiveModel {
   readonly id: string
@@ -178,6 +179,23 @@ export class ModelRegistry {
 
   approvedForProvider(providerID: string): ModelRecord[] {
     return this.approved().filter((model) => model.providerID === providerID)
+  }
+
+  /**
+   * Models available to an offline session.
+   *
+   * Offline mode deliberately bypasses the online `approved` list. Approval is
+   * an online-policy decision ("may this model serve paid work alongside the
+   * hosted floor"), and a local model is excluded from it on purpose. Requiring
+   * the owner to approve a local model for *online* routing in order to use it
+   * while offline would be exactly the kind of manual configuration step this
+   * feature is supposed to remove.
+   *
+   * The offline allow-list still applies on top of this, so the result can only
+   * ever contain local models.
+   */
+  modelsForOffline(): ModelRecord[] {
+    return this.all().filter((model) => model.providerID === OFFLINE_PROVIDER_ID)
   }
 }
 

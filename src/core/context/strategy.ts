@@ -23,6 +23,31 @@ import type { ContextManagementMode, ContextManagementSettings } from "../types.
 /** A margin added on top of the measured transcript before judging fit. */
 export const CONTEXT_ELIGIBILITY_MARGIN_TOKENS = 20_000
 
+/**
+ * The smallest share of a window that the reply margin may claim.
+ *
+ * A flat 20,000-token margin is right for a 1M window and impossible for an
+ * 8,192-token local one: the margin alone would exceed the window, so every
+ * request would be rejected before it started. The margin therefore shrinks
+ * with small windows and never grows beyond the flat value.
+ *
+ * The floor keeps a usable share of the window for the reply. At 8,192 tokens
+ * this reserves 1,024 and leaves 6,758 of transcript after the safety fraction,
+ * which fits a component, its styles and a focused instruction.
+ */
+const MINIMUM_REPLY_RESERVE_FRACTION = 0.125
+
+/**
+ * The reply margin that actually applies to a given window.
+ *
+ * Exported so the routing gate and the compaction strategy cannot drift apart:
+ * both call this with the same window and get the same answer.
+ */
+export const replyMarginFor = (windowTokens: number): number => {
+  if (!Number.isFinite(windowTokens) || windowTokens <= 0) return CONTEXT_ELIGIBILITY_MARGIN_TOKENS
+  return Math.min(CONTEXT_ELIGIBILITY_MARGIN_TOKENS, Math.floor(windowTokens * MINIMUM_REPLY_RESERVE_FRACTION))
+}
+
 /** The fraction of a model's window a request must stay under. */
 export const CONTEXT_SAFE_WINDOW_FRACTION = 0.95
 
@@ -73,7 +98,7 @@ export const decideCompaction = (input: CompactionContext): CompactionDecision =
   if (contextTokens <= 0) return no("No measured context size yet.")
   if (effectiveWindow <= 0) return no("The model's accepted context window is unknown; no router-driven compaction.")
 
-  const required = contextTokens + CONTEXT_ELIGIBILITY_MARGIN_TOKENS
+  const required = contextTokens + replyMarginFor(effectiveWindow)
   const safeLimit = effectiveWindow * CONTEXT_SAFE_WINDOW_FRACTION
   const overflow = required > safeLimit
 
