@@ -322,6 +322,26 @@ export const hydrateLedger = (value: unknown): { ledger: Ledger; warnings: strin
     }
   }
 
+  /**
+   * A ledger written before aggregates existed has more raw events than the
+   * cap, and truncating it on load would discard exactly the history the
+   * aggregates were introduced to keep. Fold the overflow into buckets here so
+   * the first load after an upgrade preserves every token.
+   */
+  let loadTruncated: UsageEvent[] | undefined
+  if (usage.length > MAX_USAGE_EVENTS && buckets.length === 0) {
+    const byKey = new Map<string, UsageBucket>()
+    const overflow = usage.length - MAX_USAGE_EVENTS
+    for (const event of usage.slice(0, overflow)) {
+      foldEventInto(byKey, event, monthKey(event.at))
+    }
+    buckets.push(...byKey.values())
+    loadTruncated = usage.slice(overflow)
+    warnings.push(
+      `Folded ${overflow} older usage events into hourly aggregates on load instead of discarding them`,
+    )
+  }
+
   const failures = emptyFailureCounts()
   if (isRecord(metrics.failures)) {
     for (const key of Object.keys(failures) as FailureClass[]) {
@@ -335,7 +355,7 @@ export const hydrateLedger = (value: unknown): { ledger: Ledger; warnings: strin
     bootstrapSource: typeof value.bootstrapSource === "string" ? value.bootstrapSource : undefined,
     cooldowns,
     providerCooldowns,
-    usage: usage.slice(-MAX_USAGE_EVENTS),
+    usage: loadTruncated ? loadTruncated.slice(-MAX_USAGE_EVENTS) : usage.slice(-MAX_USAGE_EVENTS),
     ...(buckets.length > 0
       ? {
           usageRollup: {

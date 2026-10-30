@@ -110,6 +110,28 @@ describe("durable usage history", () => {
     void warnings
   })
 
+  it("folds an over-cap pre-aggregate ledger on load instead of discarding history", () => {
+    // This is the exact upgrade scenario: the old code wrote 2,000 raw events
+    // and no aggregates, and loading it must not throw the oldest ones away.
+    const events = Array.from({ length: 3_000 }, (_, i) => event((i / 3_000) * 10 * DAY, i))
+    const old = {
+      version: 1,
+      usage: events,
+      premiumSpend: [],
+      sessions: {},
+      decisions: [],
+      metrics: {},
+      updatedAt: NOW,
+    }
+    const { ledger, warnings } = LedgerStore.hydrate(old)
+    expect(warnings.join(" ")).toMatch(/Folded 1000 older usage events/)
+    expect(ledger.usageRollup).toBeDefined()
+    const restored = new LedgerStore(ledger)
+    // Every event is still accounted for.
+    expect(restored.aggregate({ since: NOW - 30 * DAY, until: NOW }).requests).toBe(3_000)
+    expect(restored.aggregate({ since: NOW - 30 * DAY, until: NOW }).usd).toBeCloseTo(30, 6)
+  })
+
   it("groups usage by model over a window", () => {
     const s = store([
       event(HOUR, 0, { modelID: "deepseek-v4.1-flash" }),
