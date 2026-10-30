@@ -1,7 +1,56 @@
-import { existsSync, readFileSync, statSync } from "node:fs"
+import { closeSync, constants, fstatSync, openSync, readFileSync, realpathSync } from "node:fs"
 import { homedir } from "node:os"
 import { join } from "node:path"
 import { redact } from "../util.js"
+
+/**
+ * Credential discovery from the local filesystem.
+ *
+ * ## Security model
+ *
+ * This module reads bearer credentials that belong to the user and that the
+ * user has already placed on disk for their own tools. It is therefore a
+ * *local trust* component, not an authentication component: it never grants
+ * access to anything the user could not already reach themselves.
+ *
+ * Even so, silently harvesting secrets from predictable paths is a pattern
+ * that deserves explicit, documented containment, because a router that
+ * "finds" credentials automatically is one bad path away from reading
+ * something it has no business reading. The rules below are therefore
+ * enforced in code, not just described:
+ *
+ *  1. **Opt-in, never implicit.** Automatic filesystem discovery requires
+ *     `credentialSource: "auto"` (or the `SMART_ROUTER_ALLOW_KEY_DISCOVERY`
+ *     environment variable). The default is `"explicit"`, which reads only
+ *     credentials the user named in configuration or the environment.
+ *
+ *  2. **No cross-application credential theft.** Only paths that belong to
+ *     this router's own configuration directory or to the named provider are
+ *     read. Another application's unified credential store (for example
+ *     OpenCode's own `auth.json`, which holds OAuth refresh tokens for every
+ *     provider the user has connected) is explicitly excluded. Reading it
+ *     would mean handling tokens that are not ours, for providers we were
+ *     never asked about.
+ *
+ *  3. **No symlinks, no TOCTOU.** Each file is opened once, with
+ *     `O_NOFOLLOW`, and the permission and size checks are applied to the
+ *     resulting file descriptor. The previous implementation checked
+ *     `statSync(path)` and then read `path`, which allows the path to be
+ *     swapped for a symlink between the two calls.
+ *
+ *  4. **Owner-only permissions.** A file readable by group or world is
+ *     refused, because a shared machine could otherwise influence which
+ *     credential the router uses.
+ *
+ *  5. **Bounded reads.** Files are size-capped before a read is attempted and
+ *     the descriptor is always closed.
+ *
+ *  6. **Secrets never leave this module.** A discovered key is returned to the
+ *     caller and placed in an `Authorization` header for the provider it
+ *     belongs to. It is never logged, never written to the ledger, never
+ *     embedded in a decision, a session title, a diagnostic bundle or an
+ *     error message. `redact()` is applied to every error string.
+ */
 
 export interface CredentialCandidate {
   readonly source: string
@@ -12,6 +61,30 @@ export interface CredentialCandidate {
 export interface CredentialDiscovery {
   readonly candidates: CredentialCandidate[]
   readonly warnings: string[]
+}
+
+/**
+ * Whether the router may look for credentials on disk without being told
+ * exactly where.
+ *
+ * - `explicit` (default) reads only configured paths and the environment.
+ * - `auto` also reads the provider's own well-known files.
+ * - `off` reads nothing from disk at all; the environment and configuration
+ *   are the only sources.
+ */
+export type CredentialSourcePolicy = "explicit" | "auto" | "off"
+
+export const CREDENTIAL_DISCOVERY_ENV = "SMART_ROUTER_ALLOW_KEY_DISCOVERY"
+
+/** Resolve the effective policy, allowing an explicit environment override. */
+export const resolveCredentialSourcePolicy = (
+  configured: CredentialSourcePolicy | undefined,
+  env: Record<string, string | undefined> = process.env,
+): CredentialSourcePolicy => {
+  if (configured) return configured
+  const flag = env[CREDENTIAL_DISCOVERY_ENV]?.trim().toLowerCase()
+  if (flag === "1" || flag === "true" || flag === "yes") return "auto"
+  return "explicit"
 }
 
 const MAX_CREDENTIAL_FILE_BYTES = 64 * 1024
@@ -103,16 +176,26 @@ const COMMAND_CODE_FILE_OPTIONS: CredentialFileOptions = {
   label: "Command Code",
 }
 
+/**
+ * Read a credential file safely.
+ *
+ * The file is opened once with `O_NOFOLLOW` and every check runs against the
+ * open descriptor, so a path cannot be swapped for a symlink between the
+ * permission check and the read. The descriptor is closed on every path out.
+ */
 export const readCredentialFileWith = (
   path: string,
   warnings: string[],
   options: CredentialFileOptions,
 ): CredentialCandidate | undefined => {
-  if (!existsSync(path)) return undefined
+  let fd: number | undefined
   try {
-    const stat = statSync(path)
+    // `O_NOFOLLOW` makes a symlink fail with ELOOP rather than being followed.
+    fd = openSync(path, constants.O_RDONLY | constants.O_NOFOLLOW)
+    const stat = fstatSync(fd)
+
     if (!stat.isFile()) {
-      warnings.push(`${options.label} credential path is not a file: ${path}`)
+      warnings.push(`${options.label} credential path is not a regular file: ${path}`)
       return undefined
     }
     if (stat.size > MAX_CREDENTIAL_FILE_BYTES) {
@@ -124,7 +207,10 @@ export const readCredentialFileWith = (
       warnings.push(`Ignoring ${options.label} credential file with group/world permissions: ${path}`)
       return undefined
     }
-    const text = readFileSync(path, "utf8").trim()
+    if (stat.size === 0) return undefined
+
+    // Bounded read from the descriptor that was actually checked.
+    const text = readFileSync(fd, "utf8").trim()
     if (!text) return undefined
 
     let key: string | undefined
@@ -146,8 +232,22 @@ export const readCredentialFileWith = (
     }
     return { source: path, key, path }
   } catch (error) {
+    const code = (error as NodeJS.ErrnoException)?.code
+    if (code === "ENOENT") return undefined
+    if (code === "ELOOP") {
+      warnings.push(`Ignoring ${options.label} credential path because it is a symlink: ${path}`)
+      return undefined
+    }
     warnings.push(`Could not read ${path}: ${redact(error instanceof Error ? error.message : String(error))}`)
     return undefined
+  } finally {
+    if (fd !== undefined) {
+      try {
+        closeSync(fd)
+      } catch {
+        // Closing a descriptor we already failed to read is not actionable.
+      }
+    }
   }
 }
 
@@ -162,14 +262,23 @@ export interface DiscoverCommandCodeInput {
   readonly explicitPath?: string
   readonly openCodeIntegrationKey?: string
   readonly providerSettingsKey?: string
+  /**
+   * Whether unwritten-on-disk discovery is permitted. Defaults to reading
+   * `SMART_ROUTER_ALLOW_KEY_DISCOVERY`; without it, only the environment and
+   * explicitly configured paths are used.
+   */
+  readonly credentialSource?: CredentialSourcePolicy
 }
 
 /**
- * Discover a Command Code key that is authorized for the read-only alpha
- * billing surface. The provider API key configured in OpenCode is deliberately
- * last: it can serve inference but may not be authorized for /alpha endpoints.
+ * Command Code credential search order.
  *
- * Only the official Command Code host receives any of these values.
+ * The provider API key configured in OpenCode is deliberately last: it can
+ * serve inference but may not be authorized for the `/alpha` endpoints.
+ *
+ * Note what is *absent*: OpenCode's own `auth.json` is never read. That file is
+ * another application's unified credential store and contains OAuth material
+ * for every provider the user has connected, not just this one.
  */
 export const discoverCommandCodeCredentials = (input: DiscoverCommandCodeInput = {}): CredentialDiscovery => {
   const warnings: string[] = []
@@ -177,6 +286,7 @@ export const discoverCommandCodeCredentials = (input: DiscoverCommandCodeInput =
   const seen = new Set<string>()
   const home = input.home ?? homedir()
   const env = input.env ?? process.env
+  const policy = resolveCredentialSourcePolicy(input.credentialSource, env)
 
   const add = (candidate: CredentialCandidate | undefined) => {
     if (!candidate || seen.has(candidate.key)) return
@@ -189,14 +299,25 @@ export const discoverCommandCodeCredentials = (input: DiscoverCommandCodeInput =
 
   if (input.explicitPath) add(readCredentialFile(input.explicitPath, warnings))
 
-  const defaultFiles = [
-    join(home, ".commandcode", "auth.json"),
-    join(home, ".config", "opencode", "commandcode.key"),
-    join(home, ".config", "opencode", "commandcode.env"),
-    join(home, ".config", "opencode", "commandcode.json"),
-    join(home, ".local", "share", "opencode", "auth.json"),
-  ]
-  for (const path of defaultFiles) add(readCredentialFile(path, warnings))
+  if (policy === "off") {
+    if (candidates.length === 0) {
+      warnings.push(
+        "Credential discovery is disabled, so no Command Code key was found. Set COMMAND_CODE_API_KEY or configure an explicit path.",
+      )
+    }
+  } else if (policy === "auto") {
+    const defaultFiles = [
+      join(home, ".commandcode", "auth.json"),
+      join(home, ".config", "opencode", "commandcode.key"),
+      join(home, ".config", "opencode", "commandcode.env"),
+      join(home, ".config", "opencode", "commandcode.json"),
+    ]
+    for (const path of defaultFiles) add(readCredentialFile(path, warnings))
+  } else if (candidates.length === 0) {
+    warnings.push(
+      `No Command Code key was supplied. Automatic discovery is off by default; set ${CREDENTIAL_DISCOVERY_ENV}=1 to let the router read ${join(home, ".config", "opencode", "commandcode.key")}, or set COMMAND_CODE_API_KEY.`,
+    )
+  }
 
   if (input.openCodeIntegrationKey && plausibleKey(input.openCodeIntegrationKey)) {
     add({ source: "OpenCode integration", key: input.openCodeIntegrationKey })
@@ -224,23 +345,27 @@ export const plausibleOpenDesignKey = (value: string): boolean => {
   return /^sk-[A-Za-z0-9._-]{8,}$/.test(trimmed)
 }
 
+export interface DiscoverOpenDesignInput {
+  readonly home?: string
+  readonly env?: Record<string, string | undefined>
+  readonly explicitPath?: string
+  readonly providerSettingsKey?: string
+  readonly credentialSource?: CredentialSourcePolicy
+}
+
 /**
  * Discover the OpenDesign inference key.
  *
  * Only the OpenDesign hosts ever receive this value. The key is never written
  * into a decision, a log, a session title, or a diagnostic bundle.
  */
-export const discoverOpenDesignCredentials = (input: {
-  readonly home?: string
-  readonly env?: Record<string, string | undefined>
-  readonly explicitPath?: string
-  readonly providerSettingsKey?: string
-} = {}): CredentialDiscovery => {
+export const discoverOpenDesignCredentials = (input: DiscoverOpenDesignInput = {}): CredentialDiscovery => {
   const warnings: string[] = []
   const candidates: CredentialCandidate[] = []
   const seen = new Set<string>()
   const home = input.home ?? homedir()
   const env = input.env ?? process.env
+  const policy = resolveCredentialSourcePolicy(input.credentialSource, env)
 
   const add = (candidate: CredentialCandidate | undefined) => {
     if (!candidate || seen.has(candidate.key)) return
@@ -257,12 +382,24 @@ export const discoverOpenDesignCredentials = (input: {
 
   if (input.explicitPath) add(readCredentialFileWith(input.explicitPath, warnings, OPENDESIGN_FILE_OPTIONS))
 
-  const defaultFiles = [
-    join(home, ".config", "opencode", "opendesign.key"),
-    join(home, ".config", "opencode", "opendesign.env"),
-    join(home, ".config", "opencode", "opendesign.json"),
-  ]
-  for (const path of defaultFiles) add(readCredentialFileWith(path, warnings, OPENDESIGN_FILE_OPTIONS))
+  if (policy === "off") {
+    if (candidates.length === 0) {
+      warnings.push(
+        "Credential discovery is disabled, so no OpenDesign key was found. Set OPENDESIGN_API_KEY or configure an explicit path.",
+      )
+    }
+  } else if (policy === "auto") {
+    const defaultFiles = [
+      join(home, ".config", "opencode", "opendesign.key"),
+      join(home, ".config", "opencode", "opendesign.env"),
+      join(home, ".config", "opencode", "opendesign.json"),
+    ]
+    for (const path of defaultFiles) add(readCredentialFileWith(path, warnings, OPENDESIGN_FILE_OPTIONS))
+  } else if (candidates.length === 0) {
+    warnings.push(
+      `No OpenDesign key was supplied. Automatic discovery is off by default; set ${CREDENTIAL_DISCOVERY_ENV}=1 to let the router read ${join(home, ".config", "opencode", "opendesign.key")}, or set OPENDESIGN_API_KEY.`,
+    )
+  }
 
   if (input.providerSettingsKey) add({ source: "OpenCode provider settings", key: input.providerSettingsKey })
 
@@ -295,4 +432,20 @@ export const discoverOpenDesignControlKey = (input: {
   })
   if (candidate) candidates.push(candidate)
   return { candidates, warnings }
+}
+
+/**
+ * Describe where a resolved credential came from, without revealing it.
+ *
+ * Diagnostic output needs to answer "did the router find a key, and where from"
+ * without ever carrying the secret itself.
+ */
+export const describeCredentialSource = (candidate: CredentialCandidate | undefined): string => {
+  if (!candidate) return "not found"
+  if (candidate.path) {
+    // Only the final path segment is useful for support and leaks nothing.
+    const base = candidate.path.split("/").pop() ?? candidate.path
+    return `${candidate.source === candidate.path ? "file" : candidate.source} (${base})`
+  }
+  return candidate.source
 }

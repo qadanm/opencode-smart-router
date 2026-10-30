@@ -294,7 +294,13 @@ const PLAN_BY_KEY: ReadonlyMap<string, PlanDefinition> = new Map(
   PLAN_CATALOG.map((plan) => [`${plan.providerID}/${plan.planID}`, plan]),
 )
 
-/** The plan each provider falls back to when settings name nothing usable. */
+/**
+ * The plan each provider assumes when settings name nothing usable.
+ *
+ * These are *fallbacks*, not recommendations. Every one of them is reported as
+ * `resolution: "default"` so a caller can warn that an assumption was made
+ * rather than silently pretending the user configured that tier.
+ */
 export const DEFAULT_PLAN_ID: Readonly<Record<string, string>> = {
   opendesign: "pro",
   "opencode-go": "go",
@@ -316,16 +322,61 @@ const PLAN_ALIASES: Readonly<Record<string, string>> = {
   "opencode-go/go+": "go-plus",
 }
 
-export const resolvePlan = (providerID: string, planID: string | undefined): PlanDefinition | undefined => {
+/**
+ * How a plan id was resolved.
+ *
+ * - `exact`   the configured id is a catalog entry
+ * - `alias`   a legacy id was mapped to its current equivalent
+ * - `default` no usable id was configured, so the provider default applies
+ * - `unknown` an id was configured but matches nothing, so the default applies
+ */
+export type PlanResolution = "exact" | "alias" | "default" | "unknown"
+
+export interface ResolvedPlan {
+  readonly plan: PlanDefinition | undefined
+  readonly resolution: PlanResolution
+  /** The id actually matched, useful for diagnostics. */
+  readonly planID: string | undefined
+}
+
+/**
+ * Resolve a plan id, reporting *how* it was resolved.
+ *
+ * A silent fallback is dangerous on a billing boundary: a typo in `plan` would
+ * otherwise grant whatever tier this repository happens to default to, which
+ * could overstate a user's allowance by an order of magnitude. Callers use
+ * `resolution` to warn instead of guessing quietly.
+ */
+export const resolvePlanWithReason = (
+  providerID: string,
+  planID: string | undefined,
+): ResolvedPlan => {
   const requested = (planID ?? "").trim().toLowerCase()
   if (requested) {
     const aliasTarget = PLAN_ALIASES[`${providerID}/${requested}`]
-    const direct = PLAN_BY_KEY.get(`${providerID}/${aliasTarget ?? requested}`)
-    if (direct) return direct
+    if (aliasTarget) {
+      const plan = PLAN_BY_KEY.get(`${providerID}/${aliasTarget}`)
+      if (plan) return { plan, resolution: "alias", planID: plan.planID }
+    }
+    const direct = PLAN_BY_KEY.get(`${providerID}/${requested}`)
+    if (direct) return { plan: direct, resolution: "exact", planID: direct.planID }
+    const fallback = DEFAULT_PLAN_ID[providerID]
+    return {
+      plan: fallback ? PLAN_BY_KEY.get(`${providerID}/${fallback}`) : undefined,
+      resolution: "unknown",
+      planID: fallback,
+    }
   }
   const fallback = DEFAULT_PLAN_ID[providerID]
-  return fallback ? PLAN_BY_KEY.get(`${providerID}/${fallback}`) : undefined
+  return {
+    plan: fallback ? PLAN_BY_KEY.get(`${providerID}/${fallback}`) : undefined,
+    resolution: fallback ? "default" : "unknown",
+    planID: fallback,
+  }
 }
+
+export const resolvePlan = (providerID: string, planID: string | undefined): PlanDefinition | undefined =>
+  resolvePlanWithReason(providerID, planID).plan
 
 export const planById = (providerID: string, planID: string): PlanDefinition | undefined =>
   PLAN_BY_KEY.get(`${providerID}/${planID}`)

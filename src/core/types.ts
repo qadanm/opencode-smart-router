@@ -457,6 +457,17 @@ export interface ProviderSettings {
   /** Optional explicit credential file for a read-only quota probe. */
   readonly credentialPath?: string
   /**
+   * Whether the router may read well-known credential files without being
+   * told exactly where. `explicit` (the default) reads only configured paths
+   * and the environment; `auto` also scans the provider's own files; `off`
+   * reads nothing from disk.
+   *
+   * The default is deliberately conservative: automatically harvesting
+   * secrets from predictable paths is not something a router should do
+   * without the operator saying so.
+   */
+  readonly credentialSource?: "explicit" | "auto" | "off"
+  /**
    * Gateway base URL. Only providers with a configurable endpoint use it.
    * OpenDesign accepts the OpenAI-compatible gateway root; a path that
    * already contains the version is never extended again.

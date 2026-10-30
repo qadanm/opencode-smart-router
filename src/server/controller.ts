@@ -15,7 +15,7 @@ import { classifyTask, type ClassifierFile } from "../core/classify/classifier.j
 import { computeContextHealth } from "../core/context-health.js"
 import { decideCompaction, describeMode } from "../core/context/strategy.js"
 import { buildProviderUsageReport } from "../core/quota/report.js"
-import { resolvePlan } from "../core/plans/catalog.js"
+import { resolvePlan, resolvePlanWithReason } from "../core/plans/catalog.js"
 import { loadSettings, type SettingsLoadResult } from "../core/config.js"
 import { classifyFailure } from "../core/failures.js"
 import { buildRegistry } from "../core/models/registry.js"
@@ -237,6 +237,19 @@ export class RouterController {
     this.settingsWarnings = loaded.warnings
     this.settingsSources = loaded.sources
     this.ledger = new LedgerStore()
+
+    // A plan id that matches nothing must never resolve silently to whatever
+    // tier this repository defaults to: that could overstate the allowance a
+    // routing decision is allowed to spend.
+    for (const [providerID, provider] of Object.entries(loaded.settings.providers)) {
+      if (!provider?.enabled) continue
+      const resolved = resolvePlanWithReason(providerID, provider.plan)
+      if (resolved.resolution === "unknown") {
+        this.settingsWarnings.push(
+          `providers.${providerID}.plan is "${provider.plan}", which is not a known plan for ${providerID}. Using ${resolved.planID ?? "no plan"}, so quota may be miscalculated. Set a plan id from the catalog.`,
+        )
+      }
+    }
   }
 
   private get settings(): RouterSettings {
@@ -373,6 +386,7 @@ export class RouterController {
     const discovered = discoverOpenDesignCredentials({
       explicitPath: providerSettings.credentialPath,
       providerSettingsKey,
+      credentialSource: providerSettings.credentialSource,
     })
     for (const warning of discovered.warnings) {
       if (!this.settingsWarnings.includes(warning)) this.settingsWarnings.push(warning)

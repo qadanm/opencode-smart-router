@@ -12,6 +12,7 @@ import {
   planSummaryLine,
   poolDrawSequence,
   resolvePlan,
+  resolvePlanWithReason,
 } from "../src/core/plans/catalog.js"
 import { DEFAULT_SETTINGS, validateSettings } from "../src/core/config.js"
 
@@ -179,6 +180,29 @@ describe("plan catalog", () => {
     expect(defaultPlanIdFor("opencode-go")).toBe("go")
     expect(defaultPlanIdFor("commandcode")).toBe("goat")
     expect(defaultPlanIdFor("other")).toBeUndefined()
+  })
+
+  it("reports how a plan id was resolved instead of guessing silently", () => {
+    // An exact id is unambiguous.
+    expect(resolvePlanWithReason("opendesign", "pro").resolution).toBe("exact")
+    // A legacy id is mapped, and the caller can see that it was mapped.
+    expect(resolvePlanWithReason("opencode-go", "goplus").resolution).toBe("alias")
+    expect(resolvePlanWithReason("opencode-go", "goplus").planID).toBe("go-plus")
+    // No id at all is a documented default.
+    expect(resolvePlanWithReason("opendesign", undefined).resolution).toBe("default")
+    expect(resolvePlanWithReason("opendesign", "  ").resolution).toBe("default")
+    // A configured-but-wrong id is flagged, so a typo cannot silently grant a
+    // tier the user does not pay for.
+    const typo = resolvePlanWithReason("opendesign", "profesional")
+    expect(typo.resolution).toBe("unknown")
+    expect(typo.plan?.planID).toBe("pro")
+  })
+
+  it("never resolves an unknown plan to a larger allowance without saying so", () => {
+    // The fallback is reported, not hidden: callers can warn on it.
+    const resolved = resolvePlanWithReason("opendesign", "maxx")
+    expect(resolved.resolution).toBe("unknown")
+    expect(resolved.plan?.monthlyPriceUsd).toBe(100)
   })
 })
 

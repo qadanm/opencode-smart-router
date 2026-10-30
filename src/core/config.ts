@@ -220,6 +220,16 @@ const validateProvider = (
       value.credentialPath === undefined
         ? base.credentialPath
         : asString(value.credentialPath, base.credentialPath ?? "", warnings, `${path}.credentialPath`) || undefined,
+    credentialSource:
+      value.credentialSource === undefined
+        ? base.credentialSource
+        : asEnum(
+            value.credentialSource,
+            ["explicit", "auto", "off"] as const,
+            base.credentialSource ?? "explicit",
+            warnings,
+            `${path}.credentialSource`,
+          ),
     baseURL:
       value.baseURL === undefined
         ? base.baseURL

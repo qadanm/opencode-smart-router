@@ -244,6 +244,7 @@ const credentialCandidates = (input: CommandCodeProbeInput): CredentialCandidate
     explicitPath: input.explicitPath ?? input.settings.credentialPath,
     openCodeIntegrationKey: input.openCodeIntegrationKey,
     providerSettingsKey: input.providerSettingsKey,
+    ...(input.settings.credentialSource ? { credentialSource: input.settings.credentialSource } : {}),
   })
   return discovery.candidates.slice(0, 4)
 }
