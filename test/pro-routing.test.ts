@@ -451,3 +451,43 @@ describe("the displacement warning stays quiet when it would be noise", () => {
     expect(result.decision.warnings.join(" ")).not.toMatch(/was skipped for this turn/)
   })
 })
+
+describe("the displacement warning survives a premium task", () => {
+  it("still reports a displaced standard model when the task is tier 3", () => {
+    // A live session classified as tier 3 and routed to OpenDesign's
+    // minimax-m3.1-flash. Comparing the displaced model against the *task* tier
+    // excluded DeepSeek there, because DeepSeek is a tier-2 model, so the
+    // warning vanished exactly when a user would most want it. The comparison
+    // has to be against what was actually chosen.
+    const s = settings()
+    const contextTokens = 309_321
+    const task = {
+      ...classifyTask({
+        text: "Implement a small feature in src/app.ts",
+        files: [],
+        contextTokens,
+        recentFailures: 0,
+      }),
+      tier: 3 as const,
+    }
+    const decision = routeTask({
+      task,
+      settings: s,
+      mode: s.mode,
+      runtime: "automatic",
+      models: registry(s).approved(),
+      current: { providerID: "opendesign", id: "minimax-m3.1-flash" },
+      session: session({ contextTokens }),
+      quota: healthyQuota(),
+      premium: { mode: "off", monthlyBudgetUsd: 0, spentUsd: 0, remainingUsd: 0, oneShotGranted: false },
+      contextTokens,
+      cachedTokens: 8_000,
+      dryRun: false,
+      now: NOW,
+    }).decision
+    expect(task.tier).toBe(3)
+    const warning = decision.warnings.find((entry) => /on opendesign/i.test(entry))
+    expect(warning).toBeDefined()
+    expect(warning).toMatch(/328,000/)
+  })
+})

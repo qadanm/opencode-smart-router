@@ -665,15 +665,17 @@ export const routeTask = (input: EngineInput): EngineResult => {
   // a large session silently stops using the configured default and the only
   // visible signal is that some other model is suddenly in use.
   //
-  // Two conditions keep this from becoming noise. The model must be a plausible
-  // winner: it has to meet the task tier and be cheaper than what was chosen,
-  // otherwise it never mattered. And if its display name matches the chosen
-  // model's, the provider is named too, because "DeepSeek was skipped" while
-  // DeepSeek is running reads as a bug.
+  // Two conditions keep this from becoming noise. The model must be at least
+  // as capable as what was chosen, and cheaper, so it would have won had it
+  // fit. Comparing against the chosen model rather than the task tier matters:
+  // a premium task served by a standard fallback should still report that a
+  // cheaper standard model was displaced by size. And if its display name
+  // matches the chosen model's, the provider is named too, because "DeepSeek
+  // was skipped" while DeepSeek is running reads as a bug.
   const viableOnMerit = contextRejected.filter(
     (entry) =>
       (entry.model.providerID !== chosen.model.providerID || entry.model.modelID !== chosen.model.modelID) &&
-      entry.tier >= input.task.tier &&
+      entry.tier >= chosen.model.tier &&
       entry.usd < chosen.candidate.estimatedUsd,
   )
   const displaced =
