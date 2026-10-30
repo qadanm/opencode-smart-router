@@ -19,6 +19,10 @@ export const usd = (value: number) => {
 
 export const percent = (value: number) => `${value.toFixed(value >= 10 ? 0 : 1)}%`
 
+/** Group an integer with thousands separators, for token counts in prose. */
+export const thousands = (value: number) =>
+  Number.isFinite(value) ? Math.round(value).toLocaleString("en-US") : "0"
+
 export const modelKey = (providerID: string, modelID: string): string => `${providerID}/${modelID}`
 
 export const parseModelKey = (key: string): ModelKey => {

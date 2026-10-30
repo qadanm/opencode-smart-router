@@ -14,7 +14,7 @@ import type {
   TaskClass,
   TaskKind,
 } from "../types.js"
-import { keyOfRef, modelKey, nowId, safeError, usd } from "../util.js"
+import { keyOfRef, modelKey, nowId, safeError, thousands, usd } from "../util.js"
 import { decidePremium, evaluateEligibility, modelPressure, providerPressure, type PremiumDecision } from "../policy/eligibility.js"
 
 export interface EngineInput {
@@ -365,6 +365,16 @@ export const routeTask = (input: EngineInput): EngineResult => {
     return { decision, premiumDecision }
   }
 
+  /**
+   * Models that were rejected purely because the transcript would not fit.
+   *
+   * This is recorded rather than silently skipped because it is the one
+   * rejection a user is most likely to misread. A large session quietly stops
+   * being routed to the configured default, and without this note the only
+   * visible signal is that some other model is suddenly in use.
+   */
+  const contextRejected: Array<{ model: ModelRecord; required: number; window: number; usd: number }> = []
+
   const evaluate = (designRelaxation: 0 | 1 | 2) => {
     const taskForEvaluation =
       designRelaxation === 1 ? { ...input.task, sophisticatedDesign: false } : input.task
@@ -429,7 +439,15 @@ export const routeTask = (input: EngineInput): EngineResult => {
         projectedUsd: estimate.usd,
         escalationPoolProtected: protectEscalation,
       })
-        if (!eligibility.eligible) continue
+        if (!eligibility.eligible) {
+          // Record only the context-capacity rejection: it is deterministic,
+          // actionable ("start a new session"), and invisible otherwise.
+          const required = Math.max(input.contextTokens, taskForEvaluation.scope.promptTokens) + 20_000
+          if (model.context > 0 && required > model.context * 0.95) {
+            contextRejected.push({ model, required, window: model.context, usd: estimate.usd })
+          }
+          continue
+        }
         const eligibleReason =
           designRelaxation === 1 && input.task.sophisticatedDesign
             ? `Standard design route: design ${model.design} is below the sophisticated ${input.settings.routing.sophisticatedDesignFloor} threshold`
@@ -637,6 +655,28 @@ export const routeTask = (input: EngineInput): EngineResult => {
   }
   if (largeContext && wouldSwitch) {
     warnings.push("Large context detected; switching increases fresh-input cost because prompt cache is model-specific.")
+  }
+  // Explain a context-driven switch in terms the user can act on. Without this,
+  // a large session silently stops using the configured default and the only
+  // visible signal is that some other model is suddenly in use.
+  //
+  // Report the most relevant displacement rather than whichever model happened
+  // to be evaluated first: the current session's model if it was displaced,
+  // otherwise the cheapest one that lost its eligibility to context.
+  const contextDisplaced = contextRejected.filter(
+    (entry) =>
+      entry.model.providerID !== chosen.model.providerID || entry.model.modelID !== chosen.model.modelID,
+  )
+  const displaced =
+    contextDisplaced.find(
+      (entry) =>
+        input.current?.providerID === entry.model.providerID && input.current?.id === entry.model.modelID,
+    ) ??
+    [...contextDisplaced].sort((a, b) => a.usd - b.usd)[0]
+  if (displaced) {
+    warnings.push(
+      `${displaced.model.name} was skipped for this turn: the transcript needs about ${thousands(displaced.required)} tokens of context and that model's window is ${thousands(displaced.window)}. Start a new session to route to it again.`,
+    )
   }
   if (chosen.model.premium) {
     reasons.push(`Premium route approved: ${chosen.model.name}.`)

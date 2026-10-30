@@ -394,3 +394,40 @@ describe("an unresolved plan must not masquerade as an exhausted provider", () =
     expect(verdict.reason).not.toMatch(/exhausted/i)
   })
 })
+
+describe("a transcript that outgrows the default model", () => {
+  it("explains why the default model stopped being chosen", () => {
+    // DeepSeek V4.1 Flash has a 328k window. Once the transcript plus headroom
+    // passes ~291.6k it cannot be routed there, and the switch is otherwise
+    // silent: the user only notices that a different model is in use.
+    const result = run({
+      text: "Implement a small feature in src/app.ts",
+      contextTokens: 309_321,
+      current: { providerID: "opendesign", id: "minimax-m3.1-flash" },
+    })
+
+    // OpenCode Go also serves a model with this id, so assert on the pair:
+    // OpenDesign's copy is the one that cannot hold the transcript.
+    expect(
+      `${result.decision.chosen!.providerID}/${result.decision.chosen!.id}`,
+    ).not.toBe("opendesign/deepseek-v4.1-flash")
+    const warning = result.decision.warnings.find((entry) => /DeepSeek/i.test(entry))
+    expect(warning).toBeDefined()
+    // The explanation must name both numbers and the way out.
+    expect(warning).toMatch(/309,3|needs about/i)
+    expect(warning).toMatch(/328,000/)
+    expect(warning).toMatch(/new session/i)
+  })
+
+  it("still routes to the default model when the transcript fits", () => {
+    const result = run({
+      text: "Implement a small feature in src/app.ts",
+      contextTokens: 197_585,
+      current: { providerID: "opendesign", id: "deepseek-v4.1-flash" },
+    })
+    expect(
+      `${result.decision.chosen!.providerID}/${result.decision.chosen!.id}`,
+    ).toBe("opendesign/deepseek-v4.1-flash")
+    expect(result.decision.warnings.join(" ")).not.toMatch(/DeepSeek.*skipped/i)
+  })
+})
