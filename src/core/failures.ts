@@ -24,6 +24,16 @@ export interface FailureAssessment {
    * belongs to the provider as a whole and must not be charged to a model.
    */
   readonly providerScoped: boolean
+  /**
+   * True when the provider's gateway refused the work because it is saturated.
+   *
+   * Kept separate from `providerScoped` because the two need different
+   * handling downstream. A billing-scope fault happens before a model is even
+   * chosen, so cooling that model would be arbitrary blame. A saturated
+   * gateway is a reason to step off the endpoint that just refused, so the
+   * serving model is held back too.
+   */
+  readonly saturation?: boolean
 }
 
 const includes = (value: string, terms: ReadonlyArray<string>) => terms.some((term) => value.includes(term))
@@ -163,6 +173,33 @@ export const classifyFailure = (input: FailureInput, session?: SessionState): Fa
       "evaluate membership",
     ]) || type.includes("billing_scope_unavailable")
 
+  // Capacity exhaustion resembles the billing-scope case above in one respect
+  // and differs in another, so it gets its own flag rather than reusing that
+  // one. Like the billing fault it happens at the gateway before a model does
+  // any work, so it is nothing to hold against the model's ability. Unlike the
+  // billing fault, the endpoint really did refuse this request, so it must be
+  // stepped away from at once.
+  //
+  // This matters because the alternative is worse than useless. When the
+  // gateway is saturated the retry hook can only wait and try again (the host
+  // exposes no way to change model mid-turn), so a fault that never reaches
+  // the provider means every retry and every following prompt lands on a
+  // gateway that is still refusing work.
+  //
+  // Deliberately narrow. Generic "overloaded", 5xx and stream failures stay
+  // model-scoped: those can be a single bad route, and holding an entire
+  // healthy provider back over one flaky model would be its own kind of error.
+  const upstreamSaturation =
+    includes(message, [
+      // The gateway's own advice names the provider as the problem.
+      "alternative llm api service providers",
+      "service is too busy",
+      // Capacity refusals raised by the admission layer.
+      "ttft_admission_refused",
+      "admission refused",
+      "at capacity",
+    ]) || (type.includes("upstream") && includes(message, ["busy", "capacity"]))
+
   if (
     status === 502 ||
     status === 503 ||
@@ -188,9 +225,12 @@ export const classifyFailure = (input: FailureInput, session?: SessionState): Fa
       cooldownMs: 5 * 60_000,
       reason: providerScopedBillingFault
         ? "The provider's own pre-request path failed before a model was selected. This is provider-scoped, not a fault of the serving model, so it is not counted against the model's reliability."
-        : "Provider capacity or outage; retry shortly or fail over. A stronger model would hit the same capacity limit, so no escalation is warranted.",
+        : upstreamSaturation
+          ? "The provider's gateway is saturated. Every model behind it is affected, so the provider is counted as failing, and the endpoint that actually refused is held back too."
+          : "Provider capacity or outage; retry shortly or fail over. A stronger model would hit the same capacity limit, so no escalation is warranted.",
       countAgainstModel: !providerScopedBillingFault,
       providerScoped: providerScopedBillingFault,
+      ...(upstreamSaturation && !providerScopedBillingFault ? { saturation: true } : {}),
     }
   }
 

@@ -1148,6 +1148,7 @@ export class RouterController {
             countAgainstModel: assessment.countAgainstModel,
             cooldownMs: assessment.cooldownMs,
             providerScoped: assessment.providerScoped,
+            saturation: assessment.saturation === true,
           })
         }
         this.ledger.recordRetry(event.sessionID)
@@ -1165,12 +1166,17 @@ export class RouterController {
           return
         }
         if (assessment.providerScoped) {
-          // The provider's own pre-request path failed before a model ran, so
-          // the attempt cost nothing. These failures come in runs: the gateway
-          // is slow for a stretch and every immediate retry lands inside the
-          // same stretch and dies with it, which is what turns a recoverable
-          // blip into a turn that stops and waits for the owner to say
-          // continue. Back off long enough for the stretch to pass.
+          // The provider's own pre-request path failed before a model ran, or
+          // its gateway is refusing work outright, so the attempt cost nothing.
+          // These failures come in runs: the gateway is slow or saturated for a
+          // stretch and every immediate retry lands inside the same stretch and
+          // dies with it, which is what turns a recoverable blip into a turn
+          // that stops and waits for the owner to say continue. Back off long
+          // enough for the stretch to pass.
+          //
+          // Backing off is the only thing available here: the retry hook can
+          // retry with a delay or give up, but it cannot change model, so there
+          // is no cheaper escape from a saturated gateway within the turn.
           if (event.attempt >= PROVIDER_SCOPED_RETRY_ATTEMPTS) {
             event.decision = { retry: false }
           } else {
@@ -1243,6 +1249,7 @@ export class RouterController {
       countAgainstModel: assessment.countAgainstModel,
       cooldownMs: assessment.cooldownMs,
       providerScoped: assessment.providerScoped,
+      saturation: assessment.saturation === true,
     })
   }
 

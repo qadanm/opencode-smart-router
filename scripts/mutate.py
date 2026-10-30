@@ -358,6 +358,49 @@ MUTATIONS = [
         "const floor = settings.routing.intelligenceFloor",
         "test/calibration-routing.test.ts",
     ),
+    # ------------------------------------------------------- provider scope
+    Mutation(
+        "a saturated gateway forgets to hold the refusing endpoint back",
+        "src/core/quota/ledger.ts",
+        "if (options.saturation && model) {\n      this.armModelCooldown(model, options.cooldownMs ?? 0, 1)",
+        "if (options.saturation && model) {\n      void 0",
+        "test/provider-scope.test.ts",
+    ),
+    Mutation(
+        "a saturated gateway never steps the whole provider back",
+        "src/core/quota/ledger.ts",
+        "if ((options.providerScoped || options.saturation) && model) {",
+        "if (options.providerScoped && !options.saturation && model) {",
+        "test/provider-scope.test.ts",
+    ),
+    Mutation(
+        "saturated gateways pollute the model's reliability record",
+        "src/core/quota/ledger.ts",
+        "if (options.saturation && model) {\n      this.armModelCooldown(model, options.cooldownMs ?? 0, 1)",
+        "if (false && options.saturation && model) {\n      this.armModelCooldown(model, options.cooldownMs ?? 0, 1)",
+        "test/provider-scope.test.ts",
+    ),
+    Mutation(
+        "saturation is never detected at all",
+        "src/core/failures.ts",
+        "const upstreamSaturation =\n    includes(message, [",
+        "const upstreamSaturation = false &&\n    includes(message, [",
+        "test/provider-scope.test.ts",
+    ),
+    Mutation(
+        "the provider scope over-reaches into single-model stream failures",
+        "src/core/failures.ts",
+        "]) || (type.includes(\"upstream\") && includes(message, [\"busy\", \"capacity\"]))",
+        "]) || streamFailure",
+        "test/provider-scope.test.ts",
+    ),
+    Mutation(
+        "one busy blip takes out the whole provider",
+        "src/core/quota/ledger.ts",
+        "if (streak >= PROVIDER_DOWN_STREAK) {",
+        "if (streak >= 1) {",
+        "test/provider-scope.test.ts",
+    ),
 ]
 
 def run_tests(test: str) -> bool:

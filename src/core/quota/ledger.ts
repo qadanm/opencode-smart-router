@@ -668,15 +668,16 @@ export class LedgerStore {
       readonly countAgainstModel?: boolean
       readonly cooldownMs?: number
       readonly providerScoped?: boolean
+      /** The gateway refused for capacity reasons; holds back the provider and this endpoint. */
+      readonly saturation?: boolean
     } = {},
   ) {
     this.ledger.metrics.failures[failureClass] = (this.ledger.metrics.failures[failureClass] ?? 0) + 1
 
-    // A provider-scoped fault belongs to the provider's own pre-request path.
-    // It is not the serving model's fault, so the model keeps a clean record
-    // and no model cooldown is armed. Only when the provider fails several
-    // attempts in a row does the whole provider step back.
-    if (options.providerScoped && model) {
+    // Provider-scoped faults feed the provider streak. A billing-scope fault
+    // and a saturated gateway both mean the provider, not the model, is the
+    // thing failing, so both count here.
+    if ((options.providerScoped || options.saturation) && model) {
       const streak = (this.providerFaultStreak.get(model.providerID) ?? 0) + 1
       this.providerFaultStreak.set(model.providerID, streak)
       if (streak >= PROVIDER_DOWN_STREAK) {
@@ -686,6 +687,26 @@ export class LedgerStore {
           [model.providerID]: Math.max(this.ledger.providerCooldowns?.[model.providerID] ?? 0, until),
         }
       }
+    }
+
+    // A billing-scope fault happens in the provider's billing path before any
+    // model is selected, so cooling the model that happened to be serving
+    // would be arbitrary blame. Stop here and let the streak handle it.
+    if (options.providerScoped && !options.saturation && model) {
+      const session = this.ensureSession(sessionID)
+      session.failures = [...session.failures, { class: failureClass, at: Date.now(), message: safeError(message) }].slice(-12)
+      session.updatedAt = Date.now()
+      this.touch()
+      return
+    }
+
+    // A saturated gateway is a different case again: the endpoint really did
+    // refuse this request, so it must be held back at once rather than after
+    // the provider streak reaches five. But the refusal says nothing about how
+    // capable the model is, so it is kept out of the reliability record that
+    // drives the success estimate. Holding back and blaming are separate.
+    if (options.saturation && model) {
+      this.armModelCooldown(model, options.cooldownMs ?? 0, 1)
       const session = this.ensureSession(sessionID)
       session.failures = [...session.failures, { class: failureClass, at: Date.now(), message: safeError(message) }].slice(-12)
       session.updatedAt = Date.now()
@@ -703,14 +724,10 @@ export class LedgerStore {
         metrics.timeoutFailures += 1
         this.ledger.metrics.timeouts += 1
       }
-      const cooldownMs = options.cooldownMs ?? 0
-      if (cooldownMs > 0) {
+      if ((options.cooldownMs ?? 0) > 0) {
         // Repeated faults extend the cooldown, so a model that keeps dropping
         // streams is avoided for longer each time.
-        const previous = this.ledger.cooldowns?.[key] ?? 0
-        const strikes = Math.min(4, (metrics.failures % 4) + 1)
-        const until = Date.now() + cooldownMs * strikes
-        this.ledger.cooldowns = { ...(this.ledger.cooldowns ?? {}), [key]: Math.max(previous, until) }
+        this.armModelCooldown(model, options.cooldownMs ?? 0, Math.min(4, (metrics.failures % 4) + 1))
       }
     }
     const session = this.ensureSession(sessionID)
@@ -722,6 +739,22 @@ export class LedgerStore {
   /** Active failure cooldowns, keyed by model key. */
   cooldowns(): Readonly<Record<string, number>> {
     return this.ledger.cooldowns ?? {}
+  }
+
+  /**
+   * Hold one model back from routing without touching its reliability record.
+   *
+   * These are separate concerns and were previously welded together: a model
+   * could only be cooled by also being judged less reliable. A gateway
+   * refusing for capacity is proof that this endpoint is not serving, and no
+   * evidence at all about how well the model reasons.
+   */
+  private armModelCooldown(model: ModelRef, cooldownMs: number, strikes: number) {
+    if (cooldownMs <= 0) return
+    const key = modelKey(model.providerID, model.id)
+    const previous = this.ledger.cooldowns?.[key] ?? 0
+    const until = Date.now() + cooldownMs * Math.max(1, strikes)
+    this.ledger.cooldowns = { ...(this.ledger.cooldowns ?? {}), [key]: Math.max(previous, until) }
   }
 
   /** Active provider outage backoffs, keyed by provider id. */
