@@ -1,23 +1,53 @@
 # OpenCode Smart Router
 
-> **Status 2026-10-28: automatic routing active by explicit user approval.**
-> The verified artifact is installed in the live desktop. Premium escalation and
-> purchased-credit use remain disabled. See
-> [docs/DESKTOP-PROMOTION-2026-10-28.md](docs/DESKTOP-PROMOTION-2026-10-28.md) for the
-> promotion, rollback, and monitoring record. The earlier dry-run verification is in
-> [docs/DESKTOP-DRY-RUN-2026-10-28.md](docs/DESKTOP-DRY-RUN-2026-10-28.md). The
-> 2026-10-27 incident remains historical in
-> [docs/STATUS-2026-10-27.md](docs/STATUS-2026-10-27.md).
+> A model router that understands **subscriptions**, not just token prices.
 
-A local, deterministic model router for the OpenCode macOS desktop app. It chooses the least quota-expensive model that can complete the current task to the required standard, then switches the session before the request is dispatched.
+Every mainstream LLM router — `litellm`, `claude-code-router`, `Portkey`,
+`RouteLLM` — models a request as `tokens × $/M`. That assumption breaks the
+moment you pay for a subscription. A plan has a five-hour window nested inside
+a seven-day window inside a monthly ceiling; allowances that are metered per
+model and do not pool; and sometimes two credit pools with different draw rules
+and different multipliers.
 
-The current install path for **OpenCode 2.1.4** is:
+This router models what you actually bought.
 
-```text
-~/.config/opencode/plugins/opencode-smart-router
+## Two ways to use it
+
+**As an OpenCode plugin** — automatic, per-prompt model selection that respects
+your real allowances, keeps your context intact, and never spends money you did
+not authorize.
+
+**As a library** — `opencode-smart-router/allowance` is a host-independent
+17 kB surface with zero external imports. It answers one question for any
+coding agent:
+
+```ts
+import { resolvePlan, modelWindowCaps, forecast } from "opencode-smart-router/allowance"
+
+const caps = modelWindowCaps(resolvePlan("opencode-go", "go")!, "deepseek-v4.1-flash")
+// { monthlyUsd: 80, weeklyUsd: 40, fiveHourUsd: 16 }  ← windows nest, never add
+
+const weekly = forecast({
+  windowMs: 7 * 24 * 60 * 60 * 1000,
+  now: Date.now(),
+  spendInWindowUsd: 12.4,
+  activityStart,
+  remainingUsd: caps.weeklyUsd,
+  label: "weekly",
+})
+// { willExhaust: true, exhaustsAt, explanation: "…runs out about 6.2 hours from now." }
 ```
 
-Automatic routing is active by explicit approval; premium and purchased-credit spending remain disabled. The routing engine and UX code remain in this source tree. It does not require a separate daemon or dashboard.
+It touches no filesystem, no network, no environment, no host API. That is
+enforced by a test, not by convention.
+
+## Status
+
+Development snapshot. Automatic routing runs on the maintainer's machine by
+explicit approval; premium escalation and purchased-credit spending are
+disabled. See [docs/PRO-MIGRATION-2026-10-29.md](docs/PRO-MIGRATION-2026-10-29.md)
+for the current behaviour and its known limits.
+
 
 ## What it does
 
@@ -126,6 +156,24 @@ The approved seed is documented in [docs/MODELS.md](docs/MODELS.md). The short v
 8. Record a short explanation without storing the prompt.
 
 No model is called to make the routing decision.
+
+## Security
+
+Credential handling is a documented trust boundary, not an implementation
+detail. The short version:
+
+- **Discovery is opt-in.** Without `credentialSource: "auto"` or
+  `SMART_ROUTER_ALLOW_KEY_DISCOVERY=1`, only configured paths and the
+  environment are read.
+- **No cross-application access.** The router never reads OpenCode's own
+  `auth.json`, which holds OAuth material for every provider you connected.
+- **Race and symlink resistant.** Files are opened once with `O_NOFOLLOW` and
+  every check runs on the open descriptor.
+- **Secrets cannot leak into output.** No credential reaches the ledger, a
+  decision, a session title, or a log line.
+
+[SECURITY.md](SECURITY.md) is the full account, including every host the router
+contacts and every field it stores.
 
 ## Installation and verification
 

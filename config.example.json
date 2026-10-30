@@ -10,7 +10,8 @@
       "reserveWeeklyPct": 15,
       "reserveFiveHourPct": 10,
       "allowExtraUsage": false,
-      "probeUsage": true
+      "probeUsage": true,
+      "credentialSource": "auto"
     },
     "commandcode": {
       "enabled": true,
@@ -22,7 +23,8 @@
       "probeUsage": true,
       "monthlyCreditsUsd": 70,
       "fiveHourCapUsd": 14,
-      "weeklyCapUsd": 35
+      "weeklyCapUsd": 35,
+      "credentialSource": "auto"
     },
     "opendesign": {
       "enabled": true,
@@ -34,7 +36,8 @@
       "probeUsage": true,
       "subscriptionOnly": true,
       "providerScopedQuota": true,
-      "ignoreFiveHourWindow": true
+      "ignoreFiveHourWindow": true,
+      "credentialSource": "auto"
     }
   },
   "privacy": {
