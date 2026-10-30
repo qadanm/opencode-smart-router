@@ -1,6 +1,10 @@
 import type { ExtraCredits, ProviderQuotaSnapshot, ProviderSettings, QuotaWindow } from "../types.js"
 import { clamp, pct, redact } from "../util.js"
-import { discoverCommandCodeCredentials, type CredentialCandidate } from "./credentials.js"
+import {
+  describeCredentialSource,
+  discoverCommandCodeCredentials,
+  type CredentialCandidate,
+} from "./credentials.js"
 
 const HOST = "https://api.commandcode.ai"
 const TIMEOUT_MS = 8_000
@@ -419,7 +423,7 @@ export const probeCommandCodeQuota = async (input: CommandCodeProbeInput): Promi
   }
   if (summaryResult.status !== 200) notes.push(`Usage summary unavailable (${summaryResult.error ?? summaryResult.status}).`)
   if (creditsResult.status !== 200) notes.push(`Credit windows unavailable (${creditsResult.error ?? creditsResult.status}).`)
-  notes.push(`Credential source: ${authorized.source}`)
+  notes.push(`Credential source: ${describeCredentialSource(authorized)}`)
 
   const planLabel = PLAN_NAMES[planID] ?? planID
   const error =

@@ -23,7 +23,7 @@
       "fiveHourCapUsd": 10,
       "weeklyCapUsd": 30,
       "baseURL": "http://127.0.0.1:4200/od/v1",
-      "controlKeyPath": "/Users/muhammedqadan/Documents/opencode-router-canary-3p/home/.config/opencode/opendesign-control.key",
+      "controlKeyPath": "~/Documents/opencode-router-canary-3p/home/.config/opencode/opendesign-control.key",
       "controlBaseURL": "http://127.0.0.1:4200/od/api"
     }
   },

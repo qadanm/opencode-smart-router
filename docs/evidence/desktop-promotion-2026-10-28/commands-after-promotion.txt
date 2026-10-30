@@ -1,4 +1,4 @@
-commands=16 dir=/Users/muhammedqadan/Documents/Default Project
-commands=16 dir=/Users/muhammedqadan/Documents/dev/car-spotter-game
-commands=16 dir=/Users/muhammedqadan/Code/vinly
-commands=16 dir=/Users/muhammedqadan/Artwork/qadantravels-studio/carousel-studio
+commands=16 dir=~/Documents/Default Project
+commands=16 dir=~/Documents/dev/car-spotter-game
+commands=16 dir=~/Code/vinly
+commands=16 dir=~/Artwork/qadantravels-studio/carousel-studio

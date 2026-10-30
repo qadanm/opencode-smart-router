@@ -22,7 +22,7 @@ describe("audit reproduction", () => {
 
 Result:
 
- RUN  v3.2.4 /Users/muhammedqadan/Documents/opencode-smart-router
+ RUN  v3.2.4 ~/Documents/opencode-smart-router
 
  ✓ test/audit-repro.test.ts (1 test) 6ms
 

@@ -1,6 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "plugins": ["/Users/muhammedqadan/Documents/opencode-router-canary/plugin"],
+  "plugins": ["~/Documents/opencode-router-canary/plugin"],
   "model": "lab-cc/claude-haiku-5-5",
   "providers": {
     "lab-cc": {

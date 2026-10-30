@@ -6,7 +6,7 @@
   "bridges": [
     {
       "id": "bridge-90727-14",
-      "directory": "/Users/muhammedqadan/Documents/Default Project",
+      "directory": "~/Documents/Default Project",
       "createdAt": 1793166142392
     },
     {
@@ -16,7 +16,7 @@
     },
     {
       "id": "bridge-90727-27",
-      "directory": "/Users/muhammedqadan",
+      "directory": "~",
       "createdAt": 1793166991861
     },
     {
@@ -26,32 +26,32 @@
     },
     {
       "id": "bridge-90727-29",
-      "directory": "/Users/muhammedqadan/Documents/Default Project",
+      "directory": "~/Documents/Default Project",
       "createdAt": 1793166991987
     },
     {
       "id": "bridge-90727-30",
-      "directory": "/Users/muhammedqadan/Code/vinly",
+      "directory": "~/Code/vinly",
       "createdAt": 1793166992093
     },
     {
       "id": "bridge-90727-31",
-      "directory": "/Users/muhammedqadan/Documents/dev/MIT",
+      "directory": "~/Documents/dev/MIT",
       "createdAt": 1793166993277
     },
     {
       "id": "bridge-90727-32",
-      "directory": "/Users/muhammedqadan/Artwork/qadantravels-studio/carousel-studio",
+      "directory": "~/Artwork/qadantravels-studio/carousel-studio",
       "createdAt": 1793166993291
     },
     {
       "id": "bridge-90727-33",
-      "directory": "/Users/muhammedqadan/.local/share/opencode/worktree/aa104f/web/guides-2026-10-23",
+      "directory": "~/.local/share/opencode/worktree/aa104f/web/guides-2026-10-23",
       "createdAt": 1793166993344
     },
     {
       "id": "bridge-90727-34",
-      "directory": "/Users/muhammedqadan/Documents/dev/car-spotter-game",
+      "directory": "~/Documents/dev/car-spotter-game",
       "createdAt": 1793166993398
     }
   ],

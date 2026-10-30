@@ -310,3 +310,46 @@ describe("exhausted and unknown allowances", () => {
     expect(result.decision.chosen?.providerID).not.toBe("opendesign")
   })
 })
+
+describe("an unrecognised plan never overstates capacity", () => {
+  it("reports unknown capacity rather than a fresh allowance", async () => {
+    const { probeOpenDesignQuota } = await import("../src/core/quota/opendesign.js")
+    const result = await probeOpenDesignQuota({
+      // A typo'd plan id, with no explicit cap to fall back on.
+      settings: {
+        ...structuredClone(DEFAULT_SETTINGS.providers.opendesign)!,
+        plan: "profesional",
+        enabled: true,
+        monthlyCreditsUsd: undefined,
+      },
+      apiKey: "sk-a-test-inference-key-value",
+      usage: [],
+      now: () => NOW,
+    })
+    // Before the fix this became OpenDesign Pro's $360 of assumed capacity,
+    // reported as 0% used, which looks like a pristine unused allowance.
+    expect(result.state).toBe("unknown")
+    expect(result.snapshot.monthly.source).toBe("unknown")
+    expect(result.snapshot.monthlyGrantUsd).not.toBe(360)
+    expect(result.snapshot.plan).toMatch(/unresolved/)
+    expect(result.snapshot.pools ?? []).toHaveLength(0)
+    expect(result.snapshot.notes.join(" ")).toMatch(/not in the catalog/)
+  })
+
+  it("honours an explicit cap even when the plan id is wrong", async () => {
+    const { probeOpenDesignQuota } = await import("../src/core/quota/opendesign.js")
+    const result = await probeOpenDesignQuota({
+      settings: {
+        ...structuredClone(DEFAULT_SETTINGS.providers.opendesign)!,
+        plan: "profesional",
+        enabled: true,
+        // The operator told us the real number, so that is authoritative.
+        monthlyCreditsUsd: 50,
+      },
+      apiKey: "sk-a-test-inference-key-value",
+      usage: [],
+      now: () => NOW,
+    })
+    expect(result.snapshot.monthlyGrantUsd).toBe(50)
+  })
+})

@@ -133,13 +133,15 @@ describe("plan catalog", () => {
     expect(goat.pools[0]!.weeklyUsd).toBe(35)
   })
 
-  it("falls back to a sensible plan for an unknown or empty plan id", () => {
+  it("falls back to a sensible plan only when no plan id is configured", () => {
     expect(resolvePlan("opendesign", undefined)?.planID).toBe("pro")
-    expect(resolvePlan("opendesign", "nonexistent")?.planID).toBe("pro")
     expect(resolvePlan("opencode-go", undefined)?.planID).toBe("go")
     expect(resolvePlan("commandcode", undefined)?.planID).toBe("goat")
     // A provider with no catalog entry resolves to nothing rather than guessing.
     expect(resolvePlan("unknown-provider", "x")).toBeUndefined()
+    // A configured-but-wrong id must NOT silently become the default tier:
+    // that could overstate the allowance a decision is allowed to spend.
+    expect(resolvePlan("opendesign", "nonexistent")).toBeUndefined()
   })
 
   it("maps legacy plan aliases without silently describing the wrong tier", () => {
@@ -191,18 +193,20 @@ describe("plan catalog", () => {
     // No id at all is a documented default.
     expect(resolvePlanWithReason("opendesign", undefined).resolution).toBe("default")
     expect(resolvePlanWithReason("opendesign", "  ").resolution).toBe("default")
-    // A configured-but-wrong id is flagged, so a typo cannot silently grant a
-    // tier the user does not pay for.
+    // A configured-but-wrong id is flagged and resolves to nothing, so a typo
+    // cannot silently grant a tier the user does not pay for.
     const typo = resolvePlanWithReason("opendesign", "profesional")
     expect(typo.resolution).toBe("unknown")
-    expect(typo.plan?.planID).toBe("pro")
+    expect(typo.plan).toBeUndefined()
   })
 
-  it("never resolves an unknown plan to a larger allowance without saying so", () => {
-    // The fallback is reported, not hidden: callers can warn on it.
+  it("never resolves an unknown plan to a larger allowance", () => {
+    // The previous behaviour fell back to this repository's own tier, which
+    // for OpenDesign meant $360/month of assumed capacity on a typo.
     const resolved = resolvePlanWithReason("opendesign", "maxx")
     expect(resolved.resolution).toBe("unknown")
-    expect(resolved.plan?.monthlyPriceUsd).toBe(100)
+    expect(resolved.plan).toBeUndefined()
+    expect(resolvePlan("opendesign", "maxx")).toBeUndefined()
   })
 })
 

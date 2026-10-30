@@ -81,7 +81,7 @@
   },
   "sources": [
     "plugin options",
-    "/Users/muhammedqadan/.config/opencode/smart-router.json"
+    "~/.config/opencode/smart-router.json"
   ],
   "warnings": [],
   "runtime": {

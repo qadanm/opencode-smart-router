@@ -344,8 +344,12 @@ export interface ResolvedPlan {
  *
  * A silent fallback is dangerous on a billing boundary: a typo in `plan` would
  * otherwise grant whatever tier this repository happens to default to, which
- * could overstate a user's allowance by an order of magnitude. Callers use
- * `resolution` to warn instead of guessing quietly.
+ * could overstate a user's allowance by an order of magnitude.
+ *
+ * An *unknown* id therefore resolves to no plan at all rather than to the
+ * default. Callers treat "no plan" as unknown capacity, not as the maintainer's
+ * tier. `resolution: "default"` is reserved for the case where no id was
+ * configured at all, which is a documented starting point rather than a typo.
  */
 export const resolvePlanWithReason = (
   providerID: string,
@@ -360,12 +364,8 @@ export const resolvePlanWithReason = (
     }
     const direct = PLAN_BY_KEY.get(`${providerID}/${requested}`)
     if (direct) return { plan: direct, resolution: "exact", planID: direct.planID }
-    const fallback = DEFAULT_PLAN_ID[providerID]
-    return {
-      plan: fallback ? PLAN_BY_KEY.get(`${providerID}/${fallback}`) : undefined,
-      resolution: "unknown",
-      planID: fallback,
-    }
+    // Configured but unrecognised: refuse to guess a tier.
+    return { plan: undefined, resolution: "unknown", planID: undefined }
   }
   const fallback = DEFAULT_PLAN_ID[providerID]
   return {

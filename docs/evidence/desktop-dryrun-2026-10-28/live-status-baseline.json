@@ -925,7 +925,7 @@
         "Provider-reported from Command Code's read-only alpha billing endpoints; polling consumes no credits.",
         "Monthly allowance is derived from the provider's 5-hour/weekly window caps; provider-reported remaining credits are authoritative.",
         "Billing-period usage summary differs from the credit balance by $0.3698; remaining credits are authoritative.",
-        "Credential source: /Users/muhammedqadan/.config/opencode/commandcode.key"
+        "Credential source: ~/.config/opencode/commandcode.key"
       ]
     }
   ],

@@ -1,4 +1,4 @@
-import { closeSync, constants, fstatSync, openSync, readFileSync, realpathSync } from "node:fs"
+import { closeSync, constants, fstatSync, openSync, readFileSync } from "node:fs"
 import { homedir } from "node:os"
 import { join } from "node:path"
 import { redact } from "../util.js"
@@ -202,9 +202,15 @@ export const readCredentialFileWith = (
       warnings.push(`${options.label} credential file is unexpectedly large: ${path}`)
       return undefined
     }
-    // The key is a bearer credential. Refuse group/world-readable files.
+    // The key is a bearer credential. Refuse group/world-readable files, and
+    // refuse a file owned by a different user: on a shared machine another
+    // account's file must not be able to influence which credential we use.
     if ((stat.mode & 0o077) !== 0) {
       warnings.push(`Ignoring ${options.label} credential file with group/world permissions: ${path}`)
+      return undefined
+    }
+    if (typeof process.getuid === "function" && stat.uid !== process.getuid()) {
+      warnings.push(`Ignoring ${options.label} credential file owned by another user: ${path}`)
       return undefined
     }
     if (stat.size === 0) return undefined
@@ -438,14 +444,27 @@ export const discoverOpenDesignControlKey = (input: {
  * Describe where a resolved credential came from, without revealing it.
  *
  * Diagnostic output needs to answer "did the router find a key, and where from"
- * without ever carrying the secret itself.
+ * without ever carrying the secret itself, and without leaking a path beyond
+ * the final segment. `source` is caller-supplied for the non-file cases, so it
+ * is reduced to a fixed vocabulary rather than echoed: an arbitrary string here
+ * would be an unbounded channel into a persisted snapshot note.
  */
 export const describeCredentialSource = (candidate: CredentialCandidate | undefined): string => {
   if (!candidate) return "not found"
   if (candidate.path) {
-    // Only the final path segment is useful for support and leaks nothing.
-    const base = candidate.path.split("/").pop() ?? candidate.path
-    return `${candidate.source === candidate.path ? "file" : candidate.source} (${base})`
+    // Only the final path segment is useful for support and leaks no prefix.
+    const base = candidate.path.split("/").pop() ?? "file"
+    return `file (${base})`
   }
-  return candidate.source
+  switch (candidate.source) {
+    case "environment":
+      return "environment variable"
+    case "OpenCode integration":
+      return "OpenCode integration"
+    case "OpenCode provider settings":
+      return "OpenCode provider settings"
+    default:
+      // Never echo an unrecognised source string.
+      return "configured"
+  }
 }

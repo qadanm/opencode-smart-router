@@ -1,8 +1,8 @@
-dir=/Users/muhammedqadan/Documents/Default Project
+dir=~/Documents/Default Project
 {"dryRun":false,"runtime":"automatic","premium":"off","providers":["commandcode","opencode-go"],"warnings":[]}
-dir=/Users/muhammedqadan/Documents/dev/car-spotter-game
+dir=~/Documents/dev/car-spotter-game
 {"dryRun":false,"runtime":"automatic","premium":"off","providers":["commandcode","opencode-go"],"warnings":[]}
-dir=/Users/muhammedqadan/Code/vinly
+dir=~/Code/vinly
 {"dryRun":false,"runtime":"automatic","premium":"off","providers":["commandcode","opencode-go"],"warnings":[]}
-dir=/Users/muhammedqadan/Artwork/qadantravels-studio/carousel-studio
+dir=~/Artwork/qadantravels-studio/carousel-studio
 {"dryRun":false,"runtime":"automatic","premium":"off","providers":["commandcode","opencode-go"],"warnings":[]}

@@ -20,7 +20,7 @@ cli_starting_lines=0
 --- go quota after text ---
 [{"source":"provider","rolling":{"usedPct":3,"remainingPct":97,"resetsAt":1793173991000,"exceeded":false,"source":"provider"},"weekly":{"usedPct":63,"remainingPct":37,"resetsAt":1793577600000,"exceeded":false,"source":"provider"},"monthly":{"usedPct":81,"remainingPct":19,"resetsAt":1795174634000,"exceeded":false,"source":"provider"}}]
 --- create vision image ---
-c61cfa2fc1e91ccc901d668a204c0842f24d4d71875530d957f18693e0883bfc  /Users/muhammedqadan/Documents/opencode-router-stage-b-project/vision-blue-square.png
+c61cfa2fc1e91ccc901d668a204c0842f24d4d71875530d957f18693e0883bfc  ~/Documents/opencode-router-stage-b-project/vision-blue-square.png
 go_vision_sid=ses_e7f3b3007ffeFAn7LQqU3iqL02
 vision_http=200
 {"title":"AUTO · Go · Claude Haiku 5.5 — stage-b go vision","model":{"id":"claude-haiku-5-5","providerID":"opencode-go","variant":"default"},"outcome":"succeeded","tokens":{"input":16,"output":5,"reasoning":0,"cache":{"read":15321,"write":142}},"cost":0.00017506}

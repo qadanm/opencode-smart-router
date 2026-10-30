@@ -70,9 +70,9 @@ Each credential file is:
 - checked against the **open descriptor** rather than a separate `stat` call,
   which removes a time-of-check/time-of-use race in which a path could be
   swapped between the permission check and the read;
-- required to be a **regular file owned with mode `0600`** — anything readable
-  by group or world is refused, because a shared machine could otherwise
-  influence which credential the router selects;
+- required to be a **regular file**, owned by the **current user**, with **no
+  group or world permission bits**. Anything else is refused, because a shared
+  machine could otherwise influence which credential the router selects;
 - **size-capped at 64 KiB** before any read is attempted;
 - always **closed**, on every path out of the function.
 
@@ -80,9 +80,17 @@ Each credential file is:
 
 - No credential is ever written to the ledger, a routing decision, a session
   title, a diagnostic bundle, an event, or a log line.
-- Every error string derived from a credential read passes through `redact()`.
-- Diagnostic output identifies a credential **source** by file name only
-  (`file (commandcode.key)`), never by path prefix or value.
+- Error strings derived from a credential read pass through `redact()`.
+- Diagnostic output identifies a credential **source** by a fixed label and, for
+  files, the **final path segment only** — `file (commandcode.key)`, never a
+  path prefix and never a value. An unrecognised source string is reported as
+  `configured` rather than echoed, so a caller cannot introduce an arbitrary
+  channel into a persisted snapshot note.
+- Warning messages *do* name the file path that was rejected (for example
+  "Ignoring Command Code credential file with group/world permissions:
+  /path/to/key"). The path is included so a user can fix the permission; it is
+  not a secret, but on a multi-user machine it does reveal a directory layout.
+  If that matters to you, keep credentials inside your home directory.
 - A test suite asserts each of these properties; see
   `test/credentials-security.test.ts`.
 
@@ -126,8 +134,17 @@ The router contacts only:
 | OpenDesign usage | the configured gateway host (read-only, only with a control key) |
 
 No telemetry is sent anywhere. No analytics endpoint exists. No update check
-calls home. The router makes no network request at all when a status or usage
-command is run: those read cached state and the local ledger.
+calls home.
+
+Two honest qualifications:
+
+- **`status` and `usage` make no *inference* call.** They never spend tokens and
+  never cost you money.
+- **`status` may trigger a background read-only quota probe** if a cached
+  snapshot has aged past `quota.probeIntervalMinutes` (default 5). That probe is
+  a `GET` to a provider's usage endpoint, issued asynchronously; it is not
+  awaited by the command. With `probeUsage: false` on a provider, no probe is
+  made at all.
 
 ## Supply chain
 

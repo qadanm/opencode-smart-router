@@ -11,7 +11,7 @@ $ npm test
 > vitest run
 
 
- RUN  v3.2.4 /Users/muhammedqadan/Documents/opencode-smart-router
+ RUN  v3.2.4 ~/Documents/opencode-smart-router
 
  ✓ test/ui.test.ts (4 tests) 2ms
  ✓ test/classifier.test.ts (13 tests) 9ms

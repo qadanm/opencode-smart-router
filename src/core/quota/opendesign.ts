@@ -317,6 +317,13 @@ const capsFor = (settings: ProviderSettings) => {
     hasFiveHourWindow: fiveFromPlan !== undefined,
     hasWeeklyWindow: weeklyFromPlan !== undefined,
     plan,
+    /**
+     * True when the configured plan id matches nothing in the catalog and no
+     * explicit cap was supplied. Capacity is then unknown, not zero: reporting
+     * zero would look like a fresh, unused allowance and silently let the
+     * router over-spend.
+     */
+    unresolved: !plan && !(settings.monthlyCreditsUsd && settings.monthlyCreditsUsd > 0),
   }
 }
 
@@ -645,7 +652,7 @@ const probeVerified = async (
   const snapshot: ProviderQuotaSnapshot = {
     providerID: "opendesign",
     label: caps.plan?.label ?? "OpenDesign",
-    plan: caps.plan?.planID ?? input.settings.plan ?? "pro",
+    plan: caps.plan?.planID ?? (input.settings.plan ? `unresolved:${input.settings.plan}` : "unresolved"),
     source: "provider",
     fetchedAt: now,
     stale: false,
@@ -693,7 +700,9 @@ const probeEstimated = (input: OpenDesignQuotaInput, now: number): OpenDesignQuo
   const weekly = caps.weekly !== undefined
     ? windowFrom(totals.weeklyUsd, caps.weekly, undefined, "estimate")
     : { ...unknownWindow, usedUsd: totals.weeklyUsd }
-  const monthly = windowFrom(totals.monthlyUsd, caps.monthly, undefined, "estimate")
+  const monthly = caps.unresolved
+    ? { ...unknownWindow, usedUsd: totals.monthlyUsd }
+    : windowFrom(totals.monthlyUsd, caps.monthly, undefined, "estimate")
   const pools = buildPoolSnapshots({
     caps,
     used: totals.byPool,
@@ -706,13 +715,18 @@ const probeEstimated = (input: OpenDesignQuotaInput, now: number): OpenDesignQuo
     "Wallet balance is not included and is never used for automatic routing.",
     ...planNotes(caps),
   ]
+  if (caps.unresolved) {
+    notes.push(
+      `The configured plan "${input.settings.plan}" is not in the catalog, so the allowance is unknown rather than zero. Set a plan id from the catalog or an explicit monthlyCreditsUsd.`,
+    )
+  }
   if (totals.observedRequests === 0) {
     notes.push("No OpenDesign requests have been routed through this router yet, so the estimate starts at zero.")
   }
   const snapshot: ProviderQuotaSnapshot = {
     providerID: "opendesign",
     label: caps.plan?.label ?? "OpenDesign",
-    plan: caps.plan?.planID ?? input.settings.plan ?? "pro",
+    plan: caps.plan?.planID ?? (input.settings.plan ? `unresolved:${input.settings.plan}` : "unresolved"),
     source: "estimate",
     fetchedAt: now,
     stale: false,
@@ -725,6 +739,7 @@ const probeEstimated = (input: OpenDesignQuotaInput, now: number): OpenDesignQuo
     models: {},
     notes,
   }
+  if (caps.unresolved) return { snapshot, state: "unknown" }
   const exhausted = Boolean(monthly.exceeded || weekly.exceeded)
   return { snapshot, state: exhausted ? "exhausted" : "estimated" }
 }

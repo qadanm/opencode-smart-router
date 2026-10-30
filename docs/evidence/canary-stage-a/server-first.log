@@ -2,389 +2,389 @@ timestamp=2026-10-28T03:06:51.420Z level=INFO run=bdb69224 message="database sch
 timestamp=2026-10-28T03:06:51.432Z level=INFO run=bdb69224 message="database schema bootstrap completed" migrations=50 durationMs=12 role=server
 server listening on http://127.0.0.1:4220
 server password 2fSvWdS3qJ0uR3aMxuVXzigZP42i7FEwWKJfUfNRwT0
-timestamp=2026-10-28T03:06:51.861Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode type=directory ignores=6 http.span=26 role=server
-timestamp=2026-10-28T03:06:52.051Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/.opencode type=directory ignores=6 http.span=216 role=server
+timestamp=2026-10-28T03:06:51.861Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/home/.config/opencode type=directory ignores=6 http.span=26 role=server
+timestamp=2026-10-28T03:06:52.051Z level=INFO run=bdb69224 message="watcher subscribe" path=~/.opencode type=directory ignores=6 http.span=216 role=server
 timestamp=2026-10-28T03:06:52.051Z level=INFO run=bdb69224 message="watcher subscribe" path="/Library/Application Support" type=entries ignores=0 http.span=216 role=server
 timestamp=2026-10-28T03:06:52.052Z level=INFO run=bdb69224 message="watcher started" path="/Library/Application Support" type=entries backend=node ignores=0 http.span=217 role=server
 timestamp=2026-10-28T03:06:52.052Z level=INFO run=bdb69224 message="watcher subscribe" path=/ type=entries ignores=0 http.span=217 role=server
 timestamp=2026-10-28T03:06:52.054Z level=INFO run=bdb69224 message="watcher started" path=/ type=entries backend=node ignores=0 http.span=219 role=server
 timestamp=2026-10-28T03:06:52.055Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users type=entries ignores=0 http.span=220 role=server
 timestamp=2026-10-28T03:06:52.055Z level=INFO run=bdb69224 message="watcher started" path=/Users type=entries backend=node ignores=0 http.span=220 role=server
-timestamp=2026-10-28T03:06:52.055Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan type=entries ignores=0 http.span=220 role=server
-timestamp=2026-10-28T03:06:52.056Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan type=entries backend=node ignores=0 http.span=221 role=server
-timestamp=2026-10-28T03:06:52.056Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents type=entries ignores=0 http.span=221 role=server
-timestamp=2026-10-28T03:06:52.058Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents type=entries backend=node ignores=0 http.span=223 role=server
-timestamp=2026-10-28T03:06:52.058Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary-project type=entries ignores=0 http.span=223 role=server
-timestamp=2026-10-28T03:06:52.058Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary-project type=entries backend=node ignores=0 http.span=223 role=server
-timestamp=2026-10-28T03:06:52.059Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/home type=entries ignores=0 http.span=224 role=server
-timestamp=2026-10-28T03:06:52.059Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/home type=entries backend=node ignores=0 http.span=224 role=server
-timestamp=2026-10-28T03:06:52.389Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode type=directory backend=fs-events ignores=6 http.span=554 role=server
-timestamp=2026-10-28T03:06:52.389Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/.opencode type=directory backend=fs-events ignores=6 http.span=554 role=server
-timestamp=2026-10-28T03:06:52.393Z level=INFO run=bdb69224 message="location services booted" directory=/Users/muhammedqadan/Documents/opencode-router-canary-project workspaceID=undefined durationMs=557 http.span=558 role=server
-timestamp=2026-10-28T03:06:52.406Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/plugin type=directory ignores=0 http.span=571 role=server
-timestamp=2026-10-28T03:06:52.407Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/plugin type=directory backend=fs-events ignores=0 http.span=572 role=server
-timestamp=2026-10-28T03:06:52.407Z level=INFO run=bdb69224 msg="loading plugin" id=/Users/muhammedqadan/Documents/opencode-router-canary/plugin entrypoint=file:///Users/muhammedqadan/Documents/opencode-router-canary/plugin/index.js http.span=572 role=server
-timestamp=2026-10-28T03:06:52.436Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/plugin/index.js type=file ignores=0 http.span=601 role=server
-timestamp=2026-10-28T03:06:52.436Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/plugin/index.js type=file backend=node ignores=0 http.span=601 role=server
-timestamp=2026-10-28T03:06:52.595Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/AGENTS.md type=file ignores=0
-timestamp=2026-10-28T03:06:52.596Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/AGENTS.md type=file backend=node ignores=0 http.span=761 role=server
-timestamp=2026-10-28T03:06:52.596Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary-project/AGENTS.md type=file ignores=0
-timestamp=2026-10-28T03:06:52.596Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary-project/AGENTS.md type=file backend=node ignores=0 http.span=761 role=server
-timestamp=2026-10-28T03:06:52.603Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/.claude/skills type=directory ignores=8
-timestamp=2026-10-28T03:06:52.605Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/.claude/skills type=directory backend=fs-events ignores=8 http.span=770 role=server
-timestamp=2026-10-28T03:06:52.665Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/.agents/skills type=directory ignores=8
-timestamp=2026-10-28T03:06:52.666Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/.agents/skills type=directory backend=fs-events ignores=8 http.span=831 role=server
-timestamp=2026-10-28T03:06:52.672Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/skill type=file ignores=0
-timestamp=2026-10-28T03:06:52.673Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/skill type=file backend=node ignores=0 http.span=838 role=server
-timestamp=2026-10-28T03:06:52.673Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/skills type=file ignores=0
-timestamp=2026-10-28T03:06:52.673Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/skills type=file backend=node ignores=0 http.span=838 role=server
-timestamp=2026-10-28T03:06:52.673Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/.opencode/skill type=file ignores=0
-timestamp=2026-10-28T03:06:52.674Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/.opencode/skill type=file backend=node ignores=0 http.span=839 role=server
-timestamp=2026-10-28T03:06:52.674Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/.opencode/skills type=file ignores=0
-timestamp=2026-10-28T03:06:52.674Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/.opencode/skills type=file backend=node ignores=0 http.span=839 role=server
-timestamp=2026-10-28T03:06:52.682Z level=INFO run=bdb69224 message=event event.id=evt_180798f8a001mbi1YbtfblCttw event.created=1793156812682 event.type=provider.updated event.location.directory=/Users/muhammedqadan/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=847 role=server
-timestamp=2026-10-28T03:06:52.688Z level=INFO run=bdb69224 message=event event.id=evt_180798f90001r8B675ZKXModr8 event.created=1793156812688 event.type=model.updated event.location.directory=/Users/muhammedqadan/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=853 role=server
-timestamp=2026-10-28T03:06:52.689Z level=INFO run=bdb69224 message=event event.id=evt_180798f91001wgHhsBauU1pFiZ event.created=1793156812689 event.type=agent.updated event.location.directory=/Users/muhammedqadan/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=854 role=server
-timestamp=2026-10-28T03:06:52.690Z level=INFO run=bdb69224 message=event event.id=evt_180798f92001S3azY9SZNhcDZn event.created=1793156812690 event.type=command.updated event.location.directory=/Users/muhammedqadan/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=855 role=server
-timestamp=2026-10-28T03:06:53.154Z level=INFO run=bdb69224 message=event event.id=evt_180799162001rU8qnuyyROPsw3 event.created=1793156813154 event.type=provider.updated event.location.directory=/Users/muhammedqadan/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={}
-timestamp=2026-10-28T03:06:53.158Z level=INFO run=bdb69224 message=event event.id=evt_180799166001VPX10j07FA1qHD event.created=1793156813158 event.type=model.updated event.location.directory=/Users/muhammedqadan/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=1323 role=server
-timestamp=2026-10-28T03:13:02.593Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/plugin/index.js type=file http.span=370758 role=server
-timestamp=2026-10-28T03:13:02.601Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/plugin type=directory http.span=370766 role=server
-timestamp=2026-10-28T03:13:02.603Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/skill type=file http.span=370768 role=server
-timestamp=2026-10-28T03:13:02.603Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/skills type=file http.span=370768 role=server
-timestamp=2026-10-28T03:13:02.603Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/.opencode/skill type=file http.span=370768 role=server
-timestamp=2026-10-28T03:13:02.603Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/.opencode/skills type=file http.span=370768 role=server
-timestamp=2026-10-28T03:13:02.604Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/.claude/skills type=directory http.span=370769 role=server
-timestamp=2026-10-28T03:13:02.604Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/.agents/skills type=directory http.span=370769 role=server
-timestamp=2026-10-28T03:13:02.606Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary-project/AGENTS.md type=file http.span=370771 role=server
-timestamp=2026-10-28T03:13:02.607Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/AGENTS.md type=file http.span=370772 role=server
+timestamp=2026-10-28T03:06:52.055Z level=INFO run=bdb69224 message="watcher subscribe" path=~ type=entries ignores=0 http.span=220 role=server
+timestamp=2026-10-28T03:06:52.056Z level=INFO run=bdb69224 message="watcher started" path=~ type=entries backend=node ignores=0 http.span=221 role=server
+timestamp=2026-10-28T03:06:52.056Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents type=entries ignores=0 http.span=221 role=server
+timestamp=2026-10-28T03:06:52.058Z level=INFO run=bdb69224 message="watcher started" path=~/Documents type=entries backend=node ignores=0 http.span=223 role=server
+timestamp=2026-10-28T03:06:52.058Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary-project type=entries ignores=0 http.span=223 role=server
+timestamp=2026-10-28T03:06:52.058Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary-project type=entries backend=node ignores=0 http.span=223 role=server
+timestamp=2026-10-28T03:06:52.059Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/home type=entries ignores=0 http.span=224 role=server
+timestamp=2026-10-28T03:06:52.059Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/home type=entries backend=node ignores=0 http.span=224 role=server
+timestamp=2026-10-28T03:06:52.389Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/home/.config/opencode type=directory backend=fs-events ignores=6 http.span=554 role=server
+timestamp=2026-10-28T03:06:52.389Z level=INFO run=bdb69224 message="watcher started" path=~/.opencode type=directory backend=fs-events ignores=6 http.span=554 role=server
+timestamp=2026-10-28T03:06:52.393Z level=INFO run=bdb69224 message="location services booted" directory=~/Documents/opencode-router-canary-project workspaceID=undefined durationMs=557 http.span=558 role=server
+timestamp=2026-10-28T03:06:52.406Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/plugin type=directory ignores=0 http.span=571 role=server
+timestamp=2026-10-28T03:06:52.407Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/plugin type=directory backend=fs-events ignores=0 http.span=572 role=server
+timestamp=2026-10-28T03:06:52.407Z level=INFO run=bdb69224 msg="loading plugin" id=~/Documents/opencode-router-canary/plugin entrypoint=file://~/Documents/opencode-router-canary/plugin/index.js http.span=572 role=server
+timestamp=2026-10-28T03:06:52.436Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/plugin/index.js type=file ignores=0 http.span=601 role=server
+timestamp=2026-10-28T03:06:52.436Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/plugin/index.js type=file backend=node ignores=0 http.span=601 role=server
+timestamp=2026-10-28T03:06:52.595Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/home/.config/opencode/AGENTS.md type=file ignores=0
+timestamp=2026-10-28T03:06:52.596Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/home/.config/opencode/AGENTS.md type=file backend=node ignores=0 http.span=761 role=server
+timestamp=2026-10-28T03:06:52.596Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary-project/AGENTS.md type=file ignores=0
+timestamp=2026-10-28T03:06:52.596Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary-project/AGENTS.md type=file backend=node ignores=0 http.span=761 role=server
+timestamp=2026-10-28T03:06:52.603Z level=INFO run=bdb69224 message="watcher subscribe" path=~/.claude/skills type=directory ignores=8
+timestamp=2026-10-28T03:06:52.605Z level=INFO run=bdb69224 message="watcher started" path=~/.claude/skills type=directory backend=fs-events ignores=8 http.span=770 role=server
+timestamp=2026-10-28T03:06:52.665Z level=INFO run=bdb69224 message="watcher subscribe" path=~/.agents/skills type=directory ignores=8
+timestamp=2026-10-28T03:06:52.666Z level=INFO run=bdb69224 message="watcher started" path=~/.agents/skills type=directory backend=fs-events ignores=8 http.span=831 role=server
+timestamp=2026-10-28T03:06:52.672Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/home/.config/opencode/skill type=file ignores=0
+timestamp=2026-10-28T03:06:52.673Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/home/.config/opencode/skill type=file backend=node ignores=0 http.span=838 role=server
+timestamp=2026-10-28T03:06:52.673Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/home/.config/opencode/skills type=file ignores=0
+timestamp=2026-10-28T03:06:52.673Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/home/.config/opencode/skills type=file backend=node ignores=0 http.span=838 role=server
+timestamp=2026-10-28T03:06:52.673Z level=INFO run=bdb69224 message="watcher subscribe" path=~/.opencode/skill type=file ignores=0
+timestamp=2026-10-28T03:06:52.674Z level=INFO run=bdb69224 message="watcher started" path=~/.opencode/skill type=file backend=node ignores=0 http.span=839 role=server
+timestamp=2026-10-28T03:06:52.674Z level=INFO run=bdb69224 message="watcher subscribe" path=~/.opencode/skills type=file ignores=0
+timestamp=2026-10-28T03:06:52.674Z level=INFO run=bdb69224 message="watcher started" path=~/.opencode/skills type=file backend=node ignores=0 http.span=839 role=server
+timestamp=2026-10-28T03:06:52.682Z level=INFO run=bdb69224 message=event event.id=evt_180798f8a001mbi1YbtfblCttw event.created=1793156812682 event.type=provider.updated event.location.directory=~/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=847 role=server
+timestamp=2026-10-28T03:06:52.688Z level=INFO run=bdb69224 message=event event.id=evt_180798f90001r8B675ZKXModr8 event.created=1793156812688 event.type=model.updated event.location.directory=~/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=853 role=server
+timestamp=2026-10-28T03:06:52.689Z level=INFO run=bdb69224 message=event event.id=evt_180798f91001wgHhsBauU1pFiZ event.created=1793156812689 event.type=agent.updated event.location.directory=~/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=854 role=server
+timestamp=2026-10-28T03:06:52.690Z level=INFO run=bdb69224 message=event event.id=evt_180798f92001S3azY9SZNhcDZn event.created=1793156812690 event.type=command.updated event.location.directory=~/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=855 role=server
+timestamp=2026-10-28T03:06:53.154Z level=INFO run=bdb69224 message=event event.id=evt_180799162001rU8qnuyyROPsw3 event.created=1793156813154 event.type=provider.updated event.location.directory=~/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={}
+timestamp=2026-10-28T03:06:53.158Z level=INFO run=bdb69224 message=event event.id=evt_180799166001VPX10j07FA1qHD event.created=1793156813158 event.type=model.updated event.location.directory=~/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=1323 role=server
+timestamp=2026-10-28T03:13:02.593Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/plugin/index.js type=file http.span=370758 role=server
+timestamp=2026-10-28T03:13:02.601Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/plugin type=directory http.span=370766 role=server
+timestamp=2026-10-28T03:13:02.603Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/home/.config/opencode/skill type=file http.span=370768 role=server
+timestamp=2026-10-28T03:13:02.603Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/home/.config/opencode/skills type=file http.span=370768 role=server
+timestamp=2026-10-28T03:13:02.603Z level=INFO run=bdb69224 message="watcher stopped" path=~/.opencode/skill type=file http.span=370768 role=server
+timestamp=2026-10-28T03:13:02.603Z level=INFO run=bdb69224 message="watcher stopped" path=~/.opencode/skills type=file http.span=370768 role=server
+timestamp=2026-10-28T03:13:02.604Z level=INFO run=bdb69224 message="watcher stopped" path=~/.claude/skills type=directory http.span=370769 role=server
+timestamp=2026-10-28T03:13:02.604Z level=INFO run=bdb69224 message="watcher stopped" path=~/.agents/skills type=directory http.span=370769 role=server
+timestamp=2026-10-28T03:13:02.606Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary-project/AGENTS.md type=file http.span=370771 role=server
+timestamp=2026-10-28T03:13:02.607Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/home/.config/opencode/AGENTS.md type=file http.span=370772 role=server
 timestamp=2026-10-28T03:13:02.632Z level=INFO run=bdb69224 message="watcher stopped" path="/Library/Application Support" type=entries http.span=370797 role=server
 timestamp=2026-10-28T03:13:02.633Z level=INFO run=bdb69224 message="watcher stopped" path=/ type=entries http.span=370798 role=server
 timestamp=2026-10-28T03:13:02.633Z level=INFO run=bdb69224 message="watcher stopped" path=/Users type=entries http.span=370798 role=server
-timestamp=2026-10-28T03:13:02.633Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan type=entries http.span=370798 role=server
-timestamp=2026-10-28T03:13:02.633Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents type=entries http.span=370798 role=server
-timestamp=2026-10-28T03:13:02.633Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary-project type=entries http.span=370798 role=server
-timestamp=2026-10-28T03:13:02.633Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/home type=entries http.span=370798 role=server
-timestamp=2026-10-28T03:13:02.633Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode type=directory http.span=370798 role=server
-timestamp=2026-10-28T03:13:02.633Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/.opencode type=directory http.span=370798 role=server
-timestamp=2026-10-28T03:13:02.659Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode type=directory ignores=6 http.span=95 role=server
-timestamp=2026-10-28T03:13:02.660Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/.opencode type=directory ignores=6 http.span=96 role=server
+timestamp=2026-10-28T03:13:02.633Z level=INFO run=bdb69224 message="watcher stopped" path=~ type=entries http.span=370798 role=server
+timestamp=2026-10-28T03:13:02.633Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents type=entries http.span=370798 role=server
+timestamp=2026-10-28T03:13:02.633Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary-project type=entries http.span=370798 role=server
+timestamp=2026-10-28T03:13:02.633Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/home type=entries http.span=370798 role=server
+timestamp=2026-10-28T03:13:02.633Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/home/.config/opencode type=directory http.span=370798 role=server
+timestamp=2026-10-28T03:13:02.633Z level=INFO run=bdb69224 message="watcher stopped" path=~/.opencode type=directory http.span=370798 role=server
+timestamp=2026-10-28T03:13:02.659Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/home/.config/opencode type=directory ignores=6 http.span=95 role=server
+timestamp=2026-10-28T03:13:02.660Z level=INFO run=bdb69224 message="watcher subscribe" path=~/.opencode type=directory ignores=6 http.span=96 role=server
 timestamp=2026-10-28T03:13:02.660Z level=INFO run=bdb69224 message="watcher subscribe" path="/Library/Application Support" type=entries ignores=0 http.span=96 role=server
 timestamp=2026-10-28T03:13:02.661Z level=INFO run=bdb69224 message="watcher started" path="/Library/Application Support" type=entries backend=node ignores=0 http.span=97 role=server
 timestamp=2026-10-28T03:13:02.661Z level=INFO run=bdb69224 message="watcher subscribe" path=/ type=entries ignores=0 http.span=97 role=server
 timestamp=2026-10-28T03:13:02.661Z level=INFO run=bdb69224 message="watcher started" path=/ type=entries backend=node ignores=0 http.span=97 role=server
 timestamp=2026-10-28T03:13:02.661Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users type=entries ignores=0 http.span=97 role=server
 timestamp=2026-10-28T03:13:02.662Z level=INFO run=bdb69224 message="watcher started" path=/Users type=entries backend=node ignores=0 http.span=98 role=server
-timestamp=2026-10-28T03:13:02.662Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan type=entries ignores=0 http.span=98 role=server
-timestamp=2026-10-28T03:13:02.662Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan type=entries backend=node ignores=0 http.span=98 role=server
-timestamp=2026-10-28T03:13:02.662Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents type=entries ignores=0 http.span=98 role=server
-timestamp=2026-10-28T03:13:02.663Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents type=entries backend=node ignores=0 http.span=99 role=server
-timestamp=2026-10-28T03:13:02.663Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary-project type=entries ignores=0 http.span=99 role=server
-timestamp=2026-10-28T03:13:02.663Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary-project type=entries backend=node ignores=0 http.span=99 role=server
-timestamp=2026-10-28T03:13:02.663Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/home type=entries ignores=0 http.span=99 role=server
-timestamp=2026-10-28T03:13:02.663Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/home type=entries backend=node ignores=0 http.span=99 role=server
-timestamp=2026-10-28T03:13:02.673Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode type=directory backend=fs-events ignores=6 http.span=109 role=server
-timestamp=2026-10-28T03:13:02.673Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/.opencode type=directory backend=fs-events ignores=6 http.span=109 role=server
-timestamp=2026-10-28T03:13:02.721Z level=INFO run=bdb69224 message="location services booted" directory=/Users/muhammedqadan/Documents/opencode-router-canary-project workspaceID=undefined durationMs=87 http.span=157 role=server
+timestamp=2026-10-28T03:13:02.662Z level=INFO run=bdb69224 message="watcher subscribe" path=~ type=entries ignores=0 http.span=98 role=server
+timestamp=2026-10-28T03:13:02.662Z level=INFO run=bdb69224 message="watcher started" path=~ type=entries backend=node ignores=0 http.span=98 role=server
+timestamp=2026-10-28T03:13:02.662Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents type=entries ignores=0 http.span=98 role=server
+timestamp=2026-10-28T03:13:02.663Z level=INFO run=bdb69224 message="watcher started" path=~/Documents type=entries backend=node ignores=0 http.span=99 role=server
+timestamp=2026-10-28T03:13:02.663Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary-project type=entries ignores=0 http.span=99 role=server
+timestamp=2026-10-28T03:13:02.663Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary-project type=entries backend=node ignores=0 http.span=99 role=server
+timestamp=2026-10-28T03:13:02.663Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/home type=entries ignores=0 http.span=99 role=server
+timestamp=2026-10-28T03:13:02.663Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/home type=entries backend=node ignores=0 http.span=99 role=server
+timestamp=2026-10-28T03:13:02.673Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/home/.config/opencode type=directory backend=fs-events ignores=6 http.span=109 role=server
+timestamp=2026-10-28T03:13:02.673Z level=INFO run=bdb69224 message="watcher started" path=~/.opencode type=directory backend=fs-events ignores=6 http.span=109 role=server
+timestamp=2026-10-28T03:13:02.721Z level=INFO run=bdb69224 message="location services booted" directory=~/Documents/opencode-router-canary-project workspaceID=undefined durationMs=87 http.span=157 role=server
 timestamp=2026-10-28T03:13:02.722Z level=INFO run=bdb69224 message="location services reloaded" count=1 http.span=158 role=server
-timestamp=2026-10-28T03:13:02.735Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/plugin type=directory ignores=0 http.span=171 role=server
-timestamp=2026-10-28T03:13:02.736Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/plugin type=directory backend=fs-events ignores=0 http.span=172 role=server
-timestamp=2026-10-28T03:13:02.736Z level=INFO run=bdb69224 msg="loading plugin" id=/Users/muhammedqadan/Documents/opencode-router-canary/plugin entrypoint=file:///Users/muhammedqadan/Documents/opencode-router-canary/plugin/index.js http.span=172 role=server
-timestamp=2026-10-28T03:13:02.764Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/plugin/index.js type=file ignores=0 http.span=200 role=server
-timestamp=2026-10-28T03:13:02.764Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/plugin/index.js type=file backend=node ignores=0 http.span=200 role=server
-timestamp=2026-10-28T03:13:02.928Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/AGENTS.md type=file ignores=0
-timestamp=2026-10-28T03:13:02.928Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/AGENTS.md type=file backend=node ignores=0 http.span=364 role=server
-timestamp=2026-10-28T03:13:02.928Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary-project/AGENTS.md type=file ignores=0
-timestamp=2026-10-28T03:13:02.929Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary-project/AGENTS.md type=file backend=node ignores=0 http.span=365 role=server
-timestamp=2026-10-28T03:13:02.936Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/.claude/skills type=directory ignores=8
-timestamp=2026-10-28T03:13:02.937Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/.claude/skills type=directory backend=fs-events ignores=8 http.span=373 role=server
-timestamp=2026-10-28T03:13:02.992Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/.agents/skills type=directory ignores=8
-timestamp=2026-10-28T03:13:02.993Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/.agents/skills type=directory backend=fs-events ignores=8 http.span=429 role=server
-timestamp=2026-10-28T03:13:03.005Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/skill type=file ignores=0
-timestamp=2026-10-28T03:13:03.005Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/skill type=file backend=node ignores=0 http.span=441 role=server
-timestamp=2026-10-28T03:13:03.005Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/skills type=file ignores=0
-timestamp=2026-10-28T03:13:03.005Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/skills type=file backend=node ignores=0 http.span=441 role=server
-timestamp=2026-10-28T03:13:03.006Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/.opencode/skill type=file ignores=0
-timestamp=2026-10-28T03:13:03.006Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/.opencode/skill type=file backend=node ignores=0 http.span=442 role=server
-timestamp=2026-10-28T03:13:03.006Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/.opencode/skills type=file ignores=0
-timestamp=2026-10-28T03:13:03.006Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/.opencode/skills type=file backend=node ignores=0 http.span=442 role=server
-timestamp=2026-10-28T03:13:03.013Z level=INFO run=bdb69224 message=event event.id=evt_1807f3625001YuxUXGdBNbJbJy event.created=1793157183013 event.type=provider.updated event.location.directory=/Users/muhammedqadan/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=449 role=server
-timestamp=2026-10-28T03:13:03.018Z level=INFO run=bdb69224 message=event event.id=evt_1807f362a001mMlaMixKkBaDgo event.created=1793157183018 event.type=model.updated event.location.directory=/Users/muhammedqadan/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=454 role=server
-timestamp=2026-10-28T03:13:03.019Z level=INFO run=bdb69224 message=event event.id=evt_1807f362b001cb3kCl2hkoEwZk event.created=1793157183019 event.type=agent.updated event.location.directory=/Users/muhammedqadan/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=455 role=server
-timestamp=2026-10-28T03:13:03.019Z level=INFO run=bdb69224 message=event event.id=evt_1807f362b002uynclKyppOnTzU event.created=1793157183019 event.type=command.updated event.location.directory=/Users/muhammedqadan/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=455 role=server
-timestamp=2026-10-28T03:13:06.767Z level=INFO run=bdb69224 cause="RouterBlockedError: Smart Router blocked this prompt: Provider is disabled in router settings\n    at routePrompt (/Users/muhammedqadan/Documents/opencode-router-canary/plugin/index.js:4809:19)\n    at async <anonymous> (/Users/muhammedqadan/Documents/opencode-router-canary/plugin/index.js:4845:22)\n    at processTicksAndRejections (native:7:39)\n    at SessionPrompt.prepare (/$bunfs/root/chunk-n226er7g.js:146:5579)\n    at SessionPrompt.prepare (definition) (/$bunfs/root/chunk-n226er7g.js:132:79)\n    at Session.prompt (/$bunfs/root/chunk-b8nsm4tq.js:433:7488)\n    at Session.prompt (definition) (/$bunfs/root/chunk-n226er7g.js:146:5338)\n    at Effect.fn (/$bunfs/root/chunk-b3q2zwhb.js:2:21592)\n    at Effect.fn (definition) (/$bunfs/root/chunk-b8nsm4tq.js:433:7448)\n    at ServerProcess.start (/$bunfs/root/chunk-sd7zzn0p.js:2:7529)\n    at ServerProcess.start (definition) (/$bunfs/root/chunk-b8nsm4tq.js:437:26982)" http.span=7 role=server http.method=POST http.url=/api/session/ses_e7f80bb47ffeHOsYqmmgBf8Dx3/prompt http.status=500
-timestamp=2026-10-28T03:13:09.820Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/plugin/index.js type=file http.span=7256 role=server
-timestamp=2026-10-28T03:13:09.820Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/plugin type=directory http.span=7256 role=server
-timestamp=2026-10-28T03:13:09.821Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/skill type=file http.span=7257 role=server
-timestamp=2026-10-28T03:13:09.821Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/skills type=file http.span=7257 role=server
-timestamp=2026-10-28T03:13:09.821Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/.opencode/skill type=file http.span=7257 role=server
-timestamp=2026-10-28T03:13:09.821Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/.opencode/skills type=file http.span=7257 role=server
-timestamp=2026-10-28T03:13:09.821Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/.claude/skills type=directory http.span=7257 role=server
-timestamp=2026-10-28T03:13:09.821Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/.agents/skills type=directory http.span=7257 role=server
-timestamp=2026-10-28T03:13:09.822Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary-project/AGENTS.md type=file http.span=7258 role=server
-timestamp=2026-10-28T03:13:09.822Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/AGENTS.md type=file http.span=7258 role=server
+timestamp=2026-10-28T03:13:02.735Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/plugin type=directory ignores=0 http.span=171 role=server
+timestamp=2026-10-28T03:13:02.736Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/plugin type=directory backend=fs-events ignores=0 http.span=172 role=server
+timestamp=2026-10-28T03:13:02.736Z level=INFO run=bdb69224 msg="loading plugin" id=~/Documents/opencode-router-canary/plugin entrypoint=file://~/Documents/opencode-router-canary/plugin/index.js http.span=172 role=server
+timestamp=2026-10-28T03:13:02.764Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/plugin/index.js type=file ignores=0 http.span=200 role=server
+timestamp=2026-10-28T03:13:02.764Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/plugin/index.js type=file backend=node ignores=0 http.span=200 role=server
+timestamp=2026-10-28T03:13:02.928Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/home/.config/opencode/AGENTS.md type=file ignores=0
+timestamp=2026-10-28T03:13:02.928Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/home/.config/opencode/AGENTS.md type=file backend=node ignores=0 http.span=364 role=server
+timestamp=2026-10-28T03:13:02.928Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary-project/AGENTS.md type=file ignores=0
+timestamp=2026-10-28T03:13:02.929Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary-project/AGENTS.md type=file backend=node ignores=0 http.span=365 role=server
+timestamp=2026-10-28T03:13:02.936Z level=INFO run=bdb69224 message="watcher subscribe" path=~/.claude/skills type=directory ignores=8
+timestamp=2026-10-28T03:13:02.937Z level=INFO run=bdb69224 message="watcher started" path=~/.claude/skills type=directory backend=fs-events ignores=8 http.span=373 role=server
+timestamp=2026-10-28T03:13:02.992Z level=INFO run=bdb69224 message="watcher subscribe" path=~/.agents/skills type=directory ignores=8
+timestamp=2026-10-28T03:13:02.993Z level=INFO run=bdb69224 message="watcher started" path=~/.agents/skills type=directory backend=fs-events ignores=8 http.span=429 role=server
+timestamp=2026-10-28T03:13:03.005Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/home/.config/opencode/skill type=file ignores=0
+timestamp=2026-10-28T03:13:03.005Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/home/.config/opencode/skill type=file backend=node ignores=0 http.span=441 role=server
+timestamp=2026-10-28T03:13:03.005Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/home/.config/opencode/skills type=file ignores=0
+timestamp=2026-10-28T03:13:03.005Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/home/.config/opencode/skills type=file backend=node ignores=0 http.span=441 role=server
+timestamp=2026-10-28T03:13:03.006Z level=INFO run=bdb69224 message="watcher subscribe" path=~/.opencode/skill type=file ignores=0
+timestamp=2026-10-28T03:13:03.006Z level=INFO run=bdb69224 message="watcher started" path=~/.opencode/skill type=file backend=node ignores=0 http.span=442 role=server
+timestamp=2026-10-28T03:13:03.006Z level=INFO run=bdb69224 message="watcher subscribe" path=~/.opencode/skills type=file ignores=0
+timestamp=2026-10-28T03:13:03.006Z level=INFO run=bdb69224 message="watcher started" path=~/.opencode/skills type=file backend=node ignores=0 http.span=442 role=server
+timestamp=2026-10-28T03:13:03.013Z level=INFO run=bdb69224 message=event event.id=evt_1807f3625001YuxUXGdBNbJbJy event.created=1793157183013 event.type=provider.updated event.location.directory=~/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=449 role=server
+timestamp=2026-10-28T03:13:03.018Z level=INFO run=bdb69224 message=event event.id=evt_1807f362a001mMlaMixKkBaDgo event.created=1793157183018 event.type=model.updated event.location.directory=~/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=454 role=server
+timestamp=2026-10-28T03:13:03.019Z level=INFO run=bdb69224 message=event event.id=evt_1807f362b001cb3kCl2hkoEwZk event.created=1793157183019 event.type=agent.updated event.location.directory=~/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=455 role=server
+timestamp=2026-10-28T03:13:03.019Z level=INFO run=bdb69224 message=event event.id=evt_1807f362b002uynclKyppOnTzU event.created=1793157183019 event.type=command.updated event.location.directory=~/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=455 role=server
+timestamp=2026-10-28T03:13:06.767Z level=INFO run=bdb69224 cause="RouterBlockedError: Smart Router blocked this prompt: Provider is disabled in router settings\n    at routePrompt (~/Documents/opencode-router-canary/plugin/index.js:4809:19)\n    at async <anonymous> (~/Documents/opencode-router-canary/plugin/index.js:4845:22)\n    at processTicksAndRejections (native:7:39)\n    at SessionPrompt.prepare (/$bunfs/root/chunk-n226er7g.js:146:5579)\n    at SessionPrompt.prepare (definition) (/$bunfs/root/chunk-n226er7g.js:132:79)\n    at Session.prompt (/$bunfs/root/chunk-b8nsm4tq.js:433:7488)\n    at Session.prompt (definition) (/$bunfs/root/chunk-n226er7g.js:146:5338)\n    at Effect.fn (/$bunfs/root/chunk-b3q2zwhb.js:2:21592)\n    at Effect.fn (definition) (/$bunfs/root/chunk-b8nsm4tq.js:433:7448)\n    at ServerProcess.start (/$bunfs/root/chunk-sd7zzn0p.js:2:7529)\n    at ServerProcess.start (definition) (/$bunfs/root/chunk-b8nsm4tq.js:437:26982)" http.span=7 role=server http.method=POST http.url=/api/session/ses_e7f80bb47ffeHOsYqmmgBf8Dx3/prompt http.status=500
+timestamp=2026-10-28T03:13:09.820Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/plugin/index.js type=file http.span=7256 role=server
+timestamp=2026-10-28T03:13:09.820Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/plugin type=directory http.span=7256 role=server
+timestamp=2026-10-28T03:13:09.821Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/home/.config/opencode/skill type=file http.span=7257 role=server
+timestamp=2026-10-28T03:13:09.821Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/home/.config/opencode/skills type=file http.span=7257 role=server
+timestamp=2026-10-28T03:13:09.821Z level=INFO run=bdb69224 message="watcher stopped" path=~/.opencode/skill type=file http.span=7257 role=server
+timestamp=2026-10-28T03:13:09.821Z level=INFO run=bdb69224 message="watcher stopped" path=~/.opencode/skills type=file http.span=7257 role=server
+timestamp=2026-10-28T03:13:09.821Z level=INFO run=bdb69224 message="watcher stopped" path=~/.claude/skills type=directory http.span=7257 role=server
+timestamp=2026-10-28T03:13:09.821Z level=INFO run=bdb69224 message="watcher stopped" path=~/.agents/skills type=directory http.span=7257 role=server
+timestamp=2026-10-28T03:13:09.822Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary-project/AGENTS.md type=file http.span=7258 role=server
+timestamp=2026-10-28T03:13:09.822Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/home/.config/opencode/AGENTS.md type=file http.span=7258 role=server
 timestamp=2026-10-28T03:13:09.832Z level=INFO run=bdb69224 message="watcher stopped" path="/Library/Application Support" type=entries http.span=7268 role=server
 timestamp=2026-10-28T03:13:09.832Z level=INFO run=bdb69224 message="watcher stopped" path=/ type=entries http.span=7268 role=server
 timestamp=2026-10-28T03:13:09.832Z level=INFO run=bdb69224 message="watcher stopped" path=/Users type=entries http.span=7268 role=server
-timestamp=2026-10-28T03:13:09.832Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan type=entries http.span=7268 role=server
-timestamp=2026-10-28T03:13:09.832Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents type=entries http.span=7268 role=server
-timestamp=2026-10-28T03:13:09.832Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary-project type=entries http.span=7268 role=server
-timestamp=2026-10-28T03:13:09.832Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/home type=entries http.span=7268 role=server
-timestamp=2026-10-28T03:13:09.832Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode type=directory http.span=7268 role=server
-timestamp=2026-10-28T03:13:09.832Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/.opencode type=directory http.span=7268 role=server
-timestamp=2026-10-28T03:13:09.838Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode type=directory ignores=6 http.span=27 role=server
-timestamp=2026-10-28T03:13:09.838Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/.opencode type=directory ignores=6 http.span=27 role=server
+timestamp=2026-10-28T03:13:09.832Z level=INFO run=bdb69224 message="watcher stopped" path=~ type=entries http.span=7268 role=server
+timestamp=2026-10-28T03:13:09.832Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents type=entries http.span=7268 role=server
+timestamp=2026-10-28T03:13:09.832Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary-project type=entries http.span=7268 role=server
+timestamp=2026-10-28T03:13:09.832Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/home type=entries http.span=7268 role=server
+timestamp=2026-10-28T03:13:09.832Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/home/.config/opencode type=directory http.span=7268 role=server
+timestamp=2026-10-28T03:13:09.832Z level=INFO run=bdb69224 message="watcher stopped" path=~/.opencode type=directory http.span=7268 role=server
+timestamp=2026-10-28T03:13:09.838Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/home/.config/opencode type=directory ignores=6 http.span=27 role=server
+timestamp=2026-10-28T03:13:09.838Z level=INFO run=bdb69224 message="watcher subscribe" path=~/.opencode type=directory ignores=6 http.span=27 role=server
 timestamp=2026-10-28T03:13:09.838Z level=INFO run=bdb69224 message="watcher subscribe" path="/Library/Application Support" type=entries ignores=0 http.span=27 role=server
 timestamp=2026-10-28T03:13:09.838Z level=INFO run=bdb69224 message="watcher started" path="/Library/Application Support" type=entries backend=node ignores=0 http.span=27 role=server
 timestamp=2026-10-28T03:13:09.838Z level=INFO run=bdb69224 message="watcher subscribe" path=/ type=entries ignores=0 http.span=27 role=server
 timestamp=2026-10-28T03:13:09.838Z level=INFO run=bdb69224 message="watcher started" path=/ type=entries backend=node ignores=0 http.span=27 role=server
 timestamp=2026-10-28T03:13:09.839Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users type=entries ignores=0 http.span=28 role=server
 timestamp=2026-10-28T03:13:09.840Z level=INFO run=bdb69224 message="watcher started" path=/Users type=entries backend=node ignores=0 http.span=29 role=server
-timestamp=2026-10-28T03:13:09.840Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan type=entries ignores=0 http.span=29 role=server
-timestamp=2026-10-28T03:13:09.841Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan type=entries backend=node ignores=0 http.span=30 role=server
-timestamp=2026-10-28T03:13:09.841Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents type=entries ignores=0 http.span=30 role=server
-timestamp=2026-10-28T03:13:09.841Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents type=entries backend=node ignores=0 http.span=30 role=server
-timestamp=2026-10-28T03:13:09.841Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary-project type=entries ignores=0 http.span=30 role=server
-timestamp=2026-10-28T03:13:09.841Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary-project type=entries backend=node ignores=0 http.span=30 role=server
-timestamp=2026-10-28T03:13:09.841Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/home type=entries ignores=0 http.span=30 role=server
-timestamp=2026-10-28T03:13:09.842Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/home type=entries backend=node ignores=0 http.span=31 role=server
-timestamp=2026-10-28T03:13:09.844Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode type=directory backend=fs-events ignores=6 http.span=33 role=server
-timestamp=2026-10-28T03:13:09.844Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/.opencode type=directory backend=fs-events ignores=6 http.span=33 role=server
-timestamp=2026-10-28T03:13:09.846Z level=INFO run=bdb69224 message="location services booted" directory=/Users/muhammedqadan/Documents/opencode-router-canary-project workspaceID=undefined durationMs=13 http.span=35 role=server
+timestamp=2026-10-28T03:13:09.840Z level=INFO run=bdb69224 message="watcher subscribe" path=~ type=entries ignores=0 http.span=29 role=server
+timestamp=2026-10-28T03:13:09.841Z level=INFO run=bdb69224 message="watcher started" path=~ type=entries backend=node ignores=0 http.span=30 role=server
+timestamp=2026-10-28T03:13:09.841Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents type=entries ignores=0 http.span=30 role=server
+timestamp=2026-10-28T03:13:09.841Z level=INFO run=bdb69224 message="watcher started" path=~/Documents type=entries backend=node ignores=0 http.span=30 role=server
+timestamp=2026-10-28T03:13:09.841Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary-project type=entries ignores=0 http.span=30 role=server
+timestamp=2026-10-28T03:13:09.841Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary-project type=entries backend=node ignores=0 http.span=30 role=server
+timestamp=2026-10-28T03:13:09.841Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/home type=entries ignores=0 http.span=30 role=server
+timestamp=2026-10-28T03:13:09.842Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/home type=entries backend=node ignores=0 http.span=31 role=server
+timestamp=2026-10-28T03:13:09.844Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/home/.config/opencode type=directory backend=fs-events ignores=6 http.span=33 role=server
+timestamp=2026-10-28T03:13:09.844Z level=INFO run=bdb69224 message="watcher started" path=~/.opencode type=directory backend=fs-events ignores=6 http.span=33 role=server
+timestamp=2026-10-28T03:13:09.846Z level=INFO run=bdb69224 message="location services booted" directory=~/Documents/opencode-router-canary-project workspaceID=undefined durationMs=13 http.span=35 role=server
 timestamp=2026-10-28T03:13:09.846Z level=INFO run=bdb69224 message="location services reloaded" count=1 http.span=35 role=server
-timestamp=2026-10-28T03:13:09.891Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/plugin type=directory ignores=0 http.span=80 role=server
-timestamp=2026-10-28T03:13:09.891Z level=INFO run=bdb69224 msg="loading plugin" id=/Users/muhammedqadan/Documents/opencode-router-canary/plugin entrypoint=file:///Users/muhammedqadan/Documents/opencode-router-canary/plugin/index.js http.span=80 role=server
-timestamp=2026-10-28T03:13:09.897Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/plugin type=directory backend=fs-events ignores=0 http.span=86 role=server
-timestamp=2026-10-28T03:13:09.897Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/plugin/index.js type=file ignores=0 http.span=86 role=server
-timestamp=2026-10-28T03:13:09.897Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/plugin/index.js type=file backend=node ignores=0 http.span=86 role=server
-timestamp=2026-10-28T03:13:10.013Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/AGENTS.md type=file ignores=0
-timestamp=2026-10-28T03:13:10.013Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/AGENTS.md type=file backend=node ignores=0 http.span=202 role=server
-timestamp=2026-10-28T03:13:10.013Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary-project/AGENTS.md type=file ignores=0
-timestamp=2026-10-28T03:13:10.013Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary-project/AGENTS.md type=file backend=node ignores=0 http.span=202 role=server
-timestamp=2026-10-28T03:13:10.017Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/.claude/skills type=directory ignores=8
-timestamp=2026-10-28T03:13:10.018Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/.claude/skills type=directory backend=fs-events ignores=8 http.span=207 role=server
-timestamp=2026-10-28T03:13:10.048Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/.agents/skills type=directory ignores=8
-timestamp=2026-10-28T03:13:10.049Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/.agents/skills type=directory backend=fs-events ignores=8 http.span=238 role=server
-timestamp=2026-10-28T03:13:10.053Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/skill type=file ignores=0
-timestamp=2026-10-28T03:13:10.053Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/skill type=file backend=node ignores=0 http.span=242 role=server
-timestamp=2026-10-28T03:13:10.054Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/skills type=file ignores=0
-timestamp=2026-10-28T03:13:10.054Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/skills type=file backend=node ignores=0 http.span=243 role=server
-timestamp=2026-10-28T03:13:10.054Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/.opencode/skill type=file ignores=0
-timestamp=2026-10-28T03:13:10.054Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/.opencode/skill type=file backend=node ignores=0 http.span=243 role=server
-timestamp=2026-10-28T03:13:10.054Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/.opencode/skills type=file ignores=0
-timestamp=2026-10-28T03:13:10.054Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/.opencode/skills type=file backend=node ignores=0 http.span=243 role=server
-timestamp=2026-10-28T03:13:10.060Z level=INFO run=bdb69224 message=event event.id=evt_1807f51ac001W1VymeKEcdPf8N event.created=1793157190060 event.type=provider.updated event.location.directory=/Users/muhammedqadan/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=249 role=server
-timestamp=2026-10-28T03:13:10.063Z level=INFO run=bdb69224 message=event event.id=evt_1807f51af0012YbfRu4SQNF3P9 event.created=1793157190063 event.type=model.updated event.location.directory=/Users/muhammedqadan/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=252 role=server
-timestamp=2026-10-28T03:13:10.063Z level=INFO run=bdb69224 message=event event.id=evt_1807f51af002jhfkOmaAo1abNv event.created=1793157190063 event.type=agent.updated event.location.directory=/Users/muhammedqadan/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=252 role=server
-timestamp=2026-10-28T03:13:10.064Z level=INFO run=bdb69224 message=event event.id=evt_1807f51b0001ExKqcbI6QzB0ua event.created=1793157190064 event.type=command.updated event.location.directory=/Users/muhammedqadan/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=253 role=server
-timestamp=2026-10-28T03:13:29.694Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/plugin/index.js type=file http.span=19883 role=server
-timestamp=2026-10-28T03:13:29.695Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/plugin type=directory http.span=19884 role=server
-timestamp=2026-10-28T03:13:29.696Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/skill type=file http.span=19885 role=server
-timestamp=2026-10-28T03:13:29.696Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/skills type=file http.span=19885 role=server
-timestamp=2026-10-28T03:13:29.696Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/.opencode/skill type=file http.span=19885 role=server
-timestamp=2026-10-28T03:13:29.696Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/.opencode/skills type=file http.span=19885 role=server
-timestamp=2026-10-28T03:13:29.702Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/.claude/skills type=directory http.span=19891 role=server
-timestamp=2026-10-28T03:13:29.702Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/.agents/skills type=directory http.span=19891 role=server
-timestamp=2026-10-28T03:13:29.704Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary-project/AGENTS.md type=file http.span=19893 role=server
-timestamp=2026-10-28T03:13:29.704Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/AGENTS.md type=file http.span=19893 role=server
+timestamp=2026-10-28T03:13:09.891Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/plugin type=directory ignores=0 http.span=80 role=server
+timestamp=2026-10-28T03:13:09.891Z level=INFO run=bdb69224 msg="loading plugin" id=~/Documents/opencode-router-canary/plugin entrypoint=file://~/Documents/opencode-router-canary/plugin/index.js http.span=80 role=server
+timestamp=2026-10-28T03:13:09.897Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/plugin type=directory backend=fs-events ignores=0 http.span=86 role=server
+timestamp=2026-10-28T03:13:09.897Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/plugin/index.js type=file ignores=0 http.span=86 role=server
+timestamp=2026-10-28T03:13:09.897Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/plugin/index.js type=file backend=node ignores=0 http.span=86 role=server
+timestamp=2026-10-28T03:13:10.013Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/home/.config/opencode/AGENTS.md type=file ignores=0
+timestamp=2026-10-28T03:13:10.013Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/home/.config/opencode/AGENTS.md type=file backend=node ignores=0 http.span=202 role=server
+timestamp=2026-10-28T03:13:10.013Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary-project/AGENTS.md type=file ignores=0
+timestamp=2026-10-28T03:13:10.013Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary-project/AGENTS.md type=file backend=node ignores=0 http.span=202 role=server
+timestamp=2026-10-28T03:13:10.017Z level=INFO run=bdb69224 message="watcher subscribe" path=~/.claude/skills type=directory ignores=8
+timestamp=2026-10-28T03:13:10.018Z level=INFO run=bdb69224 message="watcher started" path=~/.claude/skills type=directory backend=fs-events ignores=8 http.span=207 role=server
+timestamp=2026-10-28T03:13:10.048Z level=INFO run=bdb69224 message="watcher subscribe" path=~/.agents/skills type=directory ignores=8
+timestamp=2026-10-28T03:13:10.049Z level=INFO run=bdb69224 message="watcher started" path=~/.agents/skills type=directory backend=fs-events ignores=8 http.span=238 role=server
+timestamp=2026-10-28T03:13:10.053Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/home/.config/opencode/skill type=file ignores=0
+timestamp=2026-10-28T03:13:10.053Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/home/.config/opencode/skill type=file backend=node ignores=0 http.span=242 role=server
+timestamp=2026-10-28T03:13:10.054Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/home/.config/opencode/skills type=file ignores=0
+timestamp=2026-10-28T03:13:10.054Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/home/.config/opencode/skills type=file backend=node ignores=0 http.span=243 role=server
+timestamp=2026-10-28T03:13:10.054Z level=INFO run=bdb69224 message="watcher subscribe" path=~/.opencode/skill type=file ignores=0
+timestamp=2026-10-28T03:13:10.054Z level=INFO run=bdb69224 message="watcher started" path=~/.opencode/skill type=file backend=node ignores=0 http.span=243 role=server
+timestamp=2026-10-28T03:13:10.054Z level=INFO run=bdb69224 message="watcher subscribe" path=~/.opencode/skills type=file ignores=0
+timestamp=2026-10-28T03:13:10.054Z level=INFO run=bdb69224 message="watcher started" path=~/.opencode/skills type=file backend=node ignores=0 http.span=243 role=server
+timestamp=2026-10-28T03:13:10.060Z level=INFO run=bdb69224 message=event event.id=evt_1807f51ac001W1VymeKEcdPf8N event.created=1793157190060 event.type=provider.updated event.location.directory=~/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=249 role=server
+timestamp=2026-10-28T03:13:10.063Z level=INFO run=bdb69224 message=event event.id=evt_1807f51af0012YbfRu4SQNF3P9 event.created=1793157190063 event.type=model.updated event.location.directory=~/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=252 role=server
+timestamp=2026-10-28T03:13:10.063Z level=INFO run=bdb69224 message=event event.id=evt_1807f51af002jhfkOmaAo1abNv event.created=1793157190063 event.type=agent.updated event.location.directory=~/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=252 role=server
+timestamp=2026-10-28T03:13:10.064Z level=INFO run=bdb69224 message=event event.id=evt_1807f51b0001ExKqcbI6QzB0ua event.created=1793157190064 event.type=command.updated event.location.directory=~/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=253 role=server
+timestamp=2026-10-28T03:13:29.694Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/plugin/index.js type=file http.span=19883 role=server
+timestamp=2026-10-28T03:13:29.695Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/plugin type=directory http.span=19884 role=server
+timestamp=2026-10-28T03:13:29.696Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/home/.config/opencode/skill type=file http.span=19885 role=server
+timestamp=2026-10-28T03:13:29.696Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/home/.config/opencode/skills type=file http.span=19885 role=server
+timestamp=2026-10-28T03:13:29.696Z level=INFO run=bdb69224 message="watcher stopped" path=~/.opencode/skill type=file http.span=19885 role=server
+timestamp=2026-10-28T03:13:29.696Z level=INFO run=bdb69224 message="watcher stopped" path=~/.opencode/skills type=file http.span=19885 role=server
+timestamp=2026-10-28T03:13:29.702Z level=INFO run=bdb69224 message="watcher stopped" path=~/.claude/skills type=directory http.span=19891 role=server
+timestamp=2026-10-28T03:13:29.702Z level=INFO run=bdb69224 message="watcher stopped" path=~/.agents/skills type=directory http.span=19891 role=server
+timestamp=2026-10-28T03:13:29.704Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary-project/AGENTS.md type=file http.span=19893 role=server
+timestamp=2026-10-28T03:13:29.704Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/home/.config/opencode/AGENTS.md type=file http.span=19893 role=server
 timestamp=2026-10-28T03:13:29.719Z level=INFO run=bdb69224 message="watcher stopped" path="/Library/Application Support" type=entries http.span=19908 role=server
 timestamp=2026-10-28T03:13:29.719Z level=INFO run=bdb69224 message="watcher stopped" path=/ type=entries http.span=19908 role=server
 timestamp=2026-10-28T03:13:29.719Z level=INFO run=bdb69224 message="watcher stopped" path=/Users type=entries http.span=19908 role=server
-timestamp=2026-10-28T03:13:29.719Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan type=entries http.span=19908 role=server
-timestamp=2026-10-28T03:13:29.719Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents type=entries http.span=19908 role=server
-timestamp=2026-10-28T03:13:29.719Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary-project type=entries http.span=19908 role=server
-timestamp=2026-10-28T03:13:29.719Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/home type=entries http.span=19908 role=server
-timestamp=2026-10-28T03:13:29.719Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode type=directory http.span=19908 role=server
-timestamp=2026-10-28T03:13:29.719Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/.opencode type=directory http.span=19908 role=server
-timestamp=2026-10-28T03:13:29.739Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode type=directory ignores=6 http.span=77 role=server
-timestamp=2026-10-28T03:13:29.740Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/.opencode type=directory ignores=6 http.span=78 role=server
+timestamp=2026-10-28T03:13:29.719Z level=INFO run=bdb69224 message="watcher stopped" path=~ type=entries http.span=19908 role=server
+timestamp=2026-10-28T03:13:29.719Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents type=entries http.span=19908 role=server
+timestamp=2026-10-28T03:13:29.719Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary-project type=entries http.span=19908 role=server
+timestamp=2026-10-28T03:13:29.719Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/home type=entries http.span=19908 role=server
+timestamp=2026-10-28T03:13:29.719Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/home/.config/opencode type=directory http.span=19908 role=server
+timestamp=2026-10-28T03:13:29.719Z level=INFO run=bdb69224 message="watcher stopped" path=~/.opencode type=directory http.span=19908 role=server
+timestamp=2026-10-28T03:13:29.739Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/home/.config/opencode type=directory ignores=6 http.span=77 role=server
+timestamp=2026-10-28T03:13:29.740Z level=INFO run=bdb69224 message="watcher subscribe" path=~/.opencode type=directory ignores=6 http.span=78 role=server
 timestamp=2026-10-28T03:13:29.740Z level=INFO run=bdb69224 message="watcher subscribe" path="/Library/Application Support" type=entries ignores=0 http.span=78 role=server
 timestamp=2026-10-28T03:13:29.741Z level=INFO run=bdb69224 message="watcher started" path="/Library/Application Support" type=entries backend=node ignores=0 http.span=79 role=server
 timestamp=2026-10-28T03:13:29.741Z level=INFO run=bdb69224 message="watcher subscribe" path=/ type=entries ignores=0 http.span=79 role=server
 timestamp=2026-10-28T03:13:29.743Z level=INFO run=bdb69224 message="watcher started" path=/ type=entries backend=node ignores=0 http.span=81 role=server
 timestamp=2026-10-28T03:13:29.744Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users type=entries ignores=0 http.span=82 role=server
 timestamp=2026-10-28T03:13:29.745Z level=INFO run=bdb69224 message="watcher started" path=/Users type=entries backend=node ignores=0 http.span=83 role=server
-timestamp=2026-10-28T03:13:29.745Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan type=entries ignores=0 http.span=83 role=server
-timestamp=2026-10-28T03:13:29.745Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan type=entries backend=node ignores=0 http.span=83 role=server
-timestamp=2026-10-28T03:13:29.745Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents type=entries ignores=0 http.span=83 role=server
-timestamp=2026-10-28T03:13:29.746Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents type=entries backend=node ignores=0 http.span=84 role=server
-timestamp=2026-10-28T03:13:29.746Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary-project type=entries ignores=0 http.span=84 role=server
-timestamp=2026-10-28T03:13:29.746Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary-project type=entries backend=node ignores=0 http.span=84 role=server
-timestamp=2026-10-28T03:13:29.746Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/home type=entries ignores=0 http.span=84 role=server
-timestamp=2026-10-28T03:13:29.746Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/home type=entries backend=node ignores=0 http.span=84 role=server
-timestamp=2026-10-28T03:13:29.750Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode type=directory backend=fs-events ignores=6 http.span=88 role=server
-timestamp=2026-10-28T03:13:29.750Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/.opencode type=directory backend=fs-events ignores=6 http.span=88 role=server
-timestamp=2026-10-28T03:13:29.832Z level=INFO run=bdb69224 message="location services booted" directory=/Users/muhammedqadan/Documents/opencode-router-canary-project workspaceID=undefined durationMs=113 http.span=170 role=server
+timestamp=2026-10-28T03:13:29.745Z level=INFO run=bdb69224 message="watcher subscribe" path=~ type=entries ignores=0 http.span=83 role=server
+timestamp=2026-10-28T03:13:29.745Z level=INFO run=bdb69224 message="watcher started" path=~ type=entries backend=node ignores=0 http.span=83 role=server
+timestamp=2026-10-28T03:13:29.745Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents type=entries ignores=0 http.span=83 role=server
+timestamp=2026-10-28T03:13:29.746Z level=INFO run=bdb69224 message="watcher started" path=~/Documents type=entries backend=node ignores=0 http.span=84 role=server
+timestamp=2026-10-28T03:13:29.746Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary-project type=entries ignores=0 http.span=84 role=server
+timestamp=2026-10-28T03:13:29.746Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary-project type=entries backend=node ignores=0 http.span=84 role=server
+timestamp=2026-10-28T03:13:29.746Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/home type=entries ignores=0 http.span=84 role=server
+timestamp=2026-10-28T03:13:29.746Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/home type=entries backend=node ignores=0 http.span=84 role=server
+timestamp=2026-10-28T03:13:29.750Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/home/.config/opencode type=directory backend=fs-events ignores=6 http.span=88 role=server
+timestamp=2026-10-28T03:13:29.750Z level=INFO run=bdb69224 message="watcher started" path=~/.opencode type=directory backend=fs-events ignores=6 http.span=88 role=server
+timestamp=2026-10-28T03:13:29.832Z level=INFO run=bdb69224 message="location services booted" directory=~/Documents/opencode-router-canary-project workspaceID=undefined durationMs=113 http.span=170 role=server
 timestamp=2026-10-28T03:13:29.833Z level=INFO run=bdb69224 message="location services reloaded" count=1 http.span=171 role=server
-timestamp=2026-10-28T03:13:29.835Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/plugin type=directory ignores=0 http.span=173 role=server
-timestamp=2026-10-28T03:13:29.835Z level=INFO run=bdb69224 msg="loading plugin" id=/Users/muhammedqadan/Documents/opencode-router-canary/plugin entrypoint=file:///Users/muhammedqadan/Documents/opencode-router-canary/plugin/index.js http.span=173 role=server
-timestamp=2026-10-28T03:13:29.843Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/plugin type=directory backend=fs-events ignores=0 http.span=181 role=server
-timestamp=2026-10-28T03:13:29.843Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/plugin/index.js type=file ignores=0 http.span=181 role=server
-timestamp=2026-10-28T03:13:29.843Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/plugin/index.js type=file backend=node ignores=0 http.span=181 role=server
-timestamp=2026-10-28T03:13:30.001Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/AGENTS.md type=file ignores=0
-timestamp=2026-10-28T03:13:30.001Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/AGENTS.md type=file backend=node ignores=0 http.span=339 role=server
-timestamp=2026-10-28T03:13:30.001Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary-project/AGENTS.md type=file ignores=0
-timestamp=2026-10-28T03:13:30.002Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary-project/AGENTS.md type=file backend=node ignores=0 http.span=340 role=server
-timestamp=2026-10-28T03:13:30.006Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/.claude/skills type=directory ignores=8
-timestamp=2026-10-28T03:13:30.008Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/.claude/skills type=directory backend=fs-events ignores=8 http.span=346 role=server
-timestamp=2026-10-28T03:13:30.051Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/.agents/skills type=directory ignores=8
-timestamp=2026-10-28T03:13:30.052Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/.agents/skills type=directory backend=fs-events ignores=8 http.span=390 role=server
-timestamp=2026-10-28T03:13:30.057Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/skill type=file ignores=0
-timestamp=2026-10-28T03:13:30.057Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/skill type=file backend=node ignores=0 http.span=395 role=server
-timestamp=2026-10-28T03:13:30.057Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/skills type=file ignores=0
-timestamp=2026-10-28T03:13:30.057Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/skills type=file backend=node ignores=0 http.span=395 role=server
-timestamp=2026-10-28T03:13:30.058Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/.opencode/skill type=file ignores=0
-timestamp=2026-10-28T03:13:30.058Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/.opencode/skill type=file backend=node ignores=0 http.span=396 role=server
-timestamp=2026-10-28T03:13:30.058Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/.opencode/skills type=file ignores=0
-timestamp=2026-10-28T03:13:30.058Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/.opencode/skills type=file backend=node ignores=0 http.span=396 role=server
-timestamp=2026-10-28T03:13:30.066Z level=INFO run=bdb69224 message=event event.id=evt_1807f9fd2001DQ2gkQ7TOHBwRk event.created=1793157210066 event.type=provider.updated event.location.directory=/Users/muhammedqadan/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=404 role=server
-timestamp=2026-10-28T03:13:30.070Z level=INFO run=bdb69224 message=event event.id=evt_1807f9fd6001MoNfkXtgcUX2Qo event.created=1793157210070 event.type=model.updated event.location.directory=/Users/muhammedqadan/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=408 role=server
-timestamp=2026-10-28T03:13:30.070Z level=INFO run=bdb69224 message=event event.id=evt_1807f9fd6002MhrJzygln1wzRL event.created=1793157210070 event.type=agent.updated event.location.directory=/Users/muhammedqadan/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=408 role=server
-timestamp=2026-10-28T03:13:30.071Z level=INFO run=bdb69224 message=event event.id=evt_1807f9fd7001gh9p1brxJ6oabP event.created=1793157210071 event.type=command.updated event.location.directory=/Users/muhammedqadan/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=409 role=server
-timestamp=2026-10-28T03:13:32.870Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/plugin/index.js type=file http.span=3208 role=server
-timestamp=2026-10-28T03:13:32.872Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/plugin type=directory http.span=3210 role=server
-timestamp=2026-10-28T03:13:32.873Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/skill type=file http.span=3211 role=server
-timestamp=2026-10-28T03:13:32.873Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/skills type=file http.span=3211 role=server
-timestamp=2026-10-28T03:13:32.873Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/.opencode/skill type=file http.span=3211 role=server
-timestamp=2026-10-28T03:13:32.873Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/.opencode/skills type=file http.span=3211 role=server
-timestamp=2026-10-28T03:13:32.874Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/.claude/skills type=directory http.span=3212 role=server
-timestamp=2026-10-28T03:13:32.874Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/.agents/skills type=directory http.span=3212 role=server
-timestamp=2026-10-28T03:13:32.875Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary-project/AGENTS.md type=file http.span=3213 role=server
-timestamp=2026-10-28T03:13:32.875Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/AGENTS.md type=file http.span=3213 role=server
+timestamp=2026-10-28T03:13:29.835Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/plugin type=directory ignores=0 http.span=173 role=server
+timestamp=2026-10-28T03:13:29.835Z level=INFO run=bdb69224 msg="loading plugin" id=~/Documents/opencode-router-canary/plugin entrypoint=file://~/Documents/opencode-router-canary/plugin/index.js http.span=173 role=server
+timestamp=2026-10-28T03:13:29.843Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/plugin type=directory backend=fs-events ignores=0 http.span=181 role=server
+timestamp=2026-10-28T03:13:29.843Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/plugin/index.js type=file ignores=0 http.span=181 role=server
+timestamp=2026-10-28T03:13:29.843Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/plugin/index.js type=file backend=node ignores=0 http.span=181 role=server
+timestamp=2026-10-28T03:13:30.001Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/home/.config/opencode/AGENTS.md type=file ignores=0
+timestamp=2026-10-28T03:13:30.001Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/home/.config/opencode/AGENTS.md type=file backend=node ignores=0 http.span=339 role=server
+timestamp=2026-10-28T03:13:30.001Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary-project/AGENTS.md type=file ignores=0
+timestamp=2026-10-28T03:13:30.002Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary-project/AGENTS.md type=file backend=node ignores=0 http.span=340 role=server
+timestamp=2026-10-28T03:13:30.006Z level=INFO run=bdb69224 message="watcher subscribe" path=~/.claude/skills type=directory ignores=8
+timestamp=2026-10-28T03:13:30.008Z level=INFO run=bdb69224 message="watcher started" path=~/.claude/skills type=directory backend=fs-events ignores=8 http.span=346 role=server
+timestamp=2026-10-28T03:13:30.051Z level=INFO run=bdb69224 message="watcher subscribe" path=~/.agents/skills type=directory ignores=8
+timestamp=2026-10-28T03:13:30.052Z level=INFO run=bdb69224 message="watcher started" path=~/.agents/skills type=directory backend=fs-events ignores=8 http.span=390 role=server
+timestamp=2026-10-28T03:13:30.057Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/home/.config/opencode/skill type=file ignores=0
+timestamp=2026-10-28T03:13:30.057Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/home/.config/opencode/skill type=file backend=node ignores=0 http.span=395 role=server
+timestamp=2026-10-28T03:13:30.057Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/home/.config/opencode/skills type=file ignores=0
+timestamp=2026-10-28T03:13:30.057Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/home/.config/opencode/skills type=file backend=node ignores=0 http.span=395 role=server
+timestamp=2026-10-28T03:13:30.058Z level=INFO run=bdb69224 message="watcher subscribe" path=~/.opencode/skill type=file ignores=0
+timestamp=2026-10-28T03:13:30.058Z level=INFO run=bdb69224 message="watcher started" path=~/.opencode/skill type=file backend=node ignores=0 http.span=396 role=server
+timestamp=2026-10-28T03:13:30.058Z level=INFO run=bdb69224 message="watcher subscribe" path=~/.opencode/skills type=file ignores=0
+timestamp=2026-10-28T03:13:30.058Z level=INFO run=bdb69224 message="watcher started" path=~/.opencode/skills type=file backend=node ignores=0 http.span=396 role=server
+timestamp=2026-10-28T03:13:30.066Z level=INFO run=bdb69224 message=event event.id=evt_1807f9fd2001DQ2gkQ7TOHBwRk event.created=1793157210066 event.type=provider.updated event.location.directory=~/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=404 role=server
+timestamp=2026-10-28T03:13:30.070Z level=INFO run=bdb69224 message=event event.id=evt_1807f9fd6001MoNfkXtgcUX2Qo event.created=1793157210070 event.type=model.updated event.location.directory=~/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=408 role=server
+timestamp=2026-10-28T03:13:30.070Z level=INFO run=bdb69224 message=event event.id=evt_1807f9fd6002MhrJzygln1wzRL event.created=1793157210070 event.type=agent.updated event.location.directory=~/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=408 role=server
+timestamp=2026-10-28T03:13:30.071Z level=INFO run=bdb69224 message=event event.id=evt_1807f9fd7001gh9p1brxJ6oabP event.created=1793157210071 event.type=command.updated event.location.directory=~/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=409 role=server
+timestamp=2026-10-28T03:13:32.870Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/plugin/index.js type=file http.span=3208 role=server
+timestamp=2026-10-28T03:13:32.872Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/plugin type=directory http.span=3210 role=server
+timestamp=2026-10-28T03:13:32.873Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/home/.config/opencode/skill type=file http.span=3211 role=server
+timestamp=2026-10-28T03:13:32.873Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/home/.config/opencode/skills type=file http.span=3211 role=server
+timestamp=2026-10-28T03:13:32.873Z level=INFO run=bdb69224 message="watcher stopped" path=~/.opencode/skill type=file http.span=3211 role=server
+timestamp=2026-10-28T03:13:32.873Z level=INFO run=bdb69224 message="watcher stopped" path=~/.opencode/skills type=file http.span=3211 role=server
+timestamp=2026-10-28T03:13:32.874Z level=INFO run=bdb69224 message="watcher stopped" path=~/.claude/skills type=directory http.span=3212 role=server
+timestamp=2026-10-28T03:13:32.874Z level=INFO run=bdb69224 message="watcher stopped" path=~/.agents/skills type=directory http.span=3212 role=server
+timestamp=2026-10-28T03:13:32.875Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary-project/AGENTS.md type=file http.span=3213 role=server
+timestamp=2026-10-28T03:13:32.875Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/home/.config/opencode/AGENTS.md type=file http.span=3213 role=server
 timestamp=2026-10-28T03:13:32.886Z level=INFO run=bdb69224 message="watcher stopped" path="/Library/Application Support" type=entries http.span=3224 role=server
 timestamp=2026-10-28T03:13:32.886Z level=INFO run=bdb69224 message="watcher stopped" path=/ type=entries http.span=3224 role=server
 timestamp=2026-10-28T03:13:32.886Z level=INFO run=bdb69224 message="watcher stopped" path=/Users type=entries http.span=3224 role=server
-timestamp=2026-10-28T03:13:32.886Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan type=entries http.span=3224 role=server
-timestamp=2026-10-28T03:13:32.886Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents type=entries http.span=3224 role=server
-timestamp=2026-10-28T03:13:32.886Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary-project type=entries http.span=3224 role=server
-timestamp=2026-10-28T03:13:32.886Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/home type=entries http.span=3224 role=server
-timestamp=2026-10-28T03:13:32.886Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode type=directory http.span=3224 role=server
-timestamp=2026-10-28T03:13:32.886Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/.opencode type=directory http.span=3224 role=server
-timestamp=2026-10-28T03:13:32.893Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode type=directory ignores=6 http.span=31 role=server
-timestamp=2026-10-28T03:13:32.894Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/.opencode type=directory ignores=6 http.span=32 role=server
+timestamp=2026-10-28T03:13:32.886Z level=INFO run=bdb69224 message="watcher stopped" path=~ type=entries http.span=3224 role=server
+timestamp=2026-10-28T03:13:32.886Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents type=entries http.span=3224 role=server
+timestamp=2026-10-28T03:13:32.886Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary-project type=entries http.span=3224 role=server
+timestamp=2026-10-28T03:13:32.886Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/home type=entries http.span=3224 role=server
+timestamp=2026-10-28T03:13:32.886Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/home/.config/opencode type=directory http.span=3224 role=server
+timestamp=2026-10-28T03:13:32.886Z level=INFO run=bdb69224 message="watcher stopped" path=~/.opencode type=directory http.span=3224 role=server
+timestamp=2026-10-28T03:13:32.893Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/home/.config/opencode type=directory ignores=6 http.span=31 role=server
+timestamp=2026-10-28T03:13:32.894Z level=INFO run=bdb69224 message="watcher subscribe" path=~/.opencode type=directory ignores=6 http.span=32 role=server
 timestamp=2026-10-28T03:13:32.894Z level=INFO run=bdb69224 message="watcher subscribe" path="/Library/Application Support" type=entries ignores=0 http.span=32 role=server
 timestamp=2026-10-28T03:13:32.894Z level=INFO run=bdb69224 message="watcher started" path="/Library/Application Support" type=entries backend=node ignores=0 http.span=32 role=server
 timestamp=2026-10-28T03:13:32.894Z level=INFO run=bdb69224 message="watcher subscribe" path=/ type=entries ignores=0 http.span=32 role=server
 timestamp=2026-10-28T03:13:32.894Z level=INFO run=bdb69224 message="watcher started" path=/ type=entries backend=node ignores=0 http.span=32 role=server
 timestamp=2026-10-28T03:13:32.894Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users type=entries ignores=0 http.span=32 role=server
 timestamp=2026-10-28T03:13:32.895Z level=INFO run=bdb69224 message="watcher started" path=/Users type=entries backend=node ignores=0 http.span=33 role=server
-timestamp=2026-10-28T03:13:32.895Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan type=entries ignores=0 http.span=33 role=server
-timestamp=2026-10-28T03:13:32.895Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan type=entries backend=node ignores=0 http.span=33 role=server
-timestamp=2026-10-28T03:13:32.895Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents type=entries ignores=0 http.span=33 role=server
-timestamp=2026-10-28T03:13:32.895Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents type=entries backend=node ignores=0 http.span=33 role=server
-timestamp=2026-10-28T03:13:32.895Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary-project type=entries ignores=0 http.span=33 role=server
-timestamp=2026-10-28T03:13:32.901Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary-project type=entries backend=node ignores=0 http.span=39 role=server
-timestamp=2026-10-28T03:13:32.901Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/home type=entries ignores=0 http.span=39 role=server
-timestamp=2026-10-28T03:13:32.902Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/home type=entries backend=node ignores=0 http.span=40 role=server
-timestamp=2026-10-28T03:13:32.904Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode type=directory backend=fs-events ignores=6 http.span=42 role=server
-timestamp=2026-10-28T03:13:32.904Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/.opencode type=directory backend=fs-events ignores=6 http.span=42 role=server
-timestamp=2026-10-28T03:13:32.941Z level=INFO run=bdb69224 message="location services booted" directory=/Users/muhammedqadan/Documents/opencode-router-canary-project workspaceID=undefined durationMs=55 http.span=79 role=server
+timestamp=2026-10-28T03:13:32.895Z level=INFO run=bdb69224 message="watcher subscribe" path=~ type=entries ignores=0 http.span=33 role=server
+timestamp=2026-10-28T03:13:32.895Z level=INFO run=bdb69224 message="watcher started" path=~ type=entries backend=node ignores=0 http.span=33 role=server
+timestamp=2026-10-28T03:13:32.895Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents type=entries ignores=0 http.span=33 role=server
+timestamp=2026-10-28T03:13:32.895Z level=INFO run=bdb69224 message="watcher started" path=~/Documents type=entries backend=node ignores=0 http.span=33 role=server
+timestamp=2026-10-28T03:13:32.895Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary-project type=entries ignores=0 http.span=33 role=server
+timestamp=2026-10-28T03:13:32.901Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary-project type=entries backend=node ignores=0 http.span=39 role=server
+timestamp=2026-10-28T03:13:32.901Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/home type=entries ignores=0 http.span=39 role=server
+timestamp=2026-10-28T03:13:32.902Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/home type=entries backend=node ignores=0 http.span=40 role=server
+timestamp=2026-10-28T03:13:32.904Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/home/.config/opencode type=directory backend=fs-events ignores=6 http.span=42 role=server
+timestamp=2026-10-28T03:13:32.904Z level=INFO run=bdb69224 message="watcher started" path=~/.opencode type=directory backend=fs-events ignores=6 http.span=42 role=server
+timestamp=2026-10-28T03:13:32.941Z level=INFO run=bdb69224 message="location services booted" directory=~/Documents/opencode-router-canary-project workspaceID=undefined durationMs=55 http.span=79 role=server
 timestamp=2026-10-28T03:13:32.942Z level=INFO run=bdb69224 message="location services reloaded" count=1 http.span=80 role=server
-timestamp=2026-10-28T03:13:32.944Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/plugin type=directory ignores=0 http.span=82 role=server
-timestamp=2026-10-28T03:13:32.945Z level=INFO run=bdb69224 msg="loading plugin" id=/Users/muhammedqadan/Documents/opencode-router-canary/plugin entrypoint=file:///Users/muhammedqadan/Documents/opencode-router-canary/plugin/index.js http.span=83 role=server
-timestamp=2026-10-28T03:13:32.950Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/plugin/index.js type=file ignores=0 http.span=88 role=server
-timestamp=2026-10-28T03:13:32.950Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/plugin/index.js type=file backend=node ignores=0 http.span=88 role=server
-timestamp=2026-10-28T03:13:32.995Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/plugin type=directory backend=fs-events ignores=0 http.span=133 role=server
-timestamp=2026-10-28T03:13:33.070Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/AGENTS.md type=file ignores=0
-timestamp=2026-10-28T03:13:33.070Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/AGENTS.md type=file backend=node ignores=0 http.span=208 role=server
-timestamp=2026-10-28T03:13:33.070Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary-project/AGENTS.md type=file ignores=0
-timestamp=2026-10-28T03:13:33.070Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary-project/AGENTS.md type=file backend=node ignores=0 http.span=208 role=server
-timestamp=2026-10-28T03:13:33.074Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/.claude/skills type=directory ignores=8
-timestamp=2026-10-28T03:13:33.074Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/.claude/skills type=directory backend=fs-events ignores=8 http.span=212 role=server
-timestamp=2026-10-28T03:13:33.091Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/.agents/skills type=directory ignores=8
-timestamp=2026-10-28T03:13:33.092Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/.agents/skills type=directory backend=fs-events ignores=8 http.span=230 role=server
-timestamp=2026-10-28T03:13:33.099Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/skill type=file ignores=0
-timestamp=2026-10-28T03:13:33.100Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/skill type=file backend=node ignores=0 http.span=238 role=server
-timestamp=2026-10-28T03:13:33.100Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/skills type=file ignores=0
-timestamp=2026-10-28T03:13:33.100Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/skills type=file backend=node ignores=0 http.span=238 role=server
-timestamp=2026-10-28T03:13:33.100Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/.opencode/skill type=file ignores=0
-timestamp=2026-10-28T03:13:33.100Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/.opencode/skill type=file backend=node ignores=0 http.span=238 role=server
-timestamp=2026-10-28T03:13:33.101Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/.opencode/skills type=file ignores=0
-timestamp=2026-10-28T03:13:33.101Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/.opencode/skills type=file backend=node ignores=0 http.span=239 role=server
-timestamp=2026-10-28T03:13:33.106Z level=INFO run=bdb69224 message=event event.id=evt_1807fabb2001IMXmcCID9EAF3r event.created=1793157213106 event.type=provider.updated event.location.directory=/Users/muhammedqadan/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=244 role=server
-timestamp=2026-10-28T03:13:33.110Z level=INFO run=bdb69224 message=event event.id=evt_1807fabb60012dCjExiM1AM440 event.created=1793157213110 event.type=model.updated event.location.directory=/Users/muhammedqadan/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=248 role=server
-timestamp=2026-10-28T03:13:33.110Z level=INFO run=bdb69224 message=event event.id=evt_1807fabb6002UNRPyZSw8kgo64 event.created=1793157213110 event.type=agent.updated event.location.directory=/Users/muhammedqadan/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=248 role=server
-timestamp=2026-10-28T03:13:33.110Z level=INFO run=bdb69224 message=event event.id=evt_1807fabb6003xUNBA0Yq6Vnv6v event.created=1793157213110 event.type=command.updated event.location.directory=/Users/muhammedqadan/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=248 role=server
-timestamp=2026-10-28T03:13:35.989Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/plugin/index.js type=file http.span=3127 role=server
-timestamp=2026-10-28T03:13:35.990Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/plugin type=directory http.span=3128 role=server
-timestamp=2026-10-28T03:13:35.991Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/skill type=file http.span=3129 role=server
-timestamp=2026-10-28T03:13:35.991Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/skills type=file http.span=3129 role=server
-timestamp=2026-10-28T03:13:35.991Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/.opencode/skill type=file http.span=3129 role=server
-timestamp=2026-10-28T03:13:35.991Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/.opencode/skills type=file http.span=3129 role=server
-timestamp=2026-10-28T03:13:35.991Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/.claude/skills type=directory http.span=3129 role=server
-timestamp=2026-10-28T03:13:35.991Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/.agents/skills type=directory http.span=3129 role=server
-timestamp=2026-10-28T03:13:35.993Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary-project/AGENTS.md type=file http.span=3131 role=server
-timestamp=2026-10-28T03:13:35.993Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/AGENTS.md type=file http.span=3131 role=server
+timestamp=2026-10-28T03:13:32.944Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/plugin type=directory ignores=0 http.span=82 role=server
+timestamp=2026-10-28T03:13:32.945Z level=INFO run=bdb69224 msg="loading plugin" id=~/Documents/opencode-router-canary/plugin entrypoint=file://~/Documents/opencode-router-canary/plugin/index.js http.span=83 role=server
+timestamp=2026-10-28T03:13:32.950Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/plugin/index.js type=file ignores=0 http.span=88 role=server
+timestamp=2026-10-28T03:13:32.950Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/plugin/index.js type=file backend=node ignores=0 http.span=88 role=server
+timestamp=2026-10-28T03:13:32.995Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/plugin type=directory backend=fs-events ignores=0 http.span=133 role=server
+timestamp=2026-10-28T03:13:33.070Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/home/.config/opencode/AGENTS.md type=file ignores=0
+timestamp=2026-10-28T03:13:33.070Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/home/.config/opencode/AGENTS.md type=file backend=node ignores=0 http.span=208 role=server
+timestamp=2026-10-28T03:13:33.070Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary-project/AGENTS.md type=file ignores=0
+timestamp=2026-10-28T03:13:33.070Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary-project/AGENTS.md type=file backend=node ignores=0 http.span=208 role=server
+timestamp=2026-10-28T03:13:33.074Z level=INFO run=bdb69224 message="watcher subscribe" path=~/.claude/skills type=directory ignores=8
+timestamp=2026-10-28T03:13:33.074Z level=INFO run=bdb69224 message="watcher started" path=~/.claude/skills type=directory backend=fs-events ignores=8 http.span=212 role=server
+timestamp=2026-10-28T03:13:33.091Z level=INFO run=bdb69224 message="watcher subscribe" path=~/.agents/skills type=directory ignores=8
+timestamp=2026-10-28T03:13:33.092Z level=INFO run=bdb69224 message="watcher started" path=~/.agents/skills type=directory backend=fs-events ignores=8 http.span=230 role=server
+timestamp=2026-10-28T03:13:33.099Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/home/.config/opencode/skill type=file ignores=0
+timestamp=2026-10-28T03:13:33.100Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/home/.config/opencode/skill type=file backend=node ignores=0 http.span=238 role=server
+timestamp=2026-10-28T03:13:33.100Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/home/.config/opencode/skills type=file ignores=0
+timestamp=2026-10-28T03:13:33.100Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/home/.config/opencode/skills type=file backend=node ignores=0 http.span=238 role=server
+timestamp=2026-10-28T03:13:33.100Z level=INFO run=bdb69224 message="watcher subscribe" path=~/.opencode/skill type=file ignores=0
+timestamp=2026-10-28T03:13:33.100Z level=INFO run=bdb69224 message="watcher started" path=~/.opencode/skill type=file backend=node ignores=0 http.span=238 role=server
+timestamp=2026-10-28T03:13:33.101Z level=INFO run=bdb69224 message="watcher subscribe" path=~/.opencode/skills type=file ignores=0
+timestamp=2026-10-28T03:13:33.101Z level=INFO run=bdb69224 message="watcher started" path=~/.opencode/skills type=file backend=node ignores=0 http.span=239 role=server
+timestamp=2026-10-28T03:13:33.106Z level=INFO run=bdb69224 message=event event.id=evt_1807fabb2001IMXmcCID9EAF3r event.created=1793157213106 event.type=provider.updated event.location.directory=~/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=244 role=server
+timestamp=2026-10-28T03:13:33.110Z level=INFO run=bdb69224 message=event event.id=evt_1807fabb60012dCjExiM1AM440 event.created=1793157213110 event.type=model.updated event.location.directory=~/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=248 role=server
+timestamp=2026-10-28T03:13:33.110Z level=INFO run=bdb69224 message=event event.id=evt_1807fabb6002UNRPyZSw8kgo64 event.created=1793157213110 event.type=agent.updated event.location.directory=~/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=248 role=server
+timestamp=2026-10-28T03:13:33.110Z level=INFO run=bdb69224 message=event event.id=evt_1807fabb6003xUNBA0Yq6Vnv6v event.created=1793157213110 event.type=command.updated event.location.directory=~/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=248 role=server
+timestamp=2026-10-28T03:13:35.989Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/plugin/index.js type=file http.span=3127 role=server
+timestamp=2026-10-28T03:13:35.990Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/plugin type=directory http.span=3128 role=server
+timestamp=2026-10-28T03:13:35.991Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/home/.config/opencode/skill type=file http.span=3129 role=server
+timestamp=2026-10-28T03:13:35.991Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/home/.config/opencode/skills type=file http.span=3129 role=server
+timestamp=2026-10-28T03:13:35.991Z level=INFO run=bdb69224 message="watcher stopped" path=~/.opencode/skill type=file http.span=3129 role=server
+timestamp=2026-10-28T03:13:35.991Z level=INFO run=bdb69224 message="watcher stopped" path=~/.opencode/skills type=file http.span=3129 role=server
+timestamp=2026-10-28T03:13:35.991Z level=INFO run=bdb69224 message="watcher stopped" path=~/.claude/skills type=directory http.span=3129 role=server
+timestamp=2026-10-28T03:13:35.991Z level=INFO run=bdb69224 message="watcher stopped" path=~/.agents/skills type=directory http.span=3129 role=server
+timestamp=2026-10-28T03:13:35.993Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary-project/AGENTS.md type=file http.span=3131 role=server
+timestamp=2026-10-28T03:13:35.993Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/home/.config/opencode/AGENTS.md type=file http.span=3131 role=server
 timestamp=2026-10-28T03:13:36.000Z level=INFO run=bdb69224 message="watcher stopped" path="/Library/Application Support" type=entries http.span=3138 role=server
 timestamp=2026-10-28T03:13:36.000Z level=INFO run=bdb69224 message="watcher stopped" path=/ type=entries http.span=3138 role=server
 timestamp=2026-10-28T03:13:36.000Z level=INFO run=bdb69224 message="watcher stopped" path=/Users type=entries http.span=3138 role=server
-timestamp=2026-10-28T03:13:36.000Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan type=entries http.span=3138 role=server
-timestamp=2026-10-28T03:13:36.000Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents type=entries http.span=3138 role=server
-timestamp=2026-10-28T03:13:36.000Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary-project type=entries http.span=3138 role=server
-timestamp=2026-10-28T03:13:36.000Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/home type=entries http.span=3138 role=server
-timestamp=2026-10-28T03:13:36.000Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode type=directory http.span=3138 role=server
-timestamp=2026-10-28T03:13:36.001Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/.opencode type=directory http.span=3139 role=server
-timestamp=2026-10-28T03:13:36.014Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode type=directory ignores=6 http.span=35 role=server
-timestamp=2026-10-28T03:13:36.014Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/.opencode type=directory ignores=6 http.span=35 role=server
+timestamp=2026-10-28T03:13:36.000Z level=INFO run=bdb69224 message="watcher stopped" path=~ type=entries http.span=3138 role=server
+timestamp=2026-10-28T03:13:36.000Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents type=entries http.span=3138 role=server
+timestamp=2026-10-28T03:13:36.000Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary-project type=entries http.span=3138 role=server
+timestamp=2026-10-28T03:13:36.000Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/home type=entries http.span=3138 role=server
+timestamp=2026-10-28T03:13:36.000Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/home/.config/opencode type=directory http.span=3138 role=server
+timestamp=2026-10-28T03:13:36.001Z level=INFO run=bdb69224 message="watcher stopped" path=~/.opencode type=directory http.span=3139 role=server
+timestamp=2026-10-28T03:13:36.014Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/home/.config/opencode type=directory ignores=6 http.span=35 role=server
+timestamp=2026-10-28T03:13:36.014Z level=INFO run=bdb69224 message="watcher subscribe" path=~/.opencode type=directory ignores=6 http.span=35 role=server
 timestamp=2026-10-28T03:13:36.014Z level=INFO run=bdb69224 message="watcher subscribe" path="/Library/Application Support" type=entries ignores=0 http.span=35 role=server
 timestamp=2026-10-28T03:13:36.014Z level=INFO run=bdb69224 message="watcher started" path="/Library/Application Support" type=entries backend=node ignores=0 http.span=35 role=server
 timestamp=2026-10-28T03:13:36.014Z level=INFO run=bdb69224 message="watcher subscribe" path=/ type=entries ignores=0 http.span=35 role=server
 timestamp=2026-10-28T03:13:36.015Z level=INFO run=bdb69224 message="watcher started" path=/ type=entries backend=node ignores=0 http.span=36 role=server
 timestamp=2026-10-28T03:13:36.015Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users type=entries ignores=0 http.span=36 role=server
 timestamp=2026-10-28T03:13:36.016Z level=INFO run=bdb69224 message="watcher started" path=/Users type=entries backend=node ignores=0 http.span=37 role=server
-timestamp=2026-10-28T03:13:36.016Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan type=entries ignores=0 http.span=37 role=server
-timestamp=2026-10-28T03:13:36.016Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan type=entries backend=node ignores=0 http.span=37 role=server
-timestamp=2026-10-28T03:13:36.016Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents type=entries ignores=0 http.span=37 role=server
-timestamp=2026-10-28T03:13:36.018Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents type=entries backend=node ignores=0 http.span=39 role=server
-timestamp=2026-10-28T03:13:36.018Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary-project type=entries ignores=0 http.span=39 role=server
-timestamp=2026-10-28T03:13:36.019Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary-project type=entries backend=node ignores=0 http.span=40 role=server
-timestamp=2026-10-28T03:13:36.019Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/home type=entries ignores=0 http.span=40 role=server
-timestamp=2026-10-28T03:13:36.019Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/home type=entries backend=node ignores=0 http.span=40 role=server
-timestamp=2026-10-28T03:13:36.022Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode type=directory backend=fs-events ignores=6 http.span=43 role=server
-timestamp=2026-10-28T03:13:36.022Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/.opencode type=directory backend=fs-events ignores=6 http.span=43 role=server
-timestamp=2026-10-28T03:13:36.023Z level=INFO run=bdb69224 message="location services booted" directory=/Users/muhammedqadan/Documents/opencode-router-canary-project workspaceID=undefined durationMs=22 http.span=44 role=server
+timestamp=2026-10-28T03:13:36.016Z level=INFO run=bdb69224 message="watcher subscribe" path=~ type=entries ignores=0 http.span=37 role=server
+timestamp=2026-10-28T03:13:36.016Z level=INFO run=bdb69224 message="watcher started" path=~ type=entries backend=node ignores=0 http.span=37 role=server
+timestamp=2026-10-28T03:13:36.016Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents type=entries ignores=0 http.span=37 role=server
+timestamp=2026-10-28T03:13:36.018Z level=INFO run=bdb69224 message="watcher started" path=~/Documents type=entries backend=node ignores=0 http.span=39 role=server
+timestamp=2026-10-28T03:13:36.018Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary-project type=entries ignores=0 http.span=39 role=server
+timestamp=2026-10-28T03:13:36.019Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary-project type=entries backend=node ignores=0 http.span=40 role=server
+timestamp=2026-10-28T03:13:36.019Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/home type=entries ignores=0 http.span=40 role=server
+timestamp=2026-10-28T03:13:36.019Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/home type=entries backend=node ignores=0 http.span=40 role=server
+timestamp=2026-10-28T03:13:36.022Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/home/.config/opencode type=directory backend=fs-events ignores=6 http.span=43 role=server
+timestamp=2026-10-28T03:13:36.022Z level=INFO run=bdb69224 message="watcher started" path=~/.opencode type=directory backend=fs-events ignores=6 http.span=43 role=server
+timestamp=2026-10-28T03:13:36.023Z level=INFO run=bdb69224 message="location services booted" directory=~/Documents/opencode-router-canary-project workspaceID=undefined durationMs=22 http.span=44 role=server
 timestamp=2026-10-28T03:13:36.023Z level=INFO run=bdb69224 message="location services reloaded" count=1 http.span=44 role=server
-timestamp=2026-10-28T03:13:36.060Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/plugin type=directory ignores=0 http.span=81 role=server
-timestamp=2026-10-28T03:13:36.061Z level=INFO run=bdb69224 msg="loading plugin" id=/Users/muhammedqadan/Documents/opencode-router-canary/plugin entrypoint=file:///Users/muhammedqadan/Documents/opencode-router-canary/plugin/index.js http.span=82 role=server
-timestamp=2026-10-28T03:13:36.066Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/plugin type=directory backend=fs-events ignores=0 http.span=87 role=server
-timestamp=2026-10-28T03:13:36.066Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/plugin/index.js type=file ignores=0 http.span=87 role=server
-timestamp=2026-10-28T03:13:36.066Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/plugin/index.js type=file backend=node ignores=0 http.span=87 role=server
-timestamp=2026-10-28T03:13:36.172Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/AGENTS.md type=file ignores=0
-timestamp=2026-10-28T03:13:36.172Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/AGENTS.md type=file backend=node ignores=0 http.span=193 role=server
-timestamp=2026-10-28T03:13:36.172Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary-project/AGENTS.md type=file ignores=0
-timestamp=2026-10-28T03:13:36.172Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary-project/AGENTS.md type=file backend=node ignores=0 http.span=193 role=server
-timestamp=2026-10-28T03:13:36.176Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/.claude/skills type=directory ignores=8
-timestamp=2026-10-28T03:13:36.177Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/.claude/skills type=directory backend=fs-events ignores=8 http.span=198 role=server
-timestamp=2026-10-28T03:13:36.203Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/.agents/skills type=directory ignores=8
-timestamp=2026-10-28T03:13:36.204Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/.agents/skills type=directory backend=fs-events ignores=8 http.span=225 role=server
-timestamp=2026-10-28T03:13:36.207Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/skill type=file ignores=0
-timestamp=2026-10-28T03:13:36.207Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/skill type=file backend=node ignores=0 http.span=228 role=server
-timestamp=2026-10-28T03:13:36.208Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/skills type=file ignores=0
-timestamp=2026-10-28T03:13:36.208Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/skills type=file backend=node ignores=0 http.span=229 role=server
-timestamp=2026-10-28T03:13:36.208Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/.opencode/skill type=file ignores=0
-timestamp=2026-10-28T03:13:36.208Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/.opencode/skill type=file backend=node ignores=0 http.span=229 role=server
-timestamp=2026-10-28T03:13:36.208Z level=INFO run=bdb69224 message="watcher subscribe" path=/Users/muhammedqadan/.opencode/skills type=file ignores=0
-timestamp=2026-10-28T03:13:36.208Z level=INFO run=bdb69224 message="watcher started" path=/Users/muhammedqadan/.opencode/skills type=file backend=node ignores=0 http.span=229 role=server
-timestamp=2026-10-28T03:13:36.215Z level=INFO run=bdb69224 message=event event.id=evt_1807fb7d7001iSC4Z9yml50QGq event.created=1793157216215 event.type=provider.updated event.location.directory=/Users/muhammedqadan/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=236 role=server
-timestamp=2026-10-28T03:13:36.218Z level=INFO run=bdb69224 message=event event.id=evt_1807fb7da0014lLK21okptoQrS event.created=1793157216218 event.type=model.updated event.location.directory=/Users/muhammedqadan/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=239 role=server
-timestamp=2026-10-28T03:13:36.218Z level=INFO run=bdb69224 message=event event.id=evt_1807fb7da002gbuU5ARRjxxqtv event.created=1793157216218 event.type=agent.updated event.location.directory=/Users/muhammedqadan/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=239 role=server
-timestamp=2026-10-28T03:13:36.219Z level=INFO run=bdb69224 message=event event.id=evt_1807fb7db0010xyiBWbkcavVm6 event.created=1793157216219 event.type=command.updated event.location.directory=/Users/muhammedqadan/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=240 role=server
-timestamp=2026-10-28T03:13:55.351Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/plugin/index.js type=file http.span=19372 role=server
-timestamp=2026-10-28T03:13:55.352Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/plugin type=directory http.span=19373 role=server
-timestamp=2026-10-28T03:13:55.353Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/skill type=file http.span=19374 role=server
-timestamp=2026-10-28T03:13:55.353Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/skills type=file http.span=19374 role=server
-timestamp=2026-10-28T03:13:55.353Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/.opencode/skill type=file http.span=19374 role=server
-timestamp=2026-10-28T03:13:55.353Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/.opencode/skills type=file http.span=19374 role=server
-timestamp=2026-10-28T03:13:55.353Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/.claude/skills type=directory http.span=19374 role=server
-timestamp=2026-10-28T03:13:55.353Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/.agents/skills type=directory http.span=19374 role=server
-timestamp=2026-10-28T03:13:55.354Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary-project/AGENTS.md type=file http.span=19375 role=server
-timestamp=2026-10-28T03:13:55.354Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode/AGENTS.md type=file http.span=19375 role=server
+timestamp=2026-10-28T03:13:36.060Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/plugin type=directory ignores=0 http.span=81 role=server
+timestamp=2026-10-28T03:13:36.061Z level=INFO run=bdb69224 msg="loading plugin" id=~/Documents/opencode-router-canary/plugin entrypoint=file://~/Documents/opencode-router-canary/plugin/index.js http.span=82 role=server
+timestamp=2026-10-28T03:13:36.066Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/plugin type=directory backend=fs-events ignores=0 http.span=87 role=server
+timestamp=2026-10-28T03:13:36.066Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/plugin/index.js type=file ignores=0 http.span=87 role=server
+timestamp=2026-10-28T03:13:36.066Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/plugin/index.js type=file backend=node ignores=0 http.span=87 role=server
+timestamp=2026-10-28T03:13:36.172Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/home/.config/opencode/AGENTS.md type=file ignores=0
+timestamp=2026-10-28T03:13:36.172Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/home/.config/opencode/AGENTS.md type=file backend=node ignores=0 http.span=193 role=server
+timestamp=2026-10-28T03:13:36.172Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary-project/AGENTS.md type=file ignores=0
+timestamp=2026-10-28T03:13:36.172Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary-project/AGENTS.md type=file backend=node ignores=0 http.span=193 role=server
+timestamp=2026-10-28T03:13:36.176Z level=INFO run=bdb69224 message="watcher subscribe" path=~/.claude/skills type=directory ignores=8
+timestamp=2026-10-28T03:13:36.177Z level=INFO run=bdb69224 message="watcher started" path=~/.claude/skills type=directory backend=fs-events ignores=8 http.span=198 role=server
+timestamp=2026-10-28T03:13:36.203Z level=INFO run=bdb69224 message="watcher subscribe" path=~/.agents/skills type=directory ignores=8
+timestamp=2026-10-28T03:13:36.204Z level=INFO run=bdb69224 message="watcher started" path=~/.agents/skills type=directory backend=fs-events ignores=8 http.span=225 role=server
+timestamp=2026-10-28T03:13:36.207Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/home/.config/opencode/skill type=file ignores=0
+timestamp=2026-10-28T03:13:36.207Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/home/.config/opencode/skill type=file backend=node ignores=0 http.span=228 role=server
+timestamp=2026-10-28T03:13:36.208Z level=INFO run=bdb69224 message="watcher subscribe" path=~/Documents/opencode-router-canary/home/.config/opencode/skills type=file ignores=0
+timestamp=2026-10-28T03:13:36.208Z level=INFO run=bdb69224 message="watcher started" path=~/Documents/opencode-router-canary/home/.config/opencode/skills type=file backend=node ignores=0 http.span=229 role=server
+timestamp=2026-10-28T03:13:36.208Z level=INFO run=bdb69224 message="watcher subscribe" path=~/.opencode/skill type=file ignores=0
+timestamp=2026-10-28T03:13:36.208Z level=INFO run=bdb69224 message="watcher started" path=~/.opencode/skill type=file backend=node ignores=0 http.span=229 role=server
+timestamp=2026-10-28T03:13:36.208Z level=INFO run=bdb69224 message="watcher subscribe" path=~/.opencode/skills type=file ignores=0
+timestamp=2026-10-28T03:13:36.208Z level=INFO run=bdb69224 message="watcher started" path=~/.opencode/skills type=file backend=node ignores=0 http.span=229 role=server
+timestamp=2026-10-28T03:13:36.215Z level=INFO run=bdb69224 message=event event.id=evt_1807fb7d7001iSC4Z9yml50QGq event.created=1793157216215 event.type=provider.updated event.location.directory=~/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=236 role=server
+timestamp=2026-10-28T03:13:36.218Z level=INFO run=bdb69224 message=event event.id=evt_1807fb7da0014lLK21okptoQrS event.created=1793157216218 event.type=model.updated event.location.directory=~/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=239 role=server
+timestamp=2026-10-28T03:13:36.218Z level=INFO run=bdb69224 message=event event.id=evt_1807fb7da002gbuU5ARRjxxqtv event.created=1793157216218 event.type=agent.updated event.location.directory=~/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=239 role=server
+timestamp=2026-10-28T03:13:36.219Z level=INFO run=bdb69224 message=event event.id=evt_1807fb7db0010xyiBWbkcavVm6 event.created=1793157216219 event.type=command.updated event.location.directory=~/Documents/opencode-router-canary-project event.location.workspaceID=undefined event.data={} http.span=240 role=server
+timestamp=2026-10-28T03:13:55.351Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/plugin/index.js type=file http.span=19372 role=server
+timestamp=2026-10-28T03:13:55.352Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/plugin type=directory http.span=19373 role=server
+timestamp=2026-10-28T03:13:55.353Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/home/.config/opencode/skill type=file http.span=19374 role=server
+timestamp=2026-10-28T03:13:55.353Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/home/.config/opencode/skills type=file http.span=19374 role=server
+timestamp=2026-10-28T03:13:55.353Z level=INFO run=bdb69224 message="watcher stopped" path=~/.opencode/skill type=file http.span=19374 role=server
+timestamp=2026-10-28T03:13:55.353Z level=INFO run=bdb69224 message="watcher stopped" path=~/.opencode/skills type=file http.span=19374 role=server
+timestamp=2026-10-28T03:13:55.353Z level=INFO run=bdb69224 message="watcher stopped" path=~/.claude/skills type=directory http.span=19374 role=server
+timestamp=2026-10-28T03:13:55.353Z level=INFO run=bdb69224 message="watcher stopped" path=~/.agents/skills type=directory http.span=19374 role=server
+timestamp=2026-10-28T03:13:55.354Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary-project/AGENTS.md type=file http.span=19375 role=server
+timestamp=2026-10-28T03:13:55.354Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/home/.config/opencode/AGENTS.md type=file http.span=19375 role=server
 timestamp=2026-10-28T03:13:55.365Z level=INFO run=bdb69224 message="watcher stopped" path="/Library/Application Support" type=entries http.span=19386 role=server
 timestamp=2026-10-28T03:13:55.365Z level=INFO run=bdb69224 message="watcher stopped" path=/ type=entries http.span=19386 role=server
 timestamp=2026-10-28T03:13:55.365Z level=INFO run=bdb69224 message="watcher stopped" path=/Users type=entries http.span=19386 role=server
-timestamp=2026-10-28T03:13:55.365Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan type=entries http.span=19386 role=server
-timestamp=2026-10-28T03:13:55.365Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents type=entries http.span=19386 role=server
-timestamp=2026-10-28T03:13:55.365Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary-project type=entries http.span=19386 role=server
-timestamp=2026-10-28T03:13:55.365Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/home type=entries http.span=19386 role=server
-timestamp=2026-10-28T03:13:55.365Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/Documents/opencode-router-canary/home/.config/opencode type=directory http.span=19386 role=server
-timestamp=2026-10-28T03:13:55.365Z level=INFO run=bdb69224 message="watcher stopped" path=/Users/muhammedqadan/.opencode type=directory http.span=19386 role=server
+timestamp=2026-10-28T03:13:55.365Z level=INFO run=bdb69224 message="watcher stopped" path=~ type=entries http.span=19386 role=server
+timestamp=2026-10-28T03:13:55.365Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents type=entries http.span=19386 role=server
+timestamp=2026-10-28T03:13:55.365Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary-project type=entries http.span=19386 role=server
+timestamp=2026-10-28T03:13:55.365Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/home type=entries http.span=19386 role=server
+timestamp=2026-10-28T03:13:55.365Z level=INFO run=bdb69224 message="watcher stopped" path=~/Documents/opencode-router-canary/home/.config/opencode type=directory http.span=19386 role=server
+timestamp=2026-10-28T03:13:55.365Z level=INFO run=bdb69224 message="watcher stopped" path=~/.opencode type=directory http.span=19386 role=server

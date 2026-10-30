@@ -1,4 +1,4 @@
-backup=/Users/muhammedqadan/Documents/opencode-smart-router-backups/20261027-223912
+backup=~/Documents/opencode-smart-router-backups/20261027-223912
 artifact=8c71c46c5f7616f950c6a3fcf5c42be2198407848cf9ffac15d01504496f8920
 live_config_sha256=d6cab84f1cd1899057486da35b1da09b63bcf7bf7983c440bb7f4ea888b7268b
 router_config_sha256=d7bebb5941896623f59a42d71bf13980d66394ac086ca284815c622201757d6e
