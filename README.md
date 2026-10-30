@@ -100,6 +100,7 @@ commands, which appear in the command menu and return a short status message:
 | `/router-status` | Runtime mode, selected model, task tier, quota, warnings |
 | `/router-explain` | Last decision, signals, candidate costs, reasons |
 | `/router-report` | Local usage, switches, premium prevention, retries, latency |
+| `/router-floor` | The intelligence floor in force, where it came from, and what it admits |
 | `/router-mode efficiency\|balanced\|premium` | Change the routing mode |
 | `/router-dry-run on\|off` | Explain decisions without changing the model |
 | `/router-auto` | Clear a manual override and resume automatic routing |

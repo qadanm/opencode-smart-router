@@ -2078,6 +2078,12 @@ export class RouterController {
     )
 
     this.registrations.push(
+      await command("router-floor", "Show the intelligence floor in force and where it came from", async ({ sessionID }: any) => {
+        await notice(sessionID, this.formatFloor())
+      }),
+    )
+
+    this.registrations.push(
       await command("router-dry-run", "Enable or disable dry-run routing: /router-dry-run on|off", async ({ sessionID, prompt }: any) => {
         const value = String(prompt?.text ?? "").trim().split(/\s+/).pop()
         if (value !== "on" && value !== "off") {
@@ -2279,6 +2285,49 @@ export class RouterController {
       if (snapshot.error) lines.push(`  ${snapshot.error}`)
     }
     lines.push("No inference request was made by this command.")
+    return lines.join("\n")
+  }
+
+  /**
+   * One screen describing the floor, its provenance, and what it admits.
+   *
+   * Printed rather than summarised because the point of the command is to make
+   * the number checkable. The reason line names the model and both cost figures
+   * the calibration compared, so the reader can disagree with it.
+   */
+  private formatFloor(): string {
+    const report = this.floorReport()
+    const lines: string[] = []
+    lines.push(`Floor in force: ${report.floorInForce.toFixed(1)} (${report.source})`)
+    lines.push(`  configured: ${report.configuredFloor.toFixed(1)}`)
+
+    if (report.offlineBypass) {
+      lines.push("  calibration is inactive while offline mode is enabled")
+    } else if (!report.calibrateFloor) {
+      lines.push("  calibration is off; set routing.calibrateFloor to true to derive this from spend")
+    } else if (!report.calibrated) {
+      lines.push(`  not calibrated: ${report.reason}`)
+    } else {
+      lines.push(`  calibrated: ${report.reason}`)
+      if (report.baselineUsdPerRequest !== null) {
+        lines.push(`  measured baseline: $${report.baselineUsdPerRequest.toFixed(6)} per request over ${report.windowDays} days`)
+      }
+    }
+
+    lines.push(`  needs ${report.minRequests} recorded requests; you have ${report.totalRequests}`)
+    lines.push(`Admitted at this floor (${report.admitted.length}):`)
+    for (const entry of report.admitted.slice(0, 10)) {
+      const price = entry.listInputUsdPerMtok === null ? "?" : `$${entry.listInputUsdPerMtok}`
+      lines.push(`  ${entry.model}  intel ${entry.intelligence.toFixed(1)}  ${price}/Mtok in`)
+    }
+    if (report.admitted.length > 10) lines.push(`  ... ${report.admitted.length - 10} more`)
+
+    if (report.measuredTraffic.length > 0) {
+      lines.push("Measured traffic:")
+      for (const row of report.measuredTraffic.slice(0, 6)) {
+        lines.push(`  ${row.model}  ${row.requests} req  $${row.usdPerRequest.toFixed(6)}/req`)
+      }
+    }
     return lines.join("\n")
   }
 
