@@ -236,6 +236,28 @@ MUTATIONS = [
         "      reported > 0",
         "test/opendesign-context-limit.test.ts",
     ),
+    # ------------------------------------------------------ Go to Pro migration
+    Mutation(
+        "Go-era default mode returns",
+        "src/core/config.ts",
+        '    mode: "native",\n    enabled: true,\n    compactAtTokens: 0,',
+        '    mode: "budget-optimized",\n    enabled: true,\n    compactAtTokens: 50_000,',
+        "test/go-to-pro-migration.test.ts",
+    ),
+    Mutation(
+        "native mode honours the old early-compaction knob",
+        "src/core/context/strategy.ts",
+        '    if (!overflow) return no("Native mode: the transcript fits the verified window.")',
+        '    if (!overflow && contextTokens < (settings.compactAtTokens || Infinity)) return no("Native mode: the transcript fits the verified window.")',
+        "test/go-to-pro-migration.test.ts",
+    ),
+    Mutation(
+        "unknown plan falls back to a default tier",
+        "src/core/plans/catalog.ts",
+        '    // Configured but unrecognized: refuse to guess a tier.\n    return { plan: undefined, resolution: "unknown", planID: undefined }',
+        '    const fb = DEFAULT_PLAN_ID[providerID]\n    return { plan: fb ? PLAN_BY_KEY.get(`${providerID}/${fb}`) : undefined, resolution: "unknown", planID: fb }',
+        "test/go-to-pro-migration.test.ts",
+    ),
 ]
 
 def run_tests(test: str) -> bool:

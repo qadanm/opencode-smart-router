@@ -290,7 +290,7 @@ npm test          # the suite only
 npm run mutate    # prove the safety tests fail when their properties break
 ```
 
-350 tests across 28 files cover classification, eligibility, quota parsing,
+361 tests across 29 files cover classification, eligibility, quota parsing,
 credential discovery and its security properties, ledger accounting, monthly pool
 reconciliation, documented peak pricing, cache-aware routing, premium protection,
 purchased-credit blocking, manual overrides, failure classification,
@@ -300,7 +300,7 @@ allowance API, and controller integration.
 Two commands exist because passing tests prove less than they appear to.
 `npm run verify` repeats the whole thing in a clean room with an empty `HOME`, so
 a pass cannot depend on this machine's config or credentials. `npm run mutate`
-reverts each of 29 safety properties in turn and fails if the suite still passes,
+reverts each of 32 safety properties in turn and fails if the suite still passes,
 which is the only way to know a test is guarding anything.
 
 `npx vitest run` for the suite, `npx tsc --noEmit` for types, and
