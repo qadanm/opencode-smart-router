@@ -200,8 +200,29 @@ MUTATIONS = [
         'import type { UsageEvent } from "../types.js"\nimport { homedir } from "node:os"\nexport const home = homedir()',
         "test/allowance-api.test.ts",
     ),
+    # ------------------------------------------------------- OpenDesign honesty
+    Mutation(
+        "estimated quota claims provider authority",
+        "src/core/quota/opendesign.ts",
+        '  const weekly = caps.weekly !== undefined\n    ? windowFrom(totals.weeklyUsd, caps.weekly, undefined, "estimate")',
+        '  const weekly = caps.weekly !== undefined\n    ? windowFrom(totals.weeklyUsd, caps.weekly, undefined, "provider")',
+        "test/opendesign-quota-honesty.test.ts",
+    ),
+    Mutation(
+        "estimated state reported as verified",
+        "src/core/quota/opendesign.ts",
+        '  return { snapshot, state: exhausted ? "exhausted" : "estimated" }',
+        '  return { snapshot, state: "verified" }',
+        "test/opendesign-quota-honesty.test.ts",
+    ),
+    Mutation(
+        "a plan window that does not exist reported as a measured zero",
+        "src/core/quota/opendesign.ts",
+        '    : { ...unknownWindow, usedUsd: totals.rollingUsd }',
+        '    : windowFrom(totals.rollingUsd, 0, undefined, "estimate")',
+        "test/opendesign-quota-honesty.test.ts",
+    ),
 ]
-
 
 def run_tests(test: str) -> bool:
     """Return True when the suite PASSES."""

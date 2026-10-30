@@ -21,11 +21,15 @@ import { creditMultiplierFor } from "../providers/opendesign-credits.js"
 /**
  * OpenDesign quota integration.
  *
- * OpenDesign publishes no quota API for an inference key. `GET /v1/usage` and
- * `GET /v1/me` on the inference gateway return 404, and the account-control
- * host rejects an inference key with HTTP 401. The upstream feature request
- * for a key-readable usage endpoint is still open (nexu-io/open-design#8674),
- * and the control-key lifecycle request is still open (#8870).
+ * OpenDesign publishes no quota API for an inference key. Re-verified on
+ * 2026-10-30 against the live gateway: `GET /v1/models` returns 200 with the
+ * same key, while `/v1/usage`, `/v1/me`, `/v1/credits`, `/v1/billing`,
+ * `/v1/account`, `/v1/subscription`, `/v1/limits` and `/v1/quota` all return
+ * 404. The key is valid and authorized for inference; there is simply no usage
+ * surface for it. The account-control host rejects an inference key with HTTP
+ * 401. The upstream feature request for a key-readable usage endpoint is still
+ * open (nexu-io/open-design#8674), as is the control-key lifecycle request
+ * (#8870).
  *
  * Three states are therefore supported:
  *

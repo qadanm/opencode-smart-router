@@ -110,7 +110,20 @@ OpenDesign Pro exposes two independent credit pools: Design Plan credits ($360/m
 
 These figures are **estimated**, not provider-confirmed. An OpenDesign inference key cannot read quota: `GET /v1/usage` and `/v1/me` return 404 and the account-control host rejects an inference key. A control key would enable verified reads; none is configured, and the router never acquires one automatically. Because usage from the OpenDesign app is invisible to the router, the estimate is a lower bound.
 
-`minimax-m3.1-flash`'s Design Plan multiplier is unpublished, so a neutral 1× is applied and the uncertainty is reported rather than hidden. The same applies to the GLM cache-read price.
+`minimax-m3.1-flash`'s Design Plan multiplier is unpublished, so a neutral 1x is applied and the uncertainty is reported rather than hidden. The same applies to the GLM cache-read price.
+
+OpenDesign quota cannot be verified without an account control key. Re-probed on
+2026-10-30 against the live gateway: `/v1/models` returns 200 with the inference
+key, while `/v1/usage`, `/v1/me`, `/v1/credits`, `/v1/billing`, `/v1/account`,
+`/v1/subscription`, `/v1/limits` and `/v1/quota` all return 404. The key is valid
+and authorized for inference; no usage surface exists for it. Quota therefore
+reports `estimated`, derived from this router's own consumption against the
+published plan caps with a configurable safety margin.
+
+That estimate is a lower bound, because usage from the OpenDesign desktop app and
+any other client on the same subscription is invisible to the router. The state
+label is the honest part: `estimated` never becomes `verified` without a control
+key, and `test/opendesign-quota-honesty.test.ts` pins that so it cannot drift.
 
 ## 8b. Measured speed
 
