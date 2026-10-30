@@ -49,7 +49,8 @@
     "test:watch": "vitest",
     "check": "typecheck && test",
     "build:server": "esbuild src/index.ts --bundle --format=esm --platform=node --target=node22 --external:@opencode/plugin --external:@opencode/plugin/* --outfile=dist/index.js --legal-comments=none",
-    "build:allowance": "esbuild src/allowance.ts --bundle --format=esm --platform=neutral --target=node20 --outfile=dist/allowance.js --legal-comments=none"
+    "build:allowance": "esbuild src/allowance.ts --bundle --format=esm --platform=neutral --target=node20 --outfile=dist/allowance.js --legal-comments=none",
+    "mutate": "python3 scripts/mutate.py"
   },
   "dependencies": {
     "@opencode/plugin": "2.1.4"

@@ -305,3 +305,134 @@ describe("discovered versus named files", () => {
     expect(warnings.join(" ")).toMatch(/permissions/i)
   })
 })
+
+describe("descriptors are released on every path", () => {
+  /**
+   * A descriptor leaked here is invisible until a long-running host exhausts
+   * its limit, and this function runs on a quota-probe path that repeats every
+   * few minutes. Counting the process's open descriptors is the only way to
+   * assert it, because the failure mode is an absence rather than a value.
+   */
+  const openDescriptorCount = () => {
+    // Linux and macOS both expose this; the project targets both.
+    const { readdirSync } = require("node:fs") as typeof import("node:fs")
+    try {
+      return readdirSync("/dev/fd").length
+    } catch {
+      return readdirSync("/proc/self/fd").length
+    }
+  }
+
+  const repeat = (times: number, action: () => void) => {
+    for (let index = 0; index < times; index += 1) action()
+  }
+
+  it("does not leak on a successful read", () => {
+    const home = makeHome()
+    const path = writeKey(home, "good.key", "user_no_leak_success_key_val")
+    const warnings: string[] = []
+    // Warm up so lazily-created descriptors do not skew the baseline.
+    readCredentialFileWith(path, warnings, OPTIONS)
+    const before = openDescriptorCount()
+    repeat(200, () => readCredentialFileWith(path, warnings, OPTIONS))
+    const after = openDescriptorCount()
+    expect(after - before).toBeLessThan(8)
+  })
+
+  it("does not leak when the read is rejected", () => {
+    // Every early return happens after the open, so each one is a chance to
+    // leak. A rejected file is the common case in the wild.
+    const home = makeHome()
+    const path = writeKey(home, "loose.key", "user_no_leak_reject_key_val", 0o644)
+    const warnings: string[] = []
+    readCredentialFileWith(path, warnings, OPTIONS)
+    const before = openDescriptorCount()
+    repeat(200, () => readCredentialFileWith(path, warnings, OPTIONS))
+    const after = openDescriptorCount()
+    expect(after - before).toBeLessThan(8)
+  })
+
+  it("does not leak when the file is missing or a symlink", () => {
+    const home = makeHome()
+    const real = writeKey(home, "target.key", "user_no_leak_symlink_key_val")
+    const link = join(home, "link.key")
+    symlinkSync(real, link)
+    const warnings: string[] = []
+    readCredentialFileWith(join(home, "nope.key"), warnings, OPTIONS)
+    readCredentialFileWith(link, warnings, OPTIONS)
+    const before = openDescriptorCount()
+    repeat(200, () => {
+      readCredentialFileWith(join(home, "nope.key"), warnings, OPTIONS)
+      readCredentialFileWith(link, warnings, OPTIONS)
+    })
+    const after = openDescriptorCount()
+    expect(after - before).toBeLessThan(8)
+  })
+})
+
+describe("the snapshot note cannot carry a path", () => {
+  it("reports a file credential by basename, not path", async () => {
+    // This is the exact field that shipped a full home path into committed
+    // evidence. It must be asserted on the file-backed branch, because the
+    // non-file branches never contained a path in the first place.
+    const { probeCommandCodeQuota } = await import("../src/core/quota/commandcode.js")
+    const home = makeHome()
+    const path = writeKey(home, ".config/opencode/commandcode.key", "user_note_must_not_carry_path")
+    // The note is written only after a credential authorizes, so the mock has
+    // to get that far. Returning 401 everywhere would skip the line under test.
+    const whoami = JSON.stringify({
+      success: true,
+      user: { id: "user_redacted", userName: "redacted", name: "Redacted", email: "redacted@example.invalid" },
+      org: null,
+    })
+    const result = await probeCommandCodeQuota({
+      settings: {
+        enabled: true,
+        plan: "goat",
+        credentialSource: "auto",
+      } as never,
+      home,
+      env: {},
+      fetchImpl: (async (url: string | URL | Request) => {
+        if (String(url).includes("/alpha/whoami")) return new Response(whoami, { status: 200 })
+        return new Response(JSON.stringify({}), { status: 200 })
+      }) as unknown as typeof fetch,
+      now: () => Date.UTC(2026, 9, 30, 12),
+    })
+    const notes = (result.snapshot.notes ?? []).join(" ")
+    const sources = (result.triedSources ?? []).join(" ")
+    for (const text of [notes, sources]) {
+      expect(text).not.toContain(home)
+      expect(text).not.toContain("/.config/")
+      expect(text).not.toContain("user_note_must_not_carry_path")
+    }
+    // The filename alone is still useful for support.
+    expect(`${notes} ${sources}`).toMatch(/commandcode\.key/)
+  })
+})
+
+describe("a caller-supplied source cannot become an output channel", () => {
+  it("maps an unrecognised source to a fixed label", () => {
+    // `source` is caller-supplied for non-file candidates. Echoing it verbatim
+    // would make describeCredentialSource() an arbitrary text channel into a
+    // persisted snapshot note.
+    const injected = describeCredentialSource({
+      source: "/Users/someone/secret-location/payload",
+      key: "user_injected_source_key_value",
+    })
+    expect(injected).toBe("configured")
+    expect(injected).not.toContain("/")
+    expect(injected).not.toContain("payload")
+  })
+
+  it("still names the known non-file sources", () => {
+    expect(describeCredentialSource({ source: "environment", key: "x" })).toBe("environment variable")
+    expect(describeCredentialSource({ source: "OpenCode integration", key: "x" })).toBe(
+      "OpenCode integration",
+    )
+    expect(describeCredentialSource({ source: "OpenCode provider settings", key: "x" })).toBe(
+      "OpenCode provider settings",
+    )
+    expect(describeCredentialSource(undefined)).toBe("not found")
+  })
+})
