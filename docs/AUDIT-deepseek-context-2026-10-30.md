@@ -195,3 +195,38 @@ first anyway.
 
 A session on DeepSeek loses its history at 304,000 tokens while the model may
 well accept 1,048,000.
+
+## RESOLVED: the gateway enforces 1,048,000, not 328,000
+
+Measured on 2026-10-30 with six single-request probes against
+`amr-link.open-design.ai/v1` on `deepseek-v4.1-flash`, `max_tokens: 1`, synthetic
+unique filler (random lowercase, so nothing could be prefix-cached). Total cost:
+**$0.006** across six requests, measured from the router's own ledger
+(7.112 -> 7.118 USD monthly).
+
+| Probe | Prompt tokens | Cached tokens | Result |
+|---|---|---|---|
+| repeated filler | 355,588 | 355,328 | 200 |
+| unique filler | 753,476 | **0** | 200 |
+| unique filler | 999,593 | 0 | 200 |
+| unique filler | 1,043,337 | 0 | **200** |
+| unique filler | ~1,060,000 | - | **400 context_length_exceeded** |
+| earlier oversized | ~2.4M | - | 400 context_length_exceeded |
+
+The second probe matters most: the first one reported 355,328 of 355,588 tokens
+as cached, which was suspicious for a payload that had never been sent. Repeating
+it with random text produced `cached_tokens: 0`, proving the gateway really did
+tokenize and accept the full input. Without that control, a "200" on mostly-cached
+input would have been weak evidence.
+
+### Conclusion
+
+`context_budget: 328000` is **not** a hard input limit. It is advisory metadata, a
+deployment share as the `pi-opendesign-bridge` project describes it. The real
+enforced ceiling for `deepseek-v4.1-flash` is the vendor `context_limit` of
+**1,048,000**, confirmed on both sides of the boundary: 1,043,337 succeeds,
+~1,060,000 fails with `context_length_exceeded`.
+
+The router was therefore leaving roughly **716,000 tokens of usable context
+unused** on this model, and compacting sessions at 304,000 that the gateway would
+have accepted at over a million.

@@ -30,6 +30,19 @@ describe("budget-optimized compaction (opt-in)", () => {
   const goIdle = (outcome: "succeeded" | "failed" = "succeeded") =>
     controller.handleEvent({ type: "session.idle", data: { sessionID, outcome } })
 
+  /**
+   * The window this strategy compacts against, resolved from the live registry
+   * rather than hardcoded. It moved from 328,000 to 1,048,000 when the gateway
+   * budget was measured and found advisory, and a hardcoded number would make
+   * these tests silently stop exercising the strategy at all.
+   */
+  const cheapWindow = () =>
+    (controller as any).cheapestVariantContext("deepseek-v4.1-flash") as number
+
+  /** A context size safely inside the strategy's compaction threshold. */
+  const justOver = () => Math.floor(cheapWindow() * 0.95) + 5_000
+  const wellUnder = () => Math.floor(cheapWindow() * 0.5)
+
   beforeEach(async () => {
     sharedCore.resetForTests()
     fake = makeCtx(mkdtempSync(join(tmpdir(), "router-legacy-")))
@@ -64,46 +77,46 @@ describe("budget-optimized compaction (opt-in)", () => {
   })
 
   it("compacts a session at the edge of the cheap window", async () => {
-    setContext(325_000) // 99% of OpenDesign's 328k window
+    setContext(justOver())
     await goIdle()
     expect(fake.compactions.length).toBe(1)
     expect(fake.compactions[0]?.sessionID).toBe(sessionID)
   })
 
   it("leaves a session alone while it still fits", async () => {
-    setContext(200_000)
+    setContext(wellUnder())
     await goIdle()
     expect(fake.compactions.length).toBe(0)
   })
 
   it("does not compact twice within the cooldown", async () => {
-    setContext(325_000)
+    setContext(justOver())
     await goIdle()
     expect(fake.compactions.length).toBe(1)
-    setContext(330_000)
+    setContext(justOver() + 5_000)
     await goIdle()
     expect(fake.compactions.length).toBe(1)
   })
 
   it("compacts after a failed turn too, since the context is just as large", async () => {
-    setContext(325_000)
+    setContext(justOver())
     await goIdle("failed")
     expect(fake.compactions.length).toBe(1)
   })
 
   it("compacts on a clean execution, not only on idle", async () => {
-    setContext(325_000)
+    setContext(justOver())
     await controller.handleEvent({ type: "session.execution.succeeded", data: { sessionID } })
     expect(fake.compactions.length).toBe(1)
   })
 
   it("targets the cheapest variant's window, not the current provider's", async () => {
-    // Parked on opencode-go's 1M route, but the cheapest variant of the same
-    // model is OpenDesign's 328k. Compacting is what lets the session return
-    // to the cheap pool.
+    // Parked on opencode-go's route; the strategy targets the cheapest
+    // qualified variant's window, whatever it currently is, which is what lets
+    // the session return to the cheap pool.
     const session = await fake.ctx.session.get({ sessionID })
     session.model = { providerID: "opencode-go", id: "deepseek-v4.1-flash" }
-    setContext(325_000)
+    setContext(justOver())
     await goIdle()
     expect(fake.compactions.length).toBe(1)
   })

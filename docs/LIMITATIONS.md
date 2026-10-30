@@ -160,41 +160,54 @@ can therefore be about 1.3x cheaper, and the router picks it on merit. In that
 case the context warning is deliberately silent, because nothing was displaced:
 the model never would have won.
 
-Observed live on 2026-10-30, which is worth recording because it looks like a
-regression and is not. A 309,321-token session selected
-`opendesign/minimax-m3.1-flash`. Three checks explain it:
+Observed live on 2026-10-30, and superseded later the same day. A 309,321-token
+session selected `opendesign/minimax-m3.1-flash` because three conditions held at
+once:
 
 - OpenCode Go was at 90% of a 10% monthly reserve, so it was blocked.
 - Command Code was at 86% of a 15% weekly reserve, so it was blocked.
-- On OpenDesign, DeepSeek needed 329,321 tokens against a 328,000 window.
+- On OpenDesign, DeepSeek was judged against a 328,000 window and needed 329,321.
 
-MiniMax was the only eligible route. None of the three conditions is a bug, and
-each is separately asserted by tests.
+The first two were correct. The third was not: the 328,000 window was an advisory
+gateway budget that the gateway does not enforce, and DeepSeek would now be
+chosen for that session. The quotas remain real; the context rejection was a
+consequence of the wrong window, which is documented in the section below.
 
-### OpenDesign's context budget is lower than the vendor window
+### OpenDesign's context budget is advisory, and was measured
 
-DeepSeek V4.1 Flash shows a 328,000-token context limit in the router while the
-vendor window is 1,048,000. That is not a bug and not a router default. The
-gateway publishes both numbers, and the router uses the smaller one on purpose:
+DeepSeek V4.1 Flash shows a 1,048,000-token window in the router. It used to show
+328,000, because the gateway publishes `context_budget: 328000` alongside
+`context_limit: 1048000` and the router treated the budget as the ceiling.
 
-```
-context_limit:  1,048,000   vendor window
-context_budget:   328,000   advertised usable input
-output_budget:    128,000   reserved for the reply
-```
+That was wrong. The gateway does not enforce `context_budget`. Measured on
+2026-10-30 with six single requests on `deepseek-v4.1-flash`, `max_tokens: 1`,
+synthetic unique filler, so nothing could be prefix-cached:
 
-The budget is a capability tier, not arithmetic. Across the 44 models the gateway
-serves it takes one of a few round values (228k, 232k, 264k, 304k, 328k, 400k),
-with ratios to the vendor window from 22% to 100%. Muse Spark 1.3 is the only
-model with no reduction.
+| Prompt tokens | Result |
+|---|---|
+| 355,588 | 200 |
+| 753,476 | 200 |
+| 999,593 | 200 |
+| 1,043,337 | 200 |
+| about 1,060,000 | 400 `context_length_exceeded` |
+| about 2.4M | 400 `context_length_exceeded` |
 
-Whether the gateway enforces that gap is **untested**. No request here has ever
-sent a transcript between 328k and 1,048k, because doing so costs real allowance
-and a failure would be an opaque rejection mid-session. The router therefore
-assumes the advertised budget is binding, which is the safe direction to be wrong
-in: when a session outgrows it, the router switches models deliberately instead
-of discovering the limit through an error.
+The enforced ceiling is the vendor `context_limit` of 1,048,000, confirmed on both
+sides of the boundary. Total cost of the probes was $0.006.
 
-This is not a practical constraint. `minimax-m3.1-flash` advertises a full
-1,000,000-token window on the same subscription at a lower effective cost, and
-the router already routes long sessions there.
+One control mattered: the first probe reported 355,328 of 355,588 tokens as
+cached, which is implausible for a payload that had never been sent. Repeating it
+with random text produced `cached_tokens: 0`, proving the gateway really did
+tokenize and accept the full input. Without that, a 200 on mostly-cached input
+would have been weak evidence.
+
+The router now uses the vendor limit for a model whose ceiling has been measured,
+and keeps the conservative budget for every other model. That is a per-model
+allowlist rather than a blanket rule, because guessing a larger window than a
+provider accepts fails mid-session with an opaque rejection, which is the failure
+mode this project already hit once.
+
+The router still keeps a 20,000-token margin and a 95% safety fraction, so the
+usable transcript is about 975,600 tokens rather than exactly 1,048,000. That
+margin is not part of the gateway's limit; it is the router refusing to send a
+request that has no room left for the reply.

@@ -1,4 +1,4 @@
-# Incident — OpenDesign context window, session blocked
+# Incident, OpenDesign context window, session blocked
 
 Date: 2026-10-29
 Artifact: `ed5a64937a42438effde216bbe8ac21a1cd11c41f94e8199fbe2a3ef0e0bed55`
@@ -58,7 +58,7 @@ limit, and doing so would cost real allowance. The router therefore assumes the
 advertised budget is binding, which is the safe direction to be wrong in.
 
 `minimax-m3.1-flash` reports `context_limit: 1000000` and **no**
-`context_budget` — the only one of 13 enabled models missing that field.
+`context_budget`, the only one of 13 enabled models missing that field.
 
 `toLiveModels` handled the missing budget by falling back to a hand-written
 232,000. That number is not a property of the model; it was a guess made
@@ -72,9 +72,9 @@ against a ceiling of `232,000 × 0.95 = 220,400` that the model never had.
 Three things had to line up:
 
 1. **OpenDesign's minimax was excluded** by the wrong window.
-2. **Go Plus was excluded** by its own quota reserve — monthly at 90% used
+2. **Go Plus was excluded** by its own quota reserve, monthly at 90% used
    against a 10% reserve.
-3. **Command Code was excluded** by its own quota reserve — weekly at 85.8%
+3. **Command Code was excluded** by its own quota reserve, weekly at 85.8%
    used against a 15% reserve.
 
 With no eligible candidate left and `failClosed` on, the router failed
@@ -94,7 +94,7 @@ had been removed from consideration by a wrong number.
 
 The last row matters: where the gateway *does* report a budget, the budget
 is meaningful and binding. Its absence for minimax means *unknown*, not
-*small* — so the router must not treat unknown as 232k.
+*small*, so the router must not treat unknown as 232k.
 
 ## The fix
 
@@ -122,7 +122,7 @@ the router still refuses a session that does not fit.
 
 ## Verification
 
-**Tests** — `test/opendesign-context-limit.test.ts`, 4 cases. 3 of the 4 were
+**Tests**, `test/opendesign-context-limit.test.ts`, 4 cases. 3 of the 4 were
 verified to fail against the previous code:
 
 - the vendor limit is used when the budget is absent
@@ -132,7 +132,7 @@ verified to fail against the previous code:
 
 Full suite **218 passing**, typecheck clean.
 
-**Live, after restart** — artifact sha256 matches, one core, 7 bridges,
+**Live, after restart**, artifact sha256 matches, one core, 7 bridges,
 0 errors. The live registry now reports `minimax-m3.1-flash` at 1,000,000.
 
 | Session | Context | Now routes to | Warnings |
@@ -142,7 +142,7 @@ Full suite **218 passing**, typecheck clean.
 | `ses_e9b57e9e` | 189,530 | `opendesign/deepseek-v4.1-flash` | 0 |
 
 All 13 live sessions checked: **0 blocked**. The single session with no
-chosen candidate is a manual override — its title reads `MANUAL`, and
+chosen candidate is a manual override, its title reads `MANUAL`, and
 "Manual override respected" is the correct behavior, not a block.
 
 ## Remaining constraint (not a bug)
@@ -162,3 +162,23 @@ in `~/.config/opencode/smart-router.json` (`reserveMonthlyPct`,
 ```bash
 ~/Documents/opencode-smart-router-backups/20261029-152224-od-context-limit-fix/rollback.sh
 ```
+
+## Superseded on 2026-10-30
+
+This incident record reflects what was believed on 2026-10-29. One conclusion was
+wrong and is corrected here rather than deleted, because the reasoning is
+instructive.
+
+The record treats `context_budget` as the enforced ceiling ("where it is
+reported"). Measured on 2026-10-30, it is not. `deepseek-v4.1-flash` accepted
+1,043,337 input tokens with HTTP 200 and rejected only above the 1,048,000 vendor
+limit. See `docs/AUDIT-deepseek-context-2026-10-30.md`.
+
+The line "OD deepseek-v4.1-flash, whose budget is reported as 328,000, has never
+exceeded 328,000 in 4,238 calls, so the budget is meaningful where it is reported"
+was circular: the router never sent more than 328,000, so of course no call
+exceeded it. Absence of a violation under a rule that was never tested is not
+evidence that the rule exists.
+
+The fix described below, using the vendor limit when no budget is present, was
+still correct and is still in place.

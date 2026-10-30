@@ -84,36 +84,35 @@ describe("context management on an idle session", () => {
     })
 
     it("does not compact an ordinary long session", async () => {
-      // 290k is 88% of the 328k window: well past any old early threshold,
-      // and still comfortably inside the accepted window.
-      setContext(290_000)
+      // 900k is 86% of the measured 1,048,000 window: past any old early
+      // threshold, and 920k with the margin is inside the 995,600 safe limit.
+      setContext(900_000)
       await goIdle()
       expect(fake.compactions.length).toBe(0)
     })
 
     it("compacts when the transcript would exceed the verified window", async () => {
-      // 325k + the 20k margin exceeds 328k * 0.95.
-      setContext(325_000)
+      // 1,010,000 + the 20k margin exceeds the measured 1,048,000 * 0.95.
+      setContext(1_010_000)
       await goIdle()
       expect(fake.compactions.length).toBe(1)
       expect(decision().hardLimit).toBe(true)
     })
 
     it("reports an emergency compaction rather than silently truncating", async () => {
-      setContext(340_000)
+      setContext(1_040_000)
       await goIdle()
       expect(fake.compactions.length).toBe(1)
       expect(decision().reason).toMatch(/emergency/i)
     })
 
     it("uses the current model's accepted window, not the cheapest variant's", async () => {
-      // Parked on the 1M OpenCode Go route, 325k is nowhere near its limit,
-      // so nothing should be compacted even though the cheapest variant of
-      // the same model only accepts 328k.
+      // Parked on the 1M OpenCode Go route, 900k is nowhere near its limit,
+      // so nothing should be compacted.
       ledger.patchSession(sessionID, {
         lastModel: { providerID: "opencode-go", id: "deepseek-v4.1-flash" },
       })
-      setContext(325_000)
+      setContext(900_000)
       await goIdle()
       expect(fake.compactions.length).toBe(0)
     })
@@ -128,10 +127,10 @@ describe("context management on an idle session", () => {
     })
 
     it("honours the compaction cooldown", async () => {
-      setContext(325_000)
+      setContext(1_010_000)
       await goIdle()
       expect(fake.compactions.length).toBe(1)
-      setContext(340_000)
+      setContext(1_040_000)
       await goIdle()
       expect(fake.compactions.length).toBe(1)
     })
@@ -139,7 +138,7 @@ describe("context management on an idle session", () => {
     it("does not compact when emergency compaction is disabled", async () => {
       await controller.dispose()
       await build({ mode: "native", allowEmergencyCompaction: false })
-      setContext(340_000)
+      setContext(1_040_000)
       await goIdle()
       expect(fake.compactions.length).toBe(0)
       expect(decision().reason).toMatch(/emergency compaction is disabled/)
@@ -152,14 +151,15 @@ describe("context management on an idle session", () => {
     })
 
     it("preserves history far into the window", async () => {
-      // 290k + the 20k margin is 310k, inside 328k * 0.95 = 311.6k.
-      setContext(290_000)
+      // 900k + the 20k margin is inside the measured 1,048,000 window's
+      // 995,600 safe limit, so conservative mode must leave it alone.
+      setContext(900_000)
       await goIdle()
       expect(fake.compactions.length).toBe(0)
     })
 
     it("compacts only to prevent a real overflow", async () => {
-      setContext(325_000)
+      setContext(1_010_000)
       await goIdle()
       expect(fake.compactions.length).toBe(1)
       expect(decision().reason).toMatch(/only because/)
@@ -177,16 +177,20 @@ describe("context management on an idle session", () => {
     })
 
     it("targets the cheapest variant's window rather than the current one", async () => {
-      // Parked on the 1M route; the cheapest variant of the same model only
-      // accepts 328k, so the legacy strategy compacts to get back to it.
+      // The legacy strategy targets the cheapest qualified variant's window,
+      // which is resolved at runtime rather than hardcoded. Parked on the 1M
+      // OpenCode Go route, it must still compact against that variant's window
+      // rather than the current provider's.
       await build({ mode: "budget-optimized" })
       ledger.patchSession(sessionID, {
         lastModel: { providerID: "opencode-go", id: "deepseek-v4.1-flash" },
       })
-      setContext(325_000)
+      const cheap = (controller as any).cheapestVariantContext("deepseek-v4.1-flash") as number
+      expect(cheap).toBeGreaterThan(0)
+      setContext(Math.floor(cheap * 0.96))
       await goIdle()
       expect(fake.compactions.length).toBe(1)
-      expect(decision().targetTokens).toBeLessThanOrEqual(311_600)
+      expect(decision().targetTokens).toBeLessThanOrEqual(Math.floor(cheap * 0.95))
     })
 
     it("leaves a session alone below the configured threshold", async () => {

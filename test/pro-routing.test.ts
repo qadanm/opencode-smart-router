@@ -397,29 +397,62 @@ describe("an unresolved plan must not masquerade as an exhausted provider", () =
 
 describe("a transcript that outgrows the default model", () => {
   it("explains why the default model stopped being chosen", () => {
-    // DeepSeek V4.1 Flash has a 328k window. Once the transcript plus headroom
-    // passes ~291.6k it cannot be routed there, and the switch is otherwise
-    // silent: the user only notices that a different model is in use.
+    // MiniMax M3.1 Flash on OpenDesign has a 1,000,000 window and is rejected
+    // once the transcript plus 20k headroom passes 950,000. DeepSeek's measured
+    // 1,048,000 window still accepts 996,000, so the only reason MiniMax loses
+    // here is its window, which is exactly the displacement the warning must
+    // explain. DeepSeek used to be the narrower model; the measured window
+    // reversed that relationship.
+    // OpenCode Go's DeepSeek V4.1 Flash has a 1,000,000 window and is rejected
+    // once the transcript plus 20k headroom passes 950,000. OpenDesign's copy of
+    // the same model now has a measured 1,048,000 window, so it still accepts
+    // 996,000. A context-driven move between them must be explained rather than
+    // appearing as a silent model change.
     const result = run({
       text: "Implement a small feature in src/app.ts",
-      contextTokens: 309_321,
-      current: { providerID: "opendesign", id: "minimax-m3.1-flash" },
+      contextTokens: 976_000,
+      current: { providerID: "opencode-go", id: "deepseek-v4.1-flash" },
     })
 
-    // OpenCode Go also serves a model with this id, so assert on the pair:
-    // OpenDesign's copy is the one that cannot hold the transcript.
     expect(
       `${result.decision.chosen!.providerID}/${result.decision.chosen!.id}`,
-    ).not.toBe("opendesign/deepseek-v4.1-flash")
-    const warning = result.decision.warnings.find((entry) => /DeepSeek/i.test(entry))
+    ).not.toBe("opencode-go/deepseek-v4.1-flash")
+    const warning = result.decision.warnings.find((entry) => /skipped for this turn/i.test(entry))
     expect(warning).toBeDefined()
-    // The explanation must name both numbers and the way out.
-    expect(warning).toMatch(/329,321/)
-    expect(warning).toMatch(/328,000/)
+    // The explanation must name the required size, the model's window, and the
+    // way out of the situation.
+    expect(warning).toMatch(/996,000/)
+    expect(warning).toMatch(/1,000,000/)
     expect(warning).toMatch(/new session/i)
-    // It must not read as "DeepSeek was skipped" while DeepSeek is running,
-    // which happens because another provider serves a model with the same name.
-    expect(warning).toMatch(/on opendesign/i)
+  })
+
+  it("names the provider when two providers serve a same-named model", () => {
+    // OpenCode Go and OpenDesign both serve "DeepSeek V4.1 Flash". At 960,000
+    // tokens Go's 1,000,000 window is rejected (980,000 required) while
+    // OpenDesign's measured 1,048,000 window still fits, so the session moves
+    // between two identically named models. "DeepSeek V4.1 Flash was skipped"
+    // would read as a bug in that situation, so the displaced model must be
+    // provider-qualified.
+    const s = settings({
+      models: {
+        approved: ["opendesign/deepseek-v4.1-flash", "opencode-go/deepseek-v4.1-flash"],
+        excluded: [],
+        tierOverrides: {},
+        definitions: [],
+      },
+    })
+    const result = run({
+      text: "Implement a small feature in src/app.ts",
+      contextTokens: 960_000,
+      settings: s,
+      current: { providerID: "opencode-go", id: "deepseek-v4.1-flash" },
+    })
+    expect(`${result.decision.chosen!.providerID}/${result.decision.chosen!.id}`).toBe(
+      "opendesign/deepseek-v4.1-flash",
+    )
+    const warning = result.decision.warnings.find((entry) => /skipped for this turn/i.test(entry))
+    expect(warning).toBeDefined()
+    expect(warning).toMatch(/on opencode-go/i)
   })
 
   it("still routes to the default model when the transcript fits", () => {
@@ -460,7 +493,7 @@ describe("the displacement warning survives a premium task", () => {
     // warning vanished exactly when a user would most want it. The comparison
     // has to be against what was actually chosen.
     const s = settings()
-    const contextTokens = 309_321
+    const contextTokens = 976_000
     const task = {
       ...classifyTask({
         text: "Implement a small feature in src/app.ts",
@@ -486,8 +519,11 @@ describe("the displacement warning survives a premium task", () => {
       now: NOW,
     }).decision
     expect(task.tier).toBe(3)
-    const warning = decision.warnings.find((entry) => /on opendesign/i.test(entry))
-    expect(warning).toBeDefined()
-    expect(warning).toMatch(/328,000/)
+    // The point of this test is that a tier-3 task routed to a standard fallback
+    // still reports the cheaper model that size displaced. Which model that is
+    // depends on the measured windows, so assert the mechanism, not a name.
+    expect(decision.chosen).toBeDefined()
+    expect(decision.chosen!.id).not.toBe("deepseek-v4.1-flash")
+    expect(decision.warnings.some((entry) => /skipped for this turn/i.test(entry))).toBe(true)
   })
 })

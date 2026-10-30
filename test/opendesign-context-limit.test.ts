@@ -66,7 +66,7 @@ describe("OpenDesign context window when the gateway reports no budget", () => {
     expect(minimax?.limit.context).toBe(1_000_000)
   })
 
-  it("keeps preferring the reported budget when the gateway supplies one", () => {
+  it("no longer clamps a measured model to its advisory budget", () => {
     const withBudget: OpenDesignDiscoveredModel = {
       id: "deepseek-v4.1-flash",
       name: "DeepSeek V4.1 Flash",
@@ -81,8 +81,11 @@ describe("OpenDesign context window when the gateway reports no budget", () => {
     const live = toLiveModels([withBudget])
     const deepseek = live.find((m) => m.id === "deepseek-v4.1-flash")
 
-    // The budget is the usable input window, so it stays authoritative.
-    expect(deepseek?.limit.context).toBe(328_000)
+    // This test used to assert 328,000, on the belief that the budget was the
+    // usable window. Six probes on 2026-10-30 disproved that: the gateway
+    // accepted 1,043,337 tokens and rejected only above the 1,048,000 vendor
+    // limit. The budget is advisory, so the measured model gets its real window.
+    expect(deepseek?.limit.context).toBe(1_048_000)
   })
 
   it("never reports a window larger than the vendor limit", () => {
@@ -153,9 +156,11 @@ describe("the advertised budget is a policy limit, not arithmetic", () => {
       },
     ] as never)
     const model = live[0]!
-    expect(model.limit.context).toBe(328_000)
-    // The subtraction that the old documentation implied would give 920,000.
+    // The budget is a capability tier, not a subtraction, and it is also not a
+    // hard limit. The point of this test is that 328,000 is not derived from
+    // the output reserve, which the measured 1,048,000 window also shows.
     expect(model.limit.context).not.toBe(1_048_000 - 128_000)
+    expect(model.limit.context).toBe(1_048_000)
     // And the router keeps the reserved output budget as reported.
     expect(model.limit.output).toBe(128_000)
   })
@@ -189,5 +194,80 @@ describe("the advertised budget is a policy limit, not arithmetic", () => {
       },
     ] as never)
     expect(live[0]!.limit.context).toBe(500_000)
+  })
+})
+
+describe("a measured vendor window outranks the advisory context budget", () => {
+  /**
+   * Measured on 2026-10-30 against the live gateway with six single-request
+   * probes on deepseek-v4.1-flash (max_tokens 1, synthetic unique filler):
+   *
+   *   355,588 -> 200     753,476 -> 200     999,593 -> 200
+   *   1,043,337 -> 200   ~1,060,000 -> 400 context_length_exceeded
+   *
+   * So `context_budget: 328000` is advisory metadata, and the enforced ceiling
+   * is the vendor `context_limit` of 1,048,000. Treating the budget as binding
+   * discarded roughly 716,000 usable tokens and compacted sessions at 304,000
+   * that the gateway would have accepted past a million.
+   *
+   * The probe result is per model, so this is deliberately a verified list
+   * rather than a blanket "always use the vendor limit": no other model has
+   * been measured, and guessing in the other direction is what caused the
+   * original 232k regression.
+   */
+  it("uses the vendor limit for a model whose ceiling was measured", () => {
+    const live = toLiveModels([
+      {
+        id: "deepseek-v4.1-flash",
+        name: "deepseek-v4.1-flash",
+        contextLimit: 1_048_000,
+        contextBudget: 328_000,
+        outputBudget: 128_000,
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+      },
+    ] as never)
+    expect(live[0]!.limit.context).toBe(1_048_000)
+  })
+
+  it("still uses the budget for a model that has not been measured", () => {
+    // An unmeasured model keeps the conservative reading. Guessing the vendor
+    // limit here would recreate the same class of bug in the other direction.
+    const live = toLiveModels([
+      {
+        id: "some-unmeasured-model",
+        name: "some-unmeasured-model",
+        contextLimit: 1_048_000,
+        contextBudget: 232_000,
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+      },
+    ] as never)
+    expect(live[0]!.limit.context).toBe(232_000)
+  })
+
+  it("never exceeds the vendor limit even for a verified model", () => {
+    // The vendor limit is an upper bound in both directions.
+    const live = toLiveModels([
+      {
+        id: "deepseek-v4.1-flash",
+        name: "deepseek-v4.1-flash",
+        contextLimit: 500_000,
+        contextBudget: 328_000,
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+      },
+    ] as never)
+    expect(live[0]!.limit.context).toBe(500_000)
+  })
+
+  it("exposes the verified set so the claim is auditable", async () => {
+    const mod = await import("../src/core/providers/opendesign.js")
+    const set = (mod as unknown as { VERIFIED_FULL_WINDOW_MODELS?: ReadonlySet<string> })
+      .VERIFIED_FULL_WINDOW_MODELS
+    expect(set).toBeInstanceOf(Set)
+    expect(set!.has("deepseek-v4.1-flash")).toBe(true)
+    // The evidence is for one model; adding another requires its own probe.
+    expect(set!.size).toBe(1)
   })
 })

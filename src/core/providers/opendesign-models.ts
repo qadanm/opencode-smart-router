@@ -121,7 +121,7 @@ export const OPENDESIGN_MODELS: ReadonlyArray<OpenDesignModelSpec> = [
   // Design Plan models. Charged at their published multiplier.
   // ---------------------------------------------------------------------------
   spec("deepseek-v4.1-flash", "DeepSeek V4.1 Flash", {
-    context: 328_000,
+    context: 1_048_000,
     maxOutput: 128_000,
     input: ["text", "image"],
     cost: cost(0.15, 0.6, 0.003),
@@ -131,7 +131,7 @@ export const OPENDESIGN_MODELS: ReadonlyArray<OpenDesignModelSpec> = [
     tier: 2,
     approved: true,
     notes:
-      "0.5x Design Plan credits. Gateway default. Served as DeepSeek-V4.1-Flash-1017 (2026-10-17 checkpoint). Native image input, 328k usable input window.",
+      "0.5x Design Plan credits. Gateway default. Served as DeepSeek-V4.1-Flash-1017 (2026-10-17 checkpoint). Native image input. The gateway advertises context_budget 328,000 but does not enforce it: measured on 2026-10-30 at 1,043,337 input tokens with HTTP 200, and rejected only above the 1,048,000 vendor limit. The seed carries the measured window.",
   }),
   spec("claude-haiku-5.5", "Claude Haiku 5.5", {
     context: 228_000,

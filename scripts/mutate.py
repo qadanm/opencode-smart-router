@@ -223,9 +223,16 @@ MUTATIONS = [
         "test/opendesign-quota-honesty.test.ts",
     ),
     Mutation(
-        "vendor limit used instead of the advertised budget",
+        "measured model falls back to the advisory budget",
         "src/core/providers/opendesign.ts",
+        "    const reported = measured ? vendorLimit : (model.contextBudget ?? vendorLimit)",
         "    const reported = model.contextBudget ?? vendorLimit",
+        "test/opendesign-context-limit.test.ts",
+    ),
+    Mutation(
+        "an unmeasured model is given the full vendor window",
+        "src/core/providers/opendesign.ts",
+        "    const reported = measured ? vendorLimit : (model.contextBudget ?? vendorLimit)",
         "    const reported = vendorLimit",
         "test/opendesign-context-limit.test.ts",
     ),

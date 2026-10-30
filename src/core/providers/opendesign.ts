@@ -344,16 +344,45 @@ export interface OpenDesignLiveModel {
 }
 
 /**
+ * Models whose real input ceiling has been measured against the live gateway
+ * and found to be the vendor `context_limit`, not the advisory
+ * `context_budget`.
+ *
+ * `context_budget` is not a hard input limit. It is metadata describing the
+ * share one deployment expects to serve, and the gateway does not enforce it.
+ * Measured on 2026-10-30 with single-request probes on `deepseek-v4.1-flash`
+ * (`max_tokens: 1`, synthetic unique filler, so nothing could be prefix-cached):
+ *
+ *   355,588 tokens -> 200      753,476 tokens -> 200
+ *   999,593 tokens -> 200    1,043,337 tokens -> 200
+ *   ~1,060,000 tokens -> 400 context_length_exceeded
+ *
+ * The enforced ceiling is therefore the vendor limit of 1,048,000, confirmed on
+ * both sides of the boundary. The total cost of the probes was $0.006.
+ *
+ * This is deliberately a per-model allowlist and not a blanket rule. Only one
+ * model has been measured; the others keep the conservative budget reading,
+ * because assuming a larger window than a provider accepts fails mid-session
+ * with an opaque rejection. Extending this set requires its own probe.
+ */
+export const VERIFIED_FULL_WINDOW_MODELS: ReadonlySet<string> = new Set([
+  "deepseek-v4.1-flash",
+])
+
+/**
  * Convert gateway discovery into the router's live-model shape so the model
  * registry merges gateway metadata over the curated seed.
  *
- * The usable context is the gateway's `context_budget`, not its
- * `context_limit`. The two differ by design: across the 44 models the gateway
- * serves, `context_limit` is 0.5M to 1.05M while `context_budget` is one of a
- * few values from 228k to 1.048M, chosen by capability tier rather than
- * computed. DeepSeek V4.1 Flash reports 1,048,000 and 328,000; Muse Spark 1.3
- * reports 1,048,000 for both. Routing against the vendor limit would send
- * requests the gateway may reject, so the budget is treated as binding.
+ * The window the router uses is the largest one the gateway is known to accept,
+ * which is not always `context_budget`:
+ *
+ *  - For a model in `VERIFIED_FULL_WINDOW_MODELS`, the vendor `context_limit`
+ *    has been measured as the real ceiling, so the advisory budget is ignored.
+ *    On `deepseek-v4.1-flash` this is the difference between 328,000 and
+ *    1,048,000, and treating the budget as binding discarded roughly 716,000
+ *    usable tokens.
+ *  - For every other model the budget is still used, because it is the only
+ *    claim the gateway makes and it has not been tested.
  *
  * `context_budget` is not always present. `minimax-m3.1-flash` reports only
  * `context_limit: 1000000`. The fallback for that case used to be a
@@ -362,9 +391,9 @@ export interface OpenDesignLiveModel {
  * was, pushed the session off the cheap provider, and then failed closed
  * because no provider was left that could serve it.
  *
- * The gateway's own `context_limit` is the correct fallback - it is the
- * vendor's real window. It is used as an upper bound too, so a reported
- * budget can never exceed the vendor limit it lives inside.
+ * The gateway's own `context_limit` is the correct fallback, and it is an upper
+ * bound in every case, so a reported budget can never exceed the vendor limit
+ * it lives inside.
  */
 export const toLiveModels = (
   discovered: ReadonlyArray<OpenDesignDiscoveredModel>,
@@ -374,10 +403,10 @@ export const toLiveModels = (
   for (const model of discovered) {
     const spec = OPEN_DESIGN_MODEL_BY_ID.get(model.id)
     const vendorLimit = model.contextLimit > 0 ? model.contextLimit : 0
-    const reported = model.contextBudget ?? vendorLimit
-    // A reported budget describes the usable input window inside the vendor
-    // limit, so it can never be larger than that limit. When the gateway
-    // reports no budget, its vendor limit is the real window.
+    const measured = VERIFIED_FULL_WINDOW_MODELS.has(model.id)
+    const reported = measured ? vendorLimit : (model.contextBudget ?? vendorLimit)
+    // A reported window can never be larger than the vendor limit it lives
+    // inside, whichever claim produced it.
     const context =
       reported > 0 && (vendorLimit === 0 || reported <= vendorLimit)
         ? reported

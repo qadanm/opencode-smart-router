@@ -54,7 +54,7 @@ models with authoritative metadata. Captured 2026-10-28.
 
 | Model | Usable input | Output | Image input | Credits |
 |---|---|---|---|---|
-| DeepSeek V4.1 Flash | 328,000 | 128,000 | yes | 0.5× |
+| DeepSeek V4.1 Flash | 1,048,000 (measured) | 128,000 | yes | 0.5× |
 | Claude Haiku 5.5 | 228,000 | 128,000 | yes | 2× |
 | GLM-5.3 Flash | 232,000 | 32,000 | yes | 1× |
 | GLM-5.3 Flash-X | 232,000 | 32,000 | yes | 2× |
@@ -70,15 +70,26 @@ models with authoritative metadata. Captured 2026-10-28.
 
 Three findings that change how the router treats OpenDesign:
 
-1. **`context_budget`, not `context_limit`, is the usable window.** The vendor
-   limit is up to 1.05M tokens, but the gateway's usable input budget is
-   228k to 400k. Routing against the vendor limit would send requests the gateway
-   rejects. The router uses `context_budget`.
+1. **`context_budget` is advisory, not an enforced ceiling.** This was corrected
+   on 2026-10-30 by direct measurement. The gateway advertises a
+   `context_budget` of 228k to 400k against a vendor `context_limit` of up to
+   1.05M, but it does not enforce the budget. On `deepseek-v4.1-flash` the
+   gateway accepted 1,043,337 input tokens with HTTP 200 and rejected only above
+   the 1,048,000 vendor limit with `context_length_exceeded`. Six probes, $0.006
+   total; see `docs/AUDIT-deepseek-context-2026-10-30.md`.
+
+   The router therefore uses `context_budget` only for models whose real ceiling
+   has not been measured. For a measured model it uses the vendor limit. Assuming
+   the smaller number is not free: it discarded roughly 716,000 usable tokens on
+   DeepSeek and compacted sessions at 304,000 that the gateway would have served
+   past a million.
 2. **Image support is verified from the gateway**, not inferred from a model
    card. `hy4-preview`, `deepseek-v4-flash` and `deepseek-v4-pro` are text only
    on this gateway.
 3. **MiniMax M3.1 Flash reports no context or output budget.** The router uses
-   a conservative 232k window and flags the multiplier as unverified.
+   the vendor limit of 1,000,000 and flags the multiplier as unverified. An
+   earlier version used a hand-written 232k guess here, which shrank the window
+   four-fold and blocked a live session.
 
 A fourth finding, observed live on 2026-10-28: the gateway resolves a **billing
 scope** before answering, even a read-only `/v1/models` request. During this

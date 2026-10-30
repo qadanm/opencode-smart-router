@@ -175,7 +175,7 @@ describe("OpenDesign model discovery", () => {
     expect(deepseek?.inputModalities).toContain("image")
   })
 
-  it("uses the usable context budget rather than the vendor context limit", async () => {
+  it("uses the measured window rather than the advisory budget", async () => {
     const result = await discoverOpenDesignModels({
       apiKey: "sk-amr-test",
       fetchImpl: async () => json(GATEWAY_MODELS),
@@ -183,7 +183,10 @@ describe("OpenDesign model discovery", () => {
     })
     const live = toLiveModels(result.models)
     const deepseek = live.find((m) => m.id === "deepseek-v4.1-flash")
-    expect(deepseek?.limit.context).toBe(328_000)
+    // Measured on 2026-10-30: the gateway accepted 1,043,337 input tokens and
+    // rejected only above the 1,048,000 vendor limit, so the advertised
+    // context_budget of 328,000 is advisory and is not used as the window.
+    expect(deepseek?.limit.context).toBe(1_048_000)
   })
 
   it("uses the vendor context limit when the gateway reports no budget", async () => {
