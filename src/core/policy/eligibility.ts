@@ -80,6 +80,15 @@ export interface EligibilityInput {
    * capacity reserved for hard problems.
    */
   readonly escalationPoolProtected?: boolean
+  /**
+   * The intelligence floor to enforce, when it differs from the configured one.
+   *
+   * Calibration derives the floor from recorded spend, so the gate cannot read
+   * `settings.routing.intelligenceFloor` directly: that value is the ceiling
+   * calibration is bounded by, not necessarily the value in force. Passing it
+   * explicitly keeps one source of truth for the request in progress.
+   */
+  readonly intelligenceFloor?: number
 }
 
 export interface EligibilityResult {
@@ -298,7 +307,8 @@ export const evaluateEligibility = (input: EligibilityInput): EligibilityResult 
    * online routing.
    */
   const offlineFloorApplies = substanceFloorApplies(settings, model)
-  if (substantive && offlineFloorApplies && model.intelligence < settings.routing.intelligenceFloor) {
+  const floor = input.intelligenceFloor ?? settings.routing.intelligenceFloor
+  if (substantive && offlineFloorApplies && model.intelligence < floor) {
     return {
       eligible: false,
       reason: `Intelligence ${model.intelligence.toFixed(1)} is below the ${settings.routing.intelligenceFloor.toFixed(1)} floor for substantive work`,

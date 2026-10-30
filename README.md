@@ -223,6 +223,42 @@ The approved seed is in [docs/MODELS.md](docs/MODELS.md). In short:
 7. Keep the current model when the savings fall below the hysteresis threshold.
 8. Record a short explanation, without storing the prompt.
 
+### The floor, when you would rather not maintain it by hand
+
+`routing.intelligenceFloor` defaults to 39.5 and is a hand-picked number. You can
+find it does not do much: `claude-haiku-5-5` scores 43.4 at $0.10/$0.50, so it is
+simultaneously the cheapest eligible model and above the floor. Deleting the
+floor changes nothing, because cost ranking was already choosing it.
+
+Set `routing.calibrateFloor: true` to derive the floor from your own recorded
+spend instead. It works like this:
+
+1. Take the total recorded spend for the last 14 days and divide by the number of
+   requests. That average is the budget: it is what you already spend, so
+   honoring it is consistency rather than a compromise.
+2. Among approved, non-escalation models that actually served traffic, find the
+   most capable one whose cost per request is within 5% of that average.
+3. That model's intelligence score becomes the floor.
+
+Constraints, all of them deliberate:
+
+- **It never raises the floor.** The configured value is the ceiling. Raising it
+  would exclude models you already approved and make the router stricter than its
+  own settings claim.
+- **It may drop at most 12 points.** A run of cheap traffic must not be able to
+  send substantive work to a model that cannot do it.
+- **It needs at least 5 recorded requests.** Below that you get your configured
+  floor and a message saying so, because a calibration built on four requests
+  would be a fabrication.
+- **It ignores models with no recorded traffic.** Their list price describes the
+  vendor's assumptions, not your workload.
+- **It is off by default and does nothing in offline mode.** Offline has its own
+  allow-list and its own relationship with the floor.
+
+When the flag is off, or when there is not enough evidence, behavior is exactly
+what it was before calibration existed. That is asserted in
+`test/calibration-routing.test.ts`, not assumed.
+
 No model is called to make a routing decision.
 
 A large transcript is one reason a model gets filtered out. DeepSeek V4.1 Flash
@@ -290,7 +326,7 @@ npm test          # the suite only
 npm run mutate    # prove the safety tests fail when their properties break
 ```
 
-415 tests across 32 files cover classification, eligibility, quota parsing,
+433 tests across 34 files cover classification, eligibility, quota parsing,
 credential discovery and its security properties, ledger accounting, monthly pool
 reconciliation, documented peak pricing, cache-aware routing, premium protection,
 purchased-credit blocking, manual overrides, failure classification,

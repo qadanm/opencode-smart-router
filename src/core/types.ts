@@ -531,6 +531,16 @@ export interface RoutingSettings {
   readonly protectEscalationPool: boolean
   /** Minimum model window considered adequate when a task needs long context. */
   readonly longContextFloorTokens: number
+  /**
+   * Derive the intelligence floor from recorded spend instead of trusting the
+   * hand-picked `intelligenceFloor`.
+   *
+   * The configured floor remains the ceiling: calibration may only lower it.
+   * This is opt-in because it changes which model serves real work, and a
+   * router that silently re-derives its own quality gate on upgrade would be
+   * surprising.
+   */
+  readonly calibrateFloor?: boolean
 }
 
 export interface QuotaSettings {

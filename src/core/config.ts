@@ -95,6 +95,7 @@ export const DEFAULT_SETTINGS: RouterSettings = {
     failClosed: true,
     protectEscalationPool: true,
     longContextFloorTokens: 1_000_000,
+    calibrateFloor: false,
   },
   quota: {
     probeOpenCodeGo: true,
@@ -550,6 +551,14 @@ export const validateSettings = (input: unknown, base: RouterSettings = DEFAULT_
       "routing.longContextFloorTokens",
       10_000,
       10_000_000,
+    ),
+    // Opt-in. Defaults to off so an upgrade cannot change routing behavior on
+    // its own; the owner turns it on after seeing what it would pick.
+    calibrateFloor: asBoolean(
+      routingInput.calibrateFloor,
+      base.routing.calibrateFloor ?? false,
+      warnings,
+      "routing.calibrateFloor",
     ),
   }
 

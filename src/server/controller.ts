@@ -26,6 +26,11 @@ import {
   discoverOpenDesignCredentials,
 } from "../core/quota/credentials.js"
 import { routeTask } from "../core/routing/engine.js"
+import {
+  CALIBRATION_WINDOW_MS,
+  resolveIntelligenceFloor,
+  type CalibrationResult,
+} from "../core/policy/calibration.js"
 import { decidePremium, evaluateEligibility } from "../core/policy/eligibility.js"
 import { sharedCore, type RuntimeOverrides } from "./shared-core.js"
 import {
@@ -72,6 +77,16 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
  * a failed attempt through several channels in quick succession, so this only
  * needs to span one attempt, not one session.
  */
+/**
+ * How long a computed floor is reused.
+ *
+ * Calibration reads the usage rollup, which changes per request rather than per
+ * candidate. Recomputing it for every routing decision would be wasted work in a
+ * multi-step loop; this is short enough that a spend change is picked up within
+ * a session.
+ */
+const FLOOR_CACHE_MS = 30_000
+
 const FAULT_DEDUPE_WINDOW_MS = 30_000
 
 /**
@@ -181,6 +196,8 @@ export class RouterController {
   private quota!: QuotaService
   private bridgeID = ""
   private readonly expectedSwitch = new Map<string, { key: string; at: number }>()
+  /** Memoized calibrated floor; see routingFloor(). */
+  private floorCache?: { at: number; value: { floor: number; calibration?: CalibrationResult } }
   /**
    * Guards against counting one logical provider failure several times.
    *
@@ -915,6 +932,7 @@ export class RouterController {
         mode: settings.mode,
         runtime,
         models: this.routingModels(),
+        intelligenceFloor: this.routingFloor(this.routingModels()).floor,
         current: session.lastModel,
         session,
         quota: this.quotaSnapshots(),
@@ -946,6 +964,7 @@ export class RouterController {
       mode: effectiveMode,
       runtime,
       models: this.routingModels(),
+      intelligenceFloor: this.routingFloor(this.routingModels()).floor,
       current: session.lastModel,
       session,
       quota,
@@ -1256,6 +1275,34 @@ export class RouterController {
   private routingModels() {
     if (this.settings.offline?.enabled) return this.registry.modelsForOffline()
     return this.registry.approved()
+  }
+
+  /**
+   * The intelligence floor to route with.
+   *
+   * With calibration enabled this replaces the hand-picked number with one
+   * derived from what the owner actually spent over the recorded window. It is
+   * memoized briefly because it is otherwise recomputed for every decision,
+   * while the underlying ledger changes per request, not per candidate.
+   *
+   * Offline mode bypasses it: that path has its own allow-list and its own
+   * relationship with the floor, and online cost calibration must not reach
+   * into it.
+   */
+  private routingFloor(models: ReadonlyArray<ModelRecord>): { floor: number; calibration?: CalibrationResult } {
+    if (this.settings.routing.calibrateFloor !== true || this.settings.offline?.enabled === true) {
+      return { floor: this.settings.routing.intelligenceFloor }
+    }
+    const now = Date.now()
+    if (this.floorCache && now - this.floorCache.at < FLOOR_CACHE_MS) return this.floorCache.value
+    const calibration = resolveIntelligenceFloor(this.settings, {
+      models,
+      usage: this.ledger.usageByModel({ since: now - CALIBRATION_WINDOW_MS }),
+      now,
+    })
+    const value = { floor: calibration.floor, calibration }
+    this.floorCache = { at: now, value }
+    return value
   }
 
   private cheapestVariantContext(modelID: string): number {

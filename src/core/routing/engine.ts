@@ -43,6 +43,16 @@ export interface EngineInput {
    * consulted once a model has enough samples to be meaningful.
    */
   readonly speed?: Readonly<Record<string, { tokensPerSecond: number; samples: number }>>
+  /**
+   * The intelligence floor actually in force, when it differs from the
+   * configured one.
+   *
+   * Calibration derives the floor from recorded spend and the controller
+   * resolves it before routing. Passing it in keeps the eligibility gate and
+   * the success estimate reading the same number; defaulting to the configured
+   * value preserves every existing caller and every existing test.
+   */
+  readonly intelligenceFloor?: number
 }
 
 export interface EngineResult {
@@ -190,6 +200,15 @@ export const estimateSuccess = (input: {
   session?: SessionState
   currentModelKey?: string
   history?: { requests: number; failures: number }
+  /**
+   * The floor in force for this request.
+   *
+   * This used to be a literal `39.5`, which meant raising or lowering the floor
+   * moved the eligibility gate but left this quality penalty behind at the old
+   * number. Two gates reading the same policy from different sources is exactly
+   * the drift the context-margin work removed, so the value is passed in now.
+   */
+  intelligenceFloor?: number
 }): number => {
   const { model, task } = input
   let probability: number
@@ -205,7 +224,8 @@ export const estimateSuccess = (input: {
     const threshold = task.sophisticatedDesign ? 75 : 60
     if (model.design < threshold) probability *= 0.72
   }
-  if (task.tier >= 2 && model.intelligence < 39.5) probability *= 0.7
+  const floor = input.intelligenceFloor ?? 39.5
+  if (task.tier >= 2 && model.intelligence < floor) probability *= 0.7
   if (model.context > 0 && input.contextTokens > model.context * 0.8) probability *= 0.9
   if (model.context > 0 && input.contextTokens > model.context * 0.95) probability *= 0.6
   probability *= observedSuccess(model, input.session, modelKey(model.providerID, model.modelID)) / 0.95
@@ -303,6 +323,9 @@ const candidateFor = (
  */
 export const routeTask = (input: EngineInput): EngineResult => {
   const now = input.now ?? Date.now()
+  // One value for the whole decision. The eligibility gate and the success
+  // estimate must never disagree about the floor in force.
+  const floor = input.intelligenceFloor ?? input.settings.routing.intelligenceFloor
   const warnings: string[] = []
   const reasons: string[] = []
   const currentKey = keyOfRef(input.current)
@@ -479,6 +502,7 @@ export const routeTask = (input: EngineInput): EngineResult => {
         now,
       })
       const eligibility = evaluateEligibility({
+        intelligenceFloor: floor,
         model,
         task: taskForEvaluation,
         settings: input.settings,
@@ -518,6 +542,7 @@ export const routeTask = (input: EngineInput): EngineResult => {
           session: input.session,
           currentModelKey: currentKey,
           history: input.modelHistory?.[modelKey(model.providerID, model.modelID)],
+          intelligenceFloor: floor,
         })
         const pressure = providerPressure(provider) * modelPressure(modelQuota)
         const speedFactor = speedPenalty(input, modelKey(model.providerID, model.modelID), fastestTokensPerSecond)
@@ -574,6 +599,7 @@ export const routeTask = (input: EngineInput): EngineResult => {
           now,
         })
         const eligibility = evaluateEligibility({
+          intelligenceFloor: floor,
           model,
           task: { ...input.task, designIntensive: false, sophisticatedDesign: false },
           settings: input.settings,
@@ -594,6 +620,7 @@ export const routeTask = (input: EngineInput): EngineResult => {
           session: input.session,
           currentModelKey: currentKey,
           history: input.modelHistory?.[modelKey(model.providerID, model.modelID)],
+          intelligenceFloor: floor,
         })
         const pressure = providerPressure(provider) * modelPressure(modelQuota)
         return { model, eligibility, estimate, probability, pressure, candidate: candidateFor(input, model, eligibility, estimate, probability, pressure, currentKey) }
@@ -671,6 +698,7 @@ export const routeTask = (input: EngineInput): EngineResult => {
         const provider = providerFor(input.quota, model.providerID)
         const modelQuota = modelQuotaFor(provider, model)
         const eligibility = evaluateEligibility({
+          intelligenceFloor: floor,
           model,
           task: input.task,
           settings: input.settings,
