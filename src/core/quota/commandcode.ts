@@ -277,7 +277,7 @@ export const probeCommandCodeQuota = async (input: CommandCodeProbeInput): Promi
   let lastAuthError = ""
 
   for (const candidate of candidates) {
-    triedSources.push(candidate.source)
+    triedSources.push(describeCredentialSource(candidate))
     const whoami = await fetchJson(fetchImpl, "/alpha/whoami?limits=1", candidate.key, timeoutMs)
     if (whoami.status === 200) {
       const parsed = parseWhoami(whoami.body)
@@ -323,7 +323,7 @@ export const probeCommandCodeQuota = async (input: CommandCodeProbeInput): Promi
         "Command Code billing API is rate limited",
         creditsResult.retryAfterMs ?? subscriptionResult.retryAfterMs,
       ),
-      credentialSource: authorized.source,
+      credentialSource: describeCredentialSource(authorized),
       triedSources,
     }
   }
@@ -331,7 +331,7 @@ export const probeCommandCodeQuota = async (input: CommandCodeProbeInput): Promi
   if (creditsResult.status === 401 || creditsResult.status === 403 || subscriptionResult.status === 401 || subscriptionResult.status === 403) {
     return {
       snapshot: baseSnapshot(input, now, "Command Code rejected the billing credential"),
-      credentialSource: authorized.source,
+      credentialSource: describeCredentialSource(authorized),
       triedSources,
     }
   }
@@ -452,7 +452,7 @@ export const probeCommandCodeQuota = async (input: CommandCodeProbeInput): Promi
       notes,
       error,
     },
-    credentialSource: authorized.source,
+    credentialSource: describeCredentialSource(authorized),
     triedSources,
   }
 }

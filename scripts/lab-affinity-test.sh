@@ -32,7 +32,7 @@ say "== B. a mid-stream provider fault cools the model down and moves the sessio
 MOCK_PID=$(cat "$LAB/mock.pid" 2>/dev/null | awk '{print $1}')
 kill "$MOCK_PID" 2>/dev/null || true
 sleep 1
-cd /Users/muhammedqadan/Documents/opencode-smart-router
+cd "$(dirname "$0")/.."
 (MOCK_PORT=4200 MOCK_LOG="$LAB/mock.log" MOCK_STREAM_FAILURE=1 nohup node scripts/lab-mock-3p.mjs > "$LAB/mock.out" 2>&1 & echo "pid=$!" > "$LAB/mock.pid")
 sleep 2
 FAULT_SID=$(curl -s -u "$AUTH" -X POST "$BASE/api/session" -H 'content-type: application/json' \

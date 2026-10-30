@@ -126,8 +126,14 @@ describe("Command Code quota adapter", () => {
       fetchImpl,
     })
     expect(result.snapshot.source).toBe("provider")
-    expect(result.triedSources).toContain("environment")
+    // Sources are reported through the redacting helper: no raw value, and no
+    // filesystem path beyond a basename.
+    expect(result.triedSources).toContain("environment variable")
     expect(result.triedSources).toContain("OpenCode integration")
+    for (const source of result.triedSources) {
+      expect(source).not.toContain("/")
+      expect(source).not.toContain("user_")
+    }
   })
 
   it("fails conservatively when no authorized credential exists", async () => {

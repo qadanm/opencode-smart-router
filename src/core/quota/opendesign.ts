@@ -276,7 +276,7 @@ const baseSnapshot = (
   return {
     providerID: "opendesign",
     label: plan?.label ?? "OpenDesign",
-    plan: plan?.planID ?? input.settings.plan ?? "pro",
+    plan: plan?.planID ?? (input.settings.plan ? `unresolved:${input.settings.plan}` : "unresolved"),
     source: "unknown",
     fetchedAt: now,
     stale: false,
@@ -659,7 +659,9 @@ const probeVerified = async (
     rolling,
     weekly,
     monthly,
-    monthlyGrantUsd: caps.monthly,
+    // A verified probe reads the real limits from the account, so it reports
+    // the provider's own grant when the catalog could not name the plan.
+    monthlyGrantUsd: caps.monthly > 0 ? caps.monthly : monthly.capUsd ?? 0,
     ...(monthlyRemainingUsd !== undefined ? { monthlyRemainingUsd } : {}),
     extraCredits: {
       purchasedUsd,
@@ -734,7 +736,11 @@ const probeEstimated = (input: OpenDesignQuotaInput, now: number): OpenDesignQuo
     weekly,
     monthly,
     monthlyGrantUsd: caps.monthly,
-    monthlyRemainingUsd: Math.max(0, caps.monthly - totals.monthlyUsd),
+    // An unresolved plan has no known allowance, so a "remaining balance" of
+    // zero would be a fabrication. Omitting the field lets the eligibility
+    // gate fall through to the unknown-quota policy rather than reporting the
+    // provider as exhausted.
+    ...(caps.unresolved ? {} : { monthlyRemainingUsd: Math.max(0, caps.monthly - totals.monthlyUsd) }),
     pools,
     models: {},
     notes,

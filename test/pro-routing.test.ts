@@ -353,3 +353,44 @@ describe("an unrecognised plan never overstates capacity", () => {
     expect(result.snapshot.monthlyGrantUsd).toBe(50)
   })
 })
+
+describe("an unresolved plan must not masquerade as an exhausted provider", () => {
+  it("does not report a false 'exhausted' reason", async () => {
+    const { probeOpenDesignQuota } = await import("../src/core/quota/opendesign.js")
+    const { evaluateEligibility } = await import("../src/core/policy/eligibility.js")
+
+    const result = await probeOpenDesignQuota({
+      settings: {
+        ...structuredClone(DEFAULT_SETTINGS.providers.opendesign)!,
+        plan: "profesional",
+        enabled: true,
+        monthlyCreditsUsd: undefined,
+      },
+      apiKey: "sk-a-test-inference-key-value",
+      usage: [],
+      now: () => NOW,
+    })
+
+    const s = settings()
+    const model = registry(s).get("opendesign", "deepseek-v4.1-flash")!
+    const task = classifyTask({
+      text: "Implement a small feature in src/app.ts",
+      files: [],
+      contextTokens: 10_000,
+      recentFailures: 0,
+    })
+    const verdict = evaluateEligibility({
+      model,
+      task,
+      settings: s,
+      mode: s.mode,
+      contextTokens: 10_000,
+      providerQuota: result.snapshot,
+      premium: { allowed: false, requiresApproval: false, reason: "" },
+    })
+
+    // Unknown capacity is not the same as a spent allowance. The reason must
+    // say the quota is unknown, never that the provider is exhausted.
+    expect(verdict.reason).not.toMatch(/exhausted/i)
+  })
+})

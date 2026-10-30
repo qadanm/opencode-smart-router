@@ -453,7 +453,10 @@ export const describeCredentialSource = (candidate: CredentialCandidate | undefi
   if (!candidate) return "not found"
   if (candidate.path) {
     // Only the final path segment is useful for support and leaks no prefix.
-    const base = candidate.path.split("/").pop() ?? "file"
+    // A trailing separator yields an empty segment rather than undefined, so
+    // filter empties before falling back.
+    const segments = candidate.path.split("/").filter((segment) => segment.length > 0)
+    const base = segments[segments.length - 1] ?? "file"
     return `file (${base})`
   }
   switch (candidate.source) {
