@@ -28,6 +28,7 @@ import {
 import { routeTask } from "../core/routing/engine.js"
 import {
   CALIBRATION_WINDOW_MS,
+  MIN_REQUESTS_FOR_COST_EVIDENCE,
   resolveIntelligenceFloor,
   type CalibrationResult,
 } from "../core/policy/calibration.js"
@@ -1289,6 +1290,63 @@ export class RouterController {
    * relationship with the floor, and online cost calibration must not reach
    * into it.
    */
+  /**
+   * Everything needed to judge whether the floor in force is trustworthy.
+   *
+   * Reads the ledger directly rather than the memoized routing value, so the
+   * report answers for the current moment even when nothing has routed yet.
+   */
+  private floorReport() {
+    const models = this.registry.approved()
+    const configured = this.settings.routing.intelligenceFloor
+    const enabled = this.settings.routing.calibrateFloor === true
+    const offline = this.settings.offline?.enabled === true
+    const now = Date.now()
+    const usage = this.ledger.usageByModel({ since: now - CALIBRATION_WINDOW_MS })
+    const calibration = resolveIntelligenceFloor(this.settings, { models, usage, now })
+    const inForce = enabled && !offline ? calibration.floor : configured
+
+    const perModel = usage
+      .filter((row) => row.requests > 0)
+      .map((row) => {
+        const record = this.registry.get(row.providerID, row.modelID)
+        return {
+          model: `${row.providerID}/${row.modelID}`,
+          requests: row.requests,
+          usd: Number(row.usd.toFixed(6)),
+          usdPerRequest: Number((row.usd / row.requests).toFixed(6)),
+          intelligence: record?.intelligence ?? null,
+        }
+      })
+      .sort((a, b) => a.usdPerRequest - b.usdPerRequest)
+
+    return {
+      calibrateFloor: enabled,
+      offlineBypass: offline,
+      configuredFloor: configured,
+      floorInForce: inForce,
+      calibrated: calibration.calibrated,
+      source: calibration.calibrated ? "measured" : enabled ? "configured (not calibrated)" : "configured",
+      reason: calibration.reason,
+      baselineUsdPerRequest: calibration.baselineUsdPerRequest,
+      admittedUsdPerRequest: calibration.admittedUsdPerRequest,
+      windowDays: Math.round(CALIBRATION_WINDOW_MS / 86_400_000),
+      minRequests: MIN_REQUESTS_FOR_COST_EVIDENCE,
+      // What the floor actually admits, so the number has a meaning attached.
+      admitted: models
+        .filter((model) => !model.escalationOnly && !model.premium)
+        .filter((model) => model.intelligence >= inForce)
+        .map((model) => ({
+          model: `${model.providerID}/${model.modelID}`,
+          intelligence: model.intelligence,
+          listInputUsdPerMtok: model.cost?.[0]?.input ?? null,
+        }))
+        .sort((a, b) => (a.listInputUsdPerMtok ?? 0) - (b.listInputUsdPerMtok ?? 0)),
+      measuredTraffic: perModel,
+      totalRequests: perModel.reduce((sum, row) => sum + row.requests, 0),
+    }
+  }
+
   private routingFloor(models: ReadonlyArray<ModelRecord>): { floor: number; calibration?: CalibrationResult } {
     if (this.settings.routing.calibrateFloor !== true || this.settings.offline?.enabled === true) {
       return { floor: this.settings.routing.intelligenceFloor }
@@ -1803,6 +1861,31 @@ export class RouterController {
       },
       report: async () => this.report(),
       usage: async () => this.usageReport(),
+      /**
+       * Report the intelligence floor in force and where it came from.
+       *
+       * Deliberately reports the *disabled* case too. The useful answer to
+       * "what is my floor" is not one number: it is whether that number was
+       * measured, hand-picked, or not yet calibratable because there is no
+       * traffic to calibrate against.
+       */
+      floor: async () => this.floorReport(),
+      setCalibrateFloor: async (input: any) => {
+        const enabled = Boolean(input?.enabled)
+        // Routing settings are file-backed. Runtime overrides exist for mode,
+        // pause and dry-run; changing a routing policy value at runtime would
+        // diverge from the file and silently reset on reload, so this reports
+        // exactly what to write instead of pretending it was applied.
+        return {
+          ...this.floorReport(),
+          setting: "routing.calibrateFloor",
+          requested: enabled,
+          applied: false,
+          instruction: enabled
+            ? "Set routing.calibrateFloor to true in smart-router.json, then restart the router."
+            : "Set routing.calibrateFloor to false in smart-router.json, then restart the router.",
+        }
+      },
       getConfig: async () => ({
         settings: (() => {
           const copy = this.safe(this.settings)

@@ -326,7 +326,7 @@ npm test          # the suite only
 npm run mutate    # prove the safety tests fail when their properties break
 ```
 
-433 tests across 34 files cover classification, eligibility, quota parsing,
+437 tests across 35 files cover classification, eligibility, quota parsing,
 credential discovery and its security properties, ledger accounting, monthly pool
 reconciliation, documented peak pricing, cache-aware routing, premium protection,
 purchased-credit blocking, manual overrides, failure classification,

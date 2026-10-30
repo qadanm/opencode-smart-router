@@ -88,6 +88,20 @@ export const SmartRouterRpc = Rpc.define({
       required: ["providerID"],
       additionalProperties: false,
     }),
+    /**
+     * The intelligence floor in force, and why.
+     *
+     * Calibration can only be trusted if its result is visible: a number with
+     * no explanation is indistinguishable from the hand-picked one it replaced.
+     * This previews without enabling anything.
+     */
+    floor: method(emptyInput),
+    setCalibrateFloor: method({
+      type: "object",
+      properties: { enabled: { type: "boolean" } },
+      required: ["enabled"],
+      additionalProperties: false,
+    }),
     refreshQuota: method(emptyInput),
     report: method(emptyInput),
     usage: method(emptyInput),
