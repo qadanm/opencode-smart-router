@@ -4,15 +4,13 @@
   "description": "Subscription-aware model routing for OpenCode: nested usage windows, multi-pool credit accounting, and context policy.",
   "keywords": [
     "opencode",
-    "llm",
+    "plugin",
     "router",
+    "llm",
     "quota",
-    "subscription",
-    "allowance",
-    "context-window",
-    "compaction",
-    "ai-agents",
-    "cost-optimization"
+    "openrouter",
+    "ai",
+    "coding-agent"
   ],
   "homepage": "https://github.com/qadanm/opencode-smart-router#readme",
   "bugs": {
@@ -25,7 +23,6 @@
   "author": "Moe Qadan",
   "license": "MIT",
   "type": "module",
-  "private": true,
   "engines": {
     "node": ">=20.12"
   },
@@ -35,13 +32,23 @@
     "./allowance": "./src/allowance.ts"
   },
   "files": [
+    "dist",
     "src",
-    "docs",
+    "scripts/install.sh",
+    "scripts/uninstall.sh",
+    "install",
     "config.example.json",
     "README.md",
     "LICENSE",
     "SECURITY.md",
-    "CONTRIBUTING.md"
+    "CONTRIBUTING.md",
+    "docs/ARCHITECTURE.md",
+    "docs/INSTALL.md",
+    "docs/LIMITATIONS.md",
+    "docs/MODELS.md",
+    "docs/OPENDESIGN-INTEGRATION.md",
+    "docs/SHARED-CORE.md",
+    "docs/QA.md"
   ],
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -51,14 +58,26 @@
     "build:server": "esbuild src/index.ts --bundle --format=esm --platform=node --target=node22 --external:@opencode/plugin --external:@opencode/plugin/* --outfile=dist/index.js --legal-comments=none",
     "build:allowance": "esbuild src/allowance.ts --bundle --format=esm --platform=neutral --target=node20 --outfile=dist/allowance.js --legal-comments=none",
     "mutate": "python3 scripts/mutate.py",
-    "verify": "bash scripts/cleanroom-verify.sh"
+    "verify": "bash scripts/cleanroom-verify.sh",
+    "prepublishOnly": "npm run check && npm run build:server"
   },
   "dependencies": {
-    "@opencode/plugin": "2.1.4"
+    "@opencode/plugin": "^2.1.4"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@opencode/plugin": ">=2.1.0"
+  },
+  "peerDependenciesMeta": {
+    "@opencode/plugin": {
+      "optional": true
+    }
   }
 }

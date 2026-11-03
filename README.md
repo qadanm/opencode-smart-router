@@ -15,18 +15,27 @@ did not authorize.
 
 ## Install in one command
 
-**Any machine with Node 20.12+ and git.** One command clones, builds, verifies, installs,
-and wires it into your OpenCode config:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/qadanm/opencode-smart-router/main/install | bash
-```
-
-Already cloned? Then:
+**Any machine with Node 20.12+ and git.** From a checkout:
 
 ```bash
 ./install
 ```
+
+It verifies the source, backs up your config, installs, wires the plugin in, and
+confirms it loads. Add `--dry-run` to see every step without changing anything,
+or `--yes` for a non-interactive run.
+
+If this repo lives on a remote you can reach, bootstrap from it without cloning
+first. `SMART_ROUTER_REPO` is the clone URL the bootstrap fetches:
+
+```bash
+SMART_ROUTER_REPO=https://github.com/you/opencode-smart-router.git \
+  bash <(curl -fsSL https://raw.githubusercontent.com/you/opencode-smart-router/main/install)
+```
+
+There is no published one-liner yet: this repository has no public remote, so any
+hard-coded `raw.githubusercontent.com/qadanm/...` address would 404. Point both
+the URL and `SMART_ROUTER_REPO` at wherever you actually host it.
 
 Then restart OpenCode and run `/router-status`.
 
@@ -337,15 +346,20 @@ contacts and every field it stores.
 See [docs/INSTALL.md](docs/INSTALL.md). To install, verify, or remove the plugin,
 that is the only document you need.
 
-Backups and rollback for this machine:
+### Rollback
 
-```text
-Pre-deployment + full rollback:
-~/Documents/opencode-smart-router-backups/20261027-223912
+Every install backs up the config it is about to change and prints the path. To
+undo:
 
-Promotion dry-run snapshot + immediate rollback:
-~/Documents/opencode-smart-router-backups/20261027-225615-promotion
+```bash
+./scripts/uninstall.sh                      # removes the plugin and its config entry
+./scripts/uninstall.sh --restore-backup <file>   # or restore an exact prior config
 ```
+
+Installs are additive and versioned: each one lands in its own directory under
+`~/.config/opencode/plugins/opencode-smart-router/`, and only the config pointer
+changes. Nothing on your machine outside that directory and its `plugins` entry
+is touched - not conversations, credentials, provider connections or projects.
 
 ## Known limitations
 
@@ -383,9 +397,34 @@ allowance API, and controller integration.
 Two commands exist because passing tests prove less than they appear to.
 `npm run verify` repeats the whole thing in a clean room with an empty `HOME`, so
 a pass cannot depend on this machine's config or credentials. `npm run mutate`
-reverts each of 33 safety properties in turn and fails if the suite still passes,
+reverts each of 62 safety properties in turn and fails if the suite still passes,
 which is the only way to know a test is guarding anything.
 
 `npx vitest run` for the suite, `npx tsc --noEmit` for types, and
 `npm run build:allowance` for the standalone core. Live evidence is in
 [docs/QA.md](docs/QA.md).
+
+## Contributing
+
+Bug reports and pull requests are welcome. Before opening a PR:
+
+```bash
+npm run check     # typecheck + full suite
+npm run verify    # the same, in a clean room with an empty HOME
+npm run mutate    # prove the safety tests still catch their properties
+```
+
+A change that alters routing behavior needs a test that fails without it.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the conventions this repo follows and
+[SECURITY.md](SECURITY.md) for reporting a vulnerability.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
+
+Copyright (c) 2026 Moe Qadan.
+
+In short: use it, modify it, ship it, sell it. Keep the copyright notice and the
+permission text with any substantial copy, and understand that it comes with no
+warranty. The routing decisions it makes are estimates from modelled quota data,
+not guarantees from your providers.

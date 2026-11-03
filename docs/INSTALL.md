@@ -1,63 +1,75 @@
 # Install, verify, and remove
 
-## Current installation
+# Install, verify, and remove
+
+## Install
+
+One command, from a checkout. Requires Node 20.12+, npm and git. No `jq`.
+
+```bash
+./install              # interactive
+./install --yes        # non-interactive, for CI or an LLM
+./install --dry-run    # print every step, change nothing
+```
+
+It validates the source (typecheck and the full suite), backs up your config,
+builds the bundle, installs it, adds exactly one entry to `plugins`, and confirms
+the bundle loads. Any failure exits non-zero and leaves the machine untouched,
+because every check runs before anything is written.
+
+The install is **versioned and additive**. Each run writes to its own directory:
 
 ```text
-Plugin source:  ~/Documents/opencode-smart-router
-Artifact:      ~/Documents/opencode-smart-router/dist-release/index.js
-SHA-256:       8c71c46c5f7616f950c6a3fcf5c42be2198407848cf9ffac15d01504496f8920
-               Do not install f2e76af0… (failed Stage A).
-Live status:    automatic routing active (promoted 2026-10-28 by explicit approval)
-Live config:    d6cab84f1cd1899057486da35b1da09b63bcf7bf7983c440bb7f4ea888b7268b
-Router config:  ca7476d3caa71b27948d20e91e96ce70ff6709df1e9b9c0968622009be488263
-Install path:   ~/.config/opencode/plugins/opencode-smart-router
-Rollback-to-dry-run: ~/Documents/opencode-smart-router-backups/20261027-225615-promotion/rollback-to-dryrun.sh
-Full rollback:  ~/Documents/opencode-smart-router-backups/20261027-223912/rollback.sh
+~/.config/opencode/plugins/opencode-smart-router/<timestamp>/index.js
 ```
 
-The live desktop has loaded the plugin with automatic routing active. Premium is off and purchased-credit use is blocked. See [DESKTOP-PROMOTION-2026-10-28.md](DESKTOP-PROMOTION-2026-10-28.md) for the promotion record and monitoring guidance; the earlier verification is in [DESKTOP-DRY-RUN-2026-10-28.md](DESKTOP-DRY-RUN-2026-10-28.md). The promotion and full rollback were tested against disposable copies of the deployed state.
+and only the config pointer changes. A running OpenCode server keeps the module it
+already loaded; the new version takes effect on the next start. This matters more
+than it sounds: replacing files inside the watched plugin directory invalidates the
+plugin module mid-session and makes the provider's model list go empty, which shows
+up as `Model unavailable: <provider>/<model>` for a model that is perfectly fine.
 
-## Install from this source tree
+## Verify
 
 ```bash
-cd ~/Documents/opencode-smart-router
-npm install
-npm run typecheck
-npm test
-
-INSTALL="$HOME/.config/opencode/plugins/opencode-smart-router"
-rm -rf "$INSTALL"
-mkdir -p "$INSTALL"
-cp -R src "$INSTALL/"
-printf 'export { default } from "./src/index.ts"\n' > "$INSTALL/index.ts"
+./install --dry-run        # reports the current state without changing it
 ```
 
-Back up the global config before changing it:
+Then restart OpenCode and run `/router-status` in a session. It prints the active
+plan, the allowance windows, and the model the router would pick.
+
+## Disable without uninstalling
+
+Set `"enabled": false` in `~/.config/opencode/smart-router.json` and restart. The
+plugin stays installed and inert; your config, credentials and providers are
+untouched either way.
+
+## Uninstall
 
 ```bash
-cp ~/.config/opencode/opencode.json \
-   ~/.config/opencode/opencode.json.bak-smart-router-$(date +%Y%m%d-%H%M%S)
+./scripts/uninstall.sh
 ```
 
-Add the install path to the global `plugins` array, preserving every other entry:
+Removes the plugin directory and every `plugins` entry under it, then offers the
+exact pre-removal config as a restore point. Restart OpenCode afterwards.
+
+## Update
+
+Run `./install` again. It installs a new versioned directory and repoints the
+config, so old versions can be deleted safely once the new one is confirmed:
 
 ```bash
-cd ~/.config/opencode
-jq --arg p "$HOME/.config/opencode/plugins/opencode-smart-router" \
-  '.plugins = ((.plugins // []) + [$p] | unique)' \
-  opencode.json > opencode.json.tmp
-jq empty opencode.json.tmp
-mv opencode.json.tmp opencode.json
-chmod 600 opencode.json
+ls ~/.config/opencode/plugins/opencode-smart-router/
 ```
 
-Reload or restart OpenCode. Verify the server sees the plugin:
+## Rollback
+
+Every install prints the backup it made. Two options:
 
 ```bash
-opencode api GET /api/plugin | jq '[.data[] | select(.id=="opencode-smart-router")]'
+./scripts/uninstall.sh                             # clean removal
+./scripts/uninstall.sh --restore-backup <file>     # restore an exact prior config
 ```
-
-Or use the native command `/router-status` in a session.
 
 ## Verify quota and routing
 
@@ -106,68 +118,3 @@ chmod 600 ~/.config/opencode/smart-router.json
 ```
 
 A project may add `.opencode/smart-router.json`. It can tighten privacy and spending policy but cannot loosen global restrictions.
-
-## Disable without uninstalling
-
-- `/router-pause` pauses routing globally.
-- `/router-dry-run on` records decisions without switching.
-- `"enabled": false` in `~/.config/opencode/smart-router.json` disables the router on the next load.
-- `/router-auto` clears a per-session manual override.
-
-The plugin fails closed. If no qualified route exists, it writes a BLOCKED title and **throws `RouterBlockedError` from the prompt hook**, so admission is rejected rather than running on an unqualified model. The installed 2.1.4 server returns a generic HTTP 500 and does not execute the prompt. If setup itself fails, a minimal fallback hook blocks prompts for that location; remove the plugin entry and restart/reload to recover. The next successful prompt clears the BLOCKED title back to AUTO.
-
-## Uninstall
-
-1. Remove only the router entry from the global `plugins` array:
-
-```bash
-cd ~/.config/opencode
-jq --arg p "$HOME/.config/opencode/plugins/opencode-smart-router" \
-  '.plugins = ((.plugins // []) - [$p])' \
-  opencode.json > opencode.json.tmp
-jq empty opencode.json.tmp
-mv opencode.json.tmp opencode.json
-chmod 600 opencode.json
-```
-
-2. Remove the installed plugin directory:
-
-```bash
-rm -rf ~/.config/opencode/plugins/opencode-smart-router
-```
-
-3. Reload or restart OpenCode.
-
-4. Optional: restore the pre-install configuration exactly:
-
-```bash
-cp ~/.config/opencode/opencode.json.bak-smart-router-20261027-150549 \
-   ~/.config/opencode/opencode.json
-chmod 600 ~/.config/opencode/opencode.json
-```
-
-This does not touch conversations, provider credentials, model connections, or the Command Code key file. Router metrics remain in OpenCode's plugin storage but are inert without the plugin. `/router-reset-metrics --confirm` clears them before removal if desired.
-
-## Update
-
-Replace the installed `src` directory with the new build, then reload:
-
-```bash
-rm -rf ~/.config/opencode/plugins/opencode-smart-router/src
-cp -R ~/Documents/opencode-smart-router/src \
-      ~/.config/opencode/plugins/opencode-smart-router/
-```
-
-The server watches the local plugin files and reloads them. A full OpenCode restart is the fallback.
-
-## Rollback
-
-Use the config backup and remove the install directory:
-
-```bash
-cp ~/.config/opencode/opencode.json.bak-smart-router-20261027-150549 \
-   ~/.config/opencode/opencode.json
-rm -rf ~/.config/opencode/plugins/opencode-smart-router
-```
-
-Then reload OpenCode.

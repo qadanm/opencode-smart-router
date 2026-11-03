@@ -37,6 +37,17 @@ die()  { printf '\033[31m  x %s\033[0m\n' "$*" >&2; exit 1; }
 
 step "OpenCode Smart Router — bootstrap"
 
+# Running from inside a checkout? Then that checkout IS the source. Cloning it
+# again would either duplicate it or, on a private repo, fail with a credential
+# prompt. `./install` is documented as the from-a-clone path, so it must work
+# without network access to the forge.
+SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || true)"
+if [[ -n "${SELF_DIR:-}" && -f "$SELF_DIR/scripts/install.sh" && -d "$SELF_DIR/.git" ]]; then
+  step "Installing from this checkout"
+  echo "  source: $SELF_DIR"
+  exec "$SELF_DIR/scripts/install.sh" "${PASSTHRU[@]}"
+fi
+
 command -v git  >/dev/null || die "git is required. Install it first."
 command -v node >/dev/null || die "Node 20.12+ is required: https://nodejs.org"
 NODE_MAJOR="$(node -p 'process.versions.node.split(".")[0]')"

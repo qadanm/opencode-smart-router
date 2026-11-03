@@ -53,7 +53,11 @@ if ! $DRY_RUN; then
       console.error("  x config is not valid JSON: "+e.message); process.exit(1);
     }
     const before=(cfg.plugins||[]).length;
-    cfg.plugins=(cfg.plugins||[]).filter(p=>p!==entry);
+    // Remove EVERY entry under the install root, not just an exact match. The
+    // installer writes a versioned path underneath it, so exact matching here
+    // left a dangling entry pointing at a directory that no longer existed.
+    const under=(p)=>typeof p==="string" && (p===entry || p.startsWith(entry+"/"));
+    cfg.plugins=(cfg.plugins||[]).filter(p=>!under(p));
     fs.writeFileSync(file,JSON.stringify(cfg,null,2)+"\n");
     fs.chmodSync(file,0o600);
     console.log("  removed "+(before-cfg.plugins.length)+" entry/entries; "+cfg.plugins.length+" plugin(s) remain");
