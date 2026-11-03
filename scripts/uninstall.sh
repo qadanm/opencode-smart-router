@@ -15,6 +15,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CONFIG_DIR="${OPENCODE_CONFIG_DIR:-$HOME/.config/opencode}"
 CONFIG="$CONFIG_DIR/opencode.json"
+# Uninstall removes the whole plugin directory, versioned installs included.
+# A newer installer puts each version underneath this path, so removing the
+# parent is what actually clears it.
 INSTALL="$CONFIG_DIR/plugins/opencode-smart-router"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 

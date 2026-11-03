@@ -356,6 +356,23 @@ const candidateFor = (
  */
 export const routeTask = (input: EngineInput): EngineResult => {
   const now = input.now ?? Date.now()
+  /**
+   * Does ANY provider in this decision carry a real reading?
+   *
+   * Used to tell "this provider is fine" from "nobody has been probed yet".
+   * Treating the second as the first is what let a decision route into an
+   * exhausted allowance during the ~1.5s before the quota service starts.
+   *
+   * A snapshot counts as known when it has a source other than "unknown": that
+   * is the provider telling us something, whether provider-reported or modelled.
+   * Staleness does not disqualify it; see the sticky-exhausted rule.
+   */
+  const quotaIsKnown = (input.quota ?? []).some(
+    (snapshot) =>
+      snapshot.monthly.source !== "unknown" ||
+      snapshot.weekly.source !== "unknown" ||
+      snapshot.rolling.source !== "unknown",
+  )
   // One value for the whole decision. The eligibility gate and the success
   // estimate must never disagree about the floor in force.
   const floor = input.intelligenceFloor ?? input.settings.routing.intelligenceFloor
@@ -542,6 +559,7 @@ export const routeTask = (input: EngineInput): EngineResult => {
         mode: input.mode,
         contextTokens: input.contextTokens,
         providerQuota: provider,
+        quotaIsKnown,
         modelQuota,
         premium: premiumDecision,
         currentModelKey: currentKey,
@@ -650,6 +668,7 @@ export const routeTask = (input: EngineInput): EngineResult => {
           mode: input.mode,
           contextTokens: input.contextTokens,
           providerQuota: provider,
+          quotaIsKnown,
           modelQuota,
           premium: relaxedPremium,
           currentModelKey: currentKey,

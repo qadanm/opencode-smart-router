@@ -68,6 +68,12 @@ export interface EligibilityInput {
   readonly mode: Mode
   readonly contextTokens: number
   readonly providerQuota?: ProviderQuotaSnapshot
+  /**
+   * Whether any provider reported fresh quota for this decision. Lets the
+   * eligibility check tell "this provider is genuinely fine" apart from "we have
+   * not probed anyone yet", which are not the same thing.
+   */
+  readonly quotaIsKnown?: boolean
   readonly modelQuota?: ModelQuotaSnapshot
   readonly premium: PremiumDecision
   readonly currentModelKey?: string
@@ -111,14 +117,52 @@ const providerAuthFailure = (snapshot: ProviderQuotaSnapshot | undefined): boole
   return /authoriz|authenticat|unauthorized|forbidden|401|403|credential/i.test(snapshot.error)
 }
 
-const providerLimitReached = (snapshot: ProviderQuotaSnapshot | undefined, settings: RouterSettings): string | undefined => {
-  if (!snapshot) return undefined
+/**
+ * Decide whether a provider's allowance is spent.
+ *
+ * `quotaIsKnown` says whether ANY provider reported fresh quota this decision.
+ * That distinction matters: when every provider is unknown we are blind and must
+ * not change behaviour, but when some providers have fresh data and this one does
+ * not, the asymmetry is a hole. An exhausted provider whose snapshot has not been
+ * probed yet looks identical to one that is fine, so a decision made in the ~1.5s
+ * before the quota service starts can route straight into a full allowance. That
+ * is exactly what happened on 2026-11-02 when GOAT's five-hour window was at 100%.
+ */
+const providerLimitReached = (
+  snapshot: ProviderQuotaSnapshot | undefined,
+  settings: RouterSettings,
+  providerID = "",
+  quotaIsKnown = false,
+): string | undefined => {
+  if (!snapshot) {
+    // Fail CLOSED only in the one case that is actually a hole: this provider is
+    // configured to be probed, another provider already has a real reading, and
+    // this one has none yet. That is the window before the quota service starts
+    // (~1.5s after plugin load), where an exhausted provider is indistinguishable
+    // from a healthy one and a decision can route straight into a full allowance.
+    //
+    // A provider that is simply not probed is NOT an error: absence from the
+    // array is how "we do not track this one" is expressed, and refusing there
+    // would break legitimate fallbacks to providers with no quota model at all.
+    const providerSettings = settings.providers[providerID]
+    const expectedProbe = providerSettings?.enabled === true && providerSettings?.probeUsage === true
+    if (expectedProbe && quotaIsKnown && settings.routing?.failClosed !== false) {
+      return "Provider quota has not been probed yet; refusing rather than assuming it has room"
+    }
+    return undefined
+  }
   const providerSettings = settings.providers[snapshot.providerID]
   if (!providerSettings) return undefined
   const reserveMonthly = providerSettings.reserveMonthlyPct
   const reserveWeekly = providerSettings.reserveWeeklyPct
   const reserveFive = providerSettings.reserveFiveHourPct
   const extras = snapshot.extraCredits?.totalUsd ?? 0
+  // A refusal already outlives the reading that produced it: `exceeded` is
+  // checked before anything looks at `stale`, so an allowed-out snapshot keeps
+  // blocking until a fresh probe clears the flag. `stale` only softens COST
+  // (see providerPressure); it never softens a refusal. Verified by reverting a
+  // special-case branch for stale+exceeded and watching the tests still pass,
+  // which is how that branch was proved dead and removed.
   const windowExceeded = Boolean(snapshot.monthly.exceeded || snapshot.weekly.exceeded || snapshot.rolling.exceeded)
   if (windowExceeded) {
     if (extras > 0 && providerSettings.allowExtraUsage) return undefined
@@ -359,7 +403,7 @@ export const evaluateEligibility = (input: EligibilityInput): EligibilityResult 
     }
   }
 
-  const providerLimit = providerLimitReached(providerQuota, settings)
+  const providerLimit = providerLimitReached(providerQuota, settings, model.providerID, input.quotaIsKnown === true)
   if (providerLimit) return { eligible: false, reason: providerLimit, warnings }
   const unknownLimit = unknownQuotaLimit(providerQuota, settings)
   if (unknownLimit) return { eligible: false, reason: unknownLimit, warnings }

@@ -848,7 +848,14 @@ describe("OpenDesign eligibility and routing", () => {
       mode: "balanced",
       runtime: "automatic",
       models: registry.approved(),
-      quota: [providerSnapshot()],
+      // Every probe-enabled provider reports in production, so the fallback has a
+      // real reading here too. Without it the router now correctly refuses the
+      // fallback as unprobed, which would test the guard instead of the fallback.
+      quota: [
+        providerSnapshot(),
+        providerSnapshot({ providerID: "opencode-go", label: "OpenCode Go", plan: "go" } as any),
+        providerSnapshot({ providerID: "commandcode", label: "Command Code", plan: "goat" } as any),
+      ],
       premium: { mode: "off", monthlyBudgetUsd: 0, spentUsd: 0, remainingUsd: 0, oneShotGranted: false },
       contextTokens: 10_000,
       cachedTokens: 0,

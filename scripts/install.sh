@@ -30,7 +30,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CONFIG_DIR="${OPENCODE_CONFIG_DIR:-$HOME/.config/opencode}"
 CONFIG="$CONFIG_DIR/opencode.json"
-INSTALL="$CONFIG_DIR/plugins/opencode-smart-router"
+INSTALL_ROOT="$CONFIG_DIR/plugins/opencode-smart-router"
+INSTALL="$INSTALL_ROOT"   # resolved to a versioned directory at install time
 STAMP="$(date +%Y%m%d-%H%M%S)"
 
 DRY_RUN=false
@@ -42,7 +43,7 @@ while [[ $# -gt 0 ]]; do
     --dry-run) DRY_RUN=true; shift ;;
     --yes|-y) ASSUME_YES=true; shift ;;
     --no-verify) VERIFY=false; shift ;;
-    --config-dir) CONFIG_DIR="${2:?--config-dir needs a path}"; CONFIG="$CONFIG_DIR/opencode.json"; INSTALL="$CONFIG_DIR/plugins/opencode-smart-router"; shift 2 ;;
+    --config-dir) CONFIG_DIR="${2:?--config-dir needs a path}"; CONFIG="$CONFIG_DIR/opencode.json"; INSTALL_ROOT="$CONFIG_DIR/plugins/opencode-smart-router"; INSTALL="$INSTALL_ROOT"; shift 2 ;;
     -h|--help) sed -n '2,30p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "Unknown option: $1 (try --help)" >&2; exit 2 ;;
   esac
@@ -148,33 +149,39 @@ fi
 run cp "$CONFIG" "$CONFIG.bak-smart-router-$STAMP"
 say "  config backup: $CONFIG.bak-smart-router-$STAMP"
 
-# REPLACE FILES IN PLACE. Never `rm -rf` the plugin directory while OpenCode is
-# running: the server watches that directory, and deleting it out from under a live
-# session invalidates the plugin module and empties the provider model list. The next
-# step then dies with "Model unavailable: <provider>/<model>" even though the model is
-# perfectly valid and the gateway is healthy. This was observed on 2026-11-03 during
-# a live session: the plugin was replaced under a running server and four sessions
-# failed that way.
+# INSTALL TO A FRESH PATH, THEN REPOINT THE CONFIG.
 #
-# So: write to a temp file and move it over the old one (atomic rename), which the
-# watcher sees as a content change rather than a disappearance.
-run mkdir -p "$INSTALL"
-run cp "$ROOT/dist/index.js" "$INSTALL/index.js.next"
-run mv "$INSTALL/index.js.next" "$INSTALL/index.js"
-run cp "$ROOT/config.example.json" "$INSTALL/config.example.json.next"
-run mv "$INSTALL/config.example.json.next" "$INSTALL/config.example.json"
+# Earlier versions replaced files INSIDE the plugin directory. First with `rm -rf`,
+# then with an atomic `mv` over the old file. Both were wrong, and the log proves it:
+# an atomic rename still fires the directory watcher, because the watcher sees a
+# change in the directory it is watching. On 2026-11-03 a rename-based install
+# produced a ModelUnavailableError 0.4s later, exactly like the `rm -rf` version.
+#
+# The only way not to disturb a running server is to not touch the directory it is
+# watching. So each install lands in its own versioned directory, and the config
+# pointer is what changes. A running server keeps its already-loaded module; the new
+# path takes effect on the next start.
+#
+# The pointer is written to a temp file and renamed, which is atomic for the config
+# file. OpenCode watches the plugins DIRECTORY, not the config, so that rename does
+# not invalidate a loaded plugin module.
+STAMP_DIR="$(date +%Y%m%d-%H%M%S)"
+TARGET="$INSTALL_ROOT/$STAMP_DIR"
+
+run mkdir -p "$TARGET"
+run cp "$ROOT/dist/index.js" "$TARGET/index.js"
+run cp "$ROOT/config.example.json" "$TARGET/config.example.json"
 
 # The router resolves @opencode/plugin at runtime, so the host's copy must be reachable
 # from the plugin directory. A symlink to the repo's node_modules keeps the install
 # small and lets OpenCode resolve it the same way it resolves any other plugin dep.
 if ! $DRY_RUN; then
-  # Replace the link atomically too. `ln -sfn` on an existing symlink to a DIRECTORY
-  # follows it and creates the link INSIDE the target, so the old one is never
-  # replaced. Point the link at a temp name and rename it over the top.
-  rm -f "$INSTALL/node_modules.next"
-  ln -s "$ROOT/node_modules" "$INSTALL/node_modules.next"
-  mv -f "$INSTALL/node_modules.next" "$INSTALL/node_modules"
+  ln -s "$ROOT/node_modules" "$TARGET/node_modules"
 fi
+
+# Point the config at the new version. `INSTALL` is what gets written into
+# cfg.plugins, so the running server is never asked to reload the old path.
+INSTALL="$TARGET"
 say "  installed: $INSTALL/index.js"
 
 # Record what was installed, so a later `--rollback` or audit can tell versions apart.

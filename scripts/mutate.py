@@ -468,6 +468,14 @@ MUTATIONS = [
         "    if (window.usedPct < 0) continue",
         "test/quota-waste.test.ts",
     ),
+    # ------------------------------------------- quota fail-closed
+    Mutation(
+        "a probe-enabled provider with no reading yet is assumed to have room",
+        "src/core/policy/eligibility.ts",
+        "    if (expectedProbe && quotaIsKnown && settings.routing?.failClosed !== false) {",
+        "    if (false) {",
+        "test/quota-fail-closed.test.ts",
+    ),
 ]
 
 def run_tests(test: str) -> bool:

@@ -992,6 +992,29 @@ export class RouterController {
           if (oldest) this.expectedSwitch.delete(oldest)
         }
       }
+      // NEVER SWITCH IN THE MIDDLE OF A RUNNING TURN.
+      //
+      // `switchModel` changes the model for the NEXT step. If a turn is already
+      // in flight, the step that is queued behind the switch resolves against a
+      // provider whose registration may not be settled yet, and dies with
+      // "Model unavailable: <provider>/<model>" -- which reads like a dead
+      // provider and is not one. Observed live on 2026-11-03: four of six such
+      // failures landed within ten seconds of the plugin being reloaded, three
+      // of them within one second.
+      //
+      // The prompt hook normally fires before a turn starts, so this is a guard
+      // for the cases where it does not: a retry, a second queued prompt, or an
+      // event arriving while the session is still busy. Deferring is always safe
+      // because the next prompt routes again anyway.
+      const busy = this.sessionBusy(sessionID)
+      if (busy) {
+        this.expectedSwitch.delete(sessionID)
+        this.settingsWarnings.push(
+          `Deferred a switch to ${target.providerID}/${target.modelID}: the session was mid-turn. Routing again on the next prompt.`,
+        )
+        return
+      }
+
       // NEVER SWITCH TO A MODEL OPENCODE DOES NOT HAVE.
       //
       // The router's candidate list is built from the GATEWAY and the seed catalog.
@@ -1308,6 +1331,25 @@ export class RouterController {
    * switch: the previous behaviour was to try it and surface the real error, and a
    * false negative here would silently stop all routing.
    */
+  /**
+   * Whether a turn is currently running for this session.
+   *
+   * Two independent signals, because neither is complete on its own:
+   *
+   * - `stepStarted` is set in-process and cleared on the step's terminal event.
+   *   It is the precise one, but a plugin reload empties it, so a session that
+   *   was already mid-turn looks idle.
+   * - `status` is persisted in the ledger and survives a reload, so it covers
+   *   exactly that gap. It is also written by auto-compaction.
+   *
+   * Either one saying "busy" is enough. A false positive only defers a switch
+   * to the next prompt, which costs nothing; a false negative breaks the turn.
+   */
+  private sessionBusy(sessionID: string): boolean {
+    if (this.stepStarted.has(sessionID)) return true
+    return this.ledger.getSession(sessionID)?.status === "busy"
+  }
+
   private async modelResolvable(providerID: string, modelID: string): Promise<boolean> {
     // The host is the authority, but it is not always reachable. A MISSING API is not
     // a "no": it means this host cannot answer the question, so fall back to the
