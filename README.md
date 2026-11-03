@@ -38,7 +38,7 @@ you run it. To update, run the same command again. To remove it:
 ./scripts/uninstall.sh
 ```
 
-Nothing else on your machine is touched — not your conversations, credentials, provider
+Nothing else on your machine is touched: not your conversations, credentials, provider
 connections, or project files.
 
 ### If you are an LLM setting this up for someone
@@ -52,7 +52,7 @@ curl -fsSL https://raw.githubusercontent.com/qadanm/opencode-smart-router/main/i
 
 - Exit code is non-zero on any failure, and **every check runs before anything is
   modified**, so a failed install leaves the machine exactly as it was.
-- `./install --dry-run` prints every step without changing anything — use it to confirm
+- `./install --dry-run` prints every step without changing anything; use it to confirm
   what would happen.
 - Requirements: `node >= 20.12`, `npm`, `git`. No `jq`, no other tooling.
 - After installing, **OpenCode must be restarted** before the plugin loads.
