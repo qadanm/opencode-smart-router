@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="210" viewBox="0 0 820 210" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">
+  <rect width="820" height="210" fill="#ffffff"/>
+  <defs>
+    <marker id="a" markerWidth="7" markerHeight="7" refX="5.5" refY="3.5" orient="auto">
+      <path d="M0 0L7 3.5L0 7z" fill="#a1a1aa"/>
+    </marker>
+  </defs>
+  <g font-size="12.5">
+    <rect x="20" y="66" width="150" height="66" rx="9" fill="#f4f4f5" stroke="#e4e4e7"/>
+    <text x="95" y="94" text-anchor="middle" font-weight="650" fill="#18181b">classify</text>
+    <text x="95" y="112" text-anchor="middle" font-size="11" fill="#71717a">local, ~1ms</text>
+
+    <rect x="196" y="66" width="150" height="66" rx="9" fill="#f4f4f5" stroke="#e4e4e7"/>
+    <text x="271" y="94" text-anchor="middle" font-weight="650" fill="#18181b">eligibility</text>
+    <text x="271" y="112" text-anchor="middle" font-size="11" fill="#71717a">plan, quota, vision, floor</text>
+
+    <rect x="372" y="66" width="150" height="66" rx="9" fill="#f4f4f5" stroke="#e4e4e7"/>
+    <text x="447" y="94" text-anchor="middle" font-weight="650" fill="#18181b">price</text>
+    <text x="447" y="112" text-anchor="middle" font-size="11" fill="#71717a">windows, not tokens</text>
+
+    <rect x="548" y="66" width="150" height="66" rx="9" fill="#ecfdf5" stroke="#0f766e" stroke-width="1.7"/>
+    <text x="623" y="94" text-anchor="middle" font-weight="700" fill="#0f766e">pick</text>
+    <text x="623" y="112" text-anchor="middle" font-size="11" fill="#115e59">lowest real cost</text>
+
+    <rect x="724" y="66" width="76" height="66" rx="9" fill="#f4f4f5" stroke="#e4e4e7"/>
+    <text x="762" y="94" text-anchor="middle" font-weight="650" fill="#18181b">send</text>
+    <text x="762" y="112" text-anchor="middle" font-size="11" fill="#71717a">one step</text>
+  </g>
+  <g stroke="#a1a1aa" stroke-width="1.5" fill="none" marker-end="url(#a)">
+    <path d="M172 99h18"/><path d="M348 99h18"/><path d="M524 99h18"/><path d="M700 99h18"/>
+  </g>
+  <g font-size="10.5" fill="#a1a1aa">
+    <text x="95" y="160" text-anchor="middle">no model call</text>
+    <text x="271" y="160" text-anchor="middle">hard requirements first</text>
+    <text x="447" y="160" text-anchor="middle">expiring allowance is discounted</text>
+    <text x="623" y="160" text-anchor="middle">cache affinity applies</text>
+  </g>
+</svg>

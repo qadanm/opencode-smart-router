@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="300" viewBox="0 0 760 300" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">
+  <rect width="760" height="300" fill="#ffffff"/>
+  <text x="24" y="30" font-size="12" font-weight="700" fill="#18181b">Same three subscriptions. Two routers.</text>
+
+  <text x="24" y="66" font-size="11" font-weight="700" fill="#71717a" letter-spacing=".6">PRICE PER TOKEN</text>
+  <g font-size="12">
+    <rect x="24" y="78" width="330" height="44" rx="8" fill="#f4f4f5" stroke="#e4e4e7"/>
+    <text x="40" y="105" font-weight="600" fill="#18181b">deepseek-v4.1-flash</text>
+    <text x="337" y="105" text-anchor="end" font-size="11" fill="#71717a">cheapest on paper</text>
+    <rect x="24" y="130" width="330" height="44" rx="8" fill="#f4f4f5" stroke="#e4e4e7"/>
+    <text x="40" y="157" font-weight="600" fill="#18181b">deepseek-v4.1-flash</text>
+    <text x="337" y="157" text-anchor="end" font-size="11" fill="#71717a">same choice again</text>
+    <rect x="24" y="182" width="330" height="44" rx="8" fill="#f4f4f5" stroke="#e4e4e7"/>
+    <text x="40" y="209" font-weight="600" fill="#18181b">deepseek-v4.1-flash</text>
+    <text x="337" y="209" text-anchor="end" font-size="11" fill="#71717a">allowance dies unused</text>
+  </g>
+
+  <text x="406" y="66" font-size="11" font-weight="700" fill="#0f766e" letter-spacing=".6">SMART ROUTER</text>
+  <g font-size="12">
+    <rect x="406" y="78" width="330" height="44" rx="8" fill="#ecfdf5" stroke="#0f766e" stroke-width="1.5"/>
+    <text x="422" y="105" font-weight="600" fill="#115e59">commandcode / haiku</text>
+    <text x="719" y="105" text-anchor="end" font-size="11" fill="#0f766e">window resets in 40m</text>
+    <rect x="406" y="130" width="330" height="44" rx="8" fill="#ecfdf5" stroke="#0f766e" stroke-width="1.5"/>
+    <text x="422" y="157" font-weight="600" fill="#115e59">opendesign / deepseek</text>
+    <text x="719" y="157" text-anchor="end" font-size="11" fill="#0f766e">cheapest once that empties</text>
+    <rect x="406" y="182" width="330" height="44" rx="8" fill="#ecfdf5" stroke="#0f766e" stroke-width="1.5"/>
+    <text x="422" y="209" font-weight="600" fill="#115e59">opendesign / deepseek</text>
+    <text x="719" y="209" text-anchor="end" font-size="11" fill="#0f766e">steady, nothing wasted</text>
+  </g>
+
+  <line x1="24" y1="248" x2="736" y2="248" stroke="#e4e4e7"/>
+  <text x="24" y="272" font-size="11.5" fill="#71717a">Both columns are the same three prompts, minutes apart. Only the pricing model differs.</text>
+</svg>
