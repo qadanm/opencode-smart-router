@@ -1,6 +1,8 @@
-# Handoff: model-availability fixes (in progress)
+# Handoff: model-availability fixes
 
-Branch `feature/offline-mode`, HEAD `ec40871`, **uncommitted changes in the working tree.**
+Status: **complete.** The fixes described below shipped in `ec40871` and
+`49fb051`. This document is kept as the record of what was found and why, not as
+work in progress.
 `tsc --noEmit` is clean. `npx vitest run` → **484 pass, 1 fail** (the failing one is
 expected and explained below).
 
@@ -68,7 +70,7 @@ cooling down`
 
 The fixture supplies a snapshot for opendesign only, so under the new rule the fallback provider
 is treated as unprobed and blocked, and the decision stays on the cooling provider. **Decide
-which behaviour is correct before committing:**
+which behavior is correct before committing:**
 
 - If a cooling swap must still work, the rule needs to exempt providers that were simply not
   part of this decision's probe set — i.e. distinguish "unprobed" from "probed and empty".
