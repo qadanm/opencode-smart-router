@@ -208,11 +208,16 @@ if ! $DRY_RUN; then
       console.error("  x existing config is not valid JSON: "+e.message); process.exit(1);
     }
     const list=Array.isArray(cfg.plugins)?cfg.plugins:[];
-    cfg.plugins=[...list.filter(p=>p!==entry),entry];
+    // Drop EVERY entry under the install root, not just an exact match on the
+    // new path. A versioned install leaves the previous path (and any legacy
+    // non-versioned path) behind, and two entries would load the plugin twice.
+    const root=process.argv[3];
+    const under=(p)=>typeof p==="string" && (p===root || p.startsWith(root+"/"));
+    cfg.plugins=[...list.filter(p=>!under(p)),entry];
     fs.writeFileSync(file,JSON.stringify(cfg,null,2)+"\n");
     fs.chmodSync(file,0o600);
     console.log("  config now lists "+cfg.plugins.length+" plugin(s)");
-  ' "$CONFIG" "$INSTALL"
+  ' "$CONFIG" "$INSTALL" "$INSTALL_ROOT"
 fi
 
 # ── 6. Verify it loads ───────────────────────────────────────────────────────
