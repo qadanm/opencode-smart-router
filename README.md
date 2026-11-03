@@ -13,6 +13,52 @@ different multipliers.
 This router models the plan you actually bought, and it does not spend money you
 did not authorize.
 
+## Install in one command
+
+**Any machine with Node 20.12+ and git.** One command clones, builds, verifies, installs,
+and wires it into your OpenCode config:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/qadanm/opencode-smart-router/main/install | bash
+```
+
+Already cloned? Then:
+
+```bash
+./install
+```
+
+Then restart OpenCode and run `/router-status`.
+
+That is the whole setup. It refuses to install if the source does not typecheck and pass
+tests, backs up your config first, and leaves exactly one plugin entry however many times
+you run it. To update, run the same command again. To remove it:
+
+```bash
+./scripts/uninstall.sh
+```
+
+Nothing else on your machine is touched — not your conversations, credentials, provider
+connections, or project files.
+
+### If you are an LLM setting this up for someone
+
+Run the same command with `--yes`; it never prompts and every failure message is
+actionable:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/qadanm/opencode-smart-router/main/install | bash -s -- --yes
+```
+
+- Exit code is non-zero on any failure, and **every check runs before anything is
+  modified**, so a failed install leaves the machine exactly as it was.
+- `./install --dry-run` prints every step without changing anything — use it to confirm
+  what would happen.
+- Requirements: `node >= 20.12`, `npm`, `git`. No `jq`, no other tooling.
+- After installing, **OpenCode must be restarted** before the plugin loads.
+- Verify success with `./scripts/install.sh --dry-run` (reports state) or by starting
+  OpenCode and running `/router-status`.
+
 ## Two ways to use it
 
 As an OpenCode plugin, it selects a model per prompt, respects the allowances

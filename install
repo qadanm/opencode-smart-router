@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+#
+# OpenCode Smart Router — zero-to-working in one command.
+#
+# FOR A PERSON:
+#   curl -fsSL https://raw.githubusercontent.com/qadanm/opencode-smart-router/main/install | bash
+#   ...or, from a clone:  ./install
+#
+# FOR AN LLM / CI:
+#   The same command, plus --yes. It never prompts, prints one line per step, and exits
+#   non-zero with an actionable message on any failure. Every check happens before
+#   anything is modified, so a failure leaves the machine untouched.
+#
+# WHAT IT DOES:
+#   1. checks node/npm/git
+#   2. clones the repo to ~/.opencode-smart-router (or updates it)
+#   3. runs scripts/install.sh, which builds, installs, wires the config, and verifies
+#
+# Re-running is safe and is the update path: it pulls the latest and reinstalls.
+#
+set -euo pipefail
+
+REPO_URL="${SMART_ROUTER_REPO:-https://github.com/qadanm/opencode-smart-router.git}"
+TARGET="${SMART_ROUTER_DIR:-$HOME/.opencode-smart-router}"
+ASSUME_YES=false
+PASSTHRU=()
+
+for a in "$@"; do
+  case "$a" in
+    --yes|-y) ASSUME_YES=true; PASSTHRU+=("--yes") ;;
+    *) PASSTHRU+=("$a") ;;
+  esac
+done
+
+step() { printf '\n\033[1m==> %s\033[0m\n' "$*"; }
+die()  { printf '\033[31m  x %s\033[0m\n' "$*" >&2; exit 1; }
+
+step "OpenCode Smart Router — bootstrap"
+
+command -v git  >/dev/null || die "git is required. Install it first."
+command -v node >/dev/null || die "Node 20.12+ is required: https://nodejs.org"
+NODE_MAJOR="$(node -p 'process.versions.node.split(".")[0]')"
+NODE_MINOR="$(node -p 'process.versions.node.split(".")[1]')"
+(( NODE_MAJOR > 20 || (NODE_MAJOR == 20 && NODE_MINOR >= 12) )) \
+  || die "Node $(node -v) is too old; the router needs >= 20.12."
+command -v npm >/dev/null || die "npm is required (it ships with Node)."
+echo "  node $(node -v), git $(git --version | awk '{print $3}')"
+
+if [[ -d "$TARGET/.git" ]]; then
+  step "Updating existing clone at $TARGET"
+  git -C "$TARGET" fetch --quiet origin || die "could not reach $REPO_URL"
+  # Install from whatever branch the clone is on, so feature branches work too.
+  BRANCH="$(git -C "$TARGET" rev-parse --abbrev-ref HEAD)"
+  git -C "$TARGET" pull --ff-only --quiet origin "$BRANCH" \
+    || echo "  (local commits present — installing from the working tree as-is)"
+else
+  step "Cloning into $TARGET"
+  mkdir -p "$(dirname "$TARGET")"
+  git clone --quiet "$REPO_URL" "$TARGET" \
+    || die "clone failed. If the repo is private, set SMART_ROUTER_REPO to a URL you can reach."
+fi
+
+step "Running the installer"
+exec "$TARGET/scripts/install.sh" "${PASSTHRU[@]}"
