@@ -992,6 +992,27 @@ export class RouterController {
           if (oldest) this.expectedSwitch.delete(oldest)
         }
       }
+      // NEVER SWITCH TO A MODEL OPENCODE DOES NOT HAVE.
+      //
+      // The router's candidate list is built from the GATEWAY and the seed catalog.
+      // OpenCode's own model list is a third thing, and they can disagree: a model
+      // the gateway serves, and the router has approved, may not be present in
+      // OpenCode's provider config -- or, as on 2026-11-03, the provider's model
+      // list can be empty mid-session because the plugin directory was replaced
+      // underneath a running server.
+      //
+      // Switching to a model OpenCode cannot resolve fails the NEXT step with
+      // "Model unavailable: <provider>/<model>", which looks exactly like a dead
+      // gateway and is not one. Checking first costs one call and turns a broken
+      // session into a skipped switch.
+      const resolvable = await this.modelResolvable(target.providerID, target.modelID)
+      if (!resolvable) {
+        this.expectedSwitch.delete(sessionID)
+        this.settingsWarnings.push(
+          `Skipped a switch to ${target.providerID}/${target.modelID}: OpenCode does not currently expose that model.`,
+        )
+        return
+      }
       this.expectedSwitch.set(sessionID, { key, at: Date.now() })
       try {
         await this.ctx.session.switchModel({
@@ -1272,6 +1293,36 @@ export class RouterController {
    * one, so that variant's window is the size the session needs to fit.
    * Ties prefer the larger window.
    */
+  /**
+   * Whether OpenCode exposes a model RIGHT NOW.
+   *
+   * The router knows a model because the gateway serves it and the owner approved it.
+   * OpenCode knows it only if it is in the provider's configured model list. When the
+   * two disagree, switching produces a session that fails on its NEXT step with
+   * "Model unavailable: provider/model", which reads like a dead provider and is not
+   * one. Observed 2026-11-03: the plugin directory was replaced underneath a running
+   * server, the provider's model list came back empty, and four live sessions died
+   * that way.
+   *
+   * So ask the host instead of assuming. If the host cannot answer at all, allow the
+   * switch: the previous behaviour was to try it and surface the real error, and a
+   * false negative here would silently stop all routing.
+   */
+  private async modelResolvable(providerID: string, modelID: string): Promise<boolean> {
+    // The host is the authority, but it is not always reachable. A MISSING API is not
+    // a "no": it means this host cannot answer the question, so fall back to the
+    // previous behaviour of attempting the switch and surfacing whatever happens.
+    // Only an API that answers and returns nothing is treated as a real refusal.
+    const get = this.ctx?.model?.get
+    if (typeof get !== "function") return true
+    try {
+      const model = await get.call(this.ctx.model, providerID, modelID)
+      return Boolean(model)
+    } catch {
+      return true
+    }
+  }
+
   /**
    * The candidate list a routing decision may choose from.
    *

@@ -135,19 +135,45 @@ fi
 
 # ── 5. Install ───────────────────────────────────────────────────────────────
 step "5/6  Installing into OpenCode"
+
+# If OpenCode is RUNNING, replacing the plugin under it can break the live session.
+# The files are replaced atomically (rename), which the watcher reads as a content
+# change rather than a disappearance -- but a running session can still be mid-step,
+# so say so plainly instead of letting it surprise the user.
+if pgrep -qi "opencode" 2>/dev/null; then
+  warn "OpenCode appears to be running. The plugin files are replaced atomically, but"
+  warn "a session that is MID-STEP when this finishes may still fail once."
+  warn "Restart OpenCode when convenient."
+fi
 run cp "$CONFIG" "$CONFIG.bak-smart-router-$STAMP"
 say "  config backup: $CONFIG.bak-smart-router-$STAMP"
 
-run rm -rf "$INSTALL"
+# REPLACE FILES IN PLACE. Never `rm -rf` the plugin directory while OpenCode is
+# running: the server watches that directory, and deleting it out from under a live
+# session invalidates the plugin module and empties the provider model list. The next
+# step then dies with "Model unavailable: <provider>/<model>" even though the model is
+# perfectly valid and the gateway is healthy. This was observed on 2026-11-03 during
+# a live session: the plugin was replaced under a running server and four sessions
+# failed that way.
+#
+# So: write to a temp file and move it over the old one (atomic rename), which the
+# watcher sees as a content change rather than a disappearance.
 run mkdir -p "$INSTALL"
-run cp "$ROOT/dist/index.js" "$INSTALL/index.js"
-run cp "$ROOT/config.example.json" "$INSTALL/config.example.json"
+run cp "$ROOT/dist/index.js" "$INSTALL/index.js.next"
+run mv "$INSTALL/index.js.next" "$INSTALL/index.js"
+run cp "$ROOT/config.example.json" "$INSTALL/config.example.json.next"
+run mv "$INSTALL/config.example.json.next" "$INSTALL/config.example.json"
 
 # The router resolves @opencode/plugin at runtime, so the host's copy must be reachable
 # from the plugin directory. A symlink to the repo's node_modules keeps the install
 # small and lets OpenCode resolve it the same way it resolves any other plugin dep.
 if ! $DRY_RUN; then
-  ln -sfn "$ROOT/node_modules" "$INSTALL/node_modules"
+  # Replace the link atomically too. `ln -sfn` on an existing symlink to a DIRECTORY
+  # follows it and creates the link INSIDE the target, so the old one is never
+  # replaced. Point the link at a temp name and rename it over the top.
+  rm -f "$INSTALL/node_modules.next"
+  ln -s "$ROOT/node_modules" "$INSTALL/node_modules.next"
+  mv -f "$INSTALL/node_modules.next" "$INSTALL/node_modules"
 fi
 say "  installed: $INSTALL/index.js"
 
