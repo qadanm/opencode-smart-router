@@ -65,8 +65,14 @@ free. When a pool is nearly gone, it stops being attractive.
 Requires Node 20.12+, npm and git. No `jq`, no global CLI, nothing to configure.
 
 ```bash
-git clone <this-repo> && cd opencode-smart-router
-./install
+curl -fsSL https://raw.githubusercontent.com/qadanm/opencode-smart-router/main/install | bash
+```
+
+Or from a clone:
+
+```bash
+git clone https://github.com/qadanm/opencode-smart-router.git
+cd opencode-smart-router && ./install
 ```
 
 It validates the source, runs the full suite, backs up your config, builds, installs,
