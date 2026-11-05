@@ -736,19 +736,15 @@ function Disclosure(props: {
 
 function ProviderModels(props: { status: RouterStatus | undefined }) {
   /**
-   * What is open, and why.
+   * Providers, not their catalogs.
    *
-   * The providers that can serve a request right now are expanded, because they
-   * are the answer to the question the panel exists to answer. Providers with no
-   * credential are collapsed, because they are reference material until somebody
-   * configures them.
+   * The question this answers is "what can route right now, and what is not
+   * configured". Listing every model answered a question nobody asked and
+   * buried the rest of the panel under forty rows of names.
    *
-   * The signal tracks *collapsed* ids rather than expanded ones so that the
-   * default is "open" without needing to know the provider list, which arrives
-   * asynchronously and would otherwise leave everything closed on first paint.
+   * Collapsed by default except the section itself, which carries the summary
+   * that is most of the value: one line telling you how many providers are live.
    */
-  const [collapsedActive, setCollapsedActive] = createSignal<ReadonlyArray<string>>([])
-  const [expandedInactive, setExpandedInactive] = createSignal<ReadonlyArray<string>>([])
   const [sectionOpen, setSectionOpen] = createSignal(true)
   const [notConfiguredOpen, setNotConfiguredOpen] = createSignal(false)
   const [hovered, setHovered] = createSignal<string | undefined>(undefined)
@@ -766,157 +762,50 @@ function ProviderModels(props: { status: RouterStatus | undefined }) {
     })
   }
 
-  /**
-   * How many models to show per provider before asking.
-   *
-   * Five is enough to see what will be chosen and what it costs; the rest is
-   * reference. The full list is one click away.
-   */
-  const PREVIEW_MODELS = 5
-  const [expandedAll, setExpandedAll] = createSignal<ReadonlyArray<string>>([])
-
-  const approvedModelsOf = (group: ReturnType<typeof groups>[number]) =>
-    group.models.filter((model) => model.state === "approved")
-  const unapprovedCount = (group: ReturnType<typeof groups>[number]) =>
-    group.models.length - approvedModelsOf(group).length
-
-  const visibleModels = (group: ReturnType<typeof groups>[number]) => {
-    const approved = approvedModelsOf(group)
-    if (expandedAll().includes(group.providerID)) return approved
-    return approved.slice(0, PREVIEW_MODELS)
-  }
-
-  const hiddenCount = (group: ReturnType<typeof groups>[number]) =>
-    approvedModelsOf(group).length - visibleModels(group).length
-
-  const toggleAll = (providerID: string) =>
-    setExpandedAll((current) =>
-      current.includes(providerID) ? current.filter((id) => id !== providerID) : [...current, providerID],
-    )
-
   const activeGroups = () => groups().filter((group) => group.state === "active")
   const inactiveGroups = () => groups().filter((group) => group.state !== "active")
 
-  const ProviderCard = (cardProps: { group: ReturnType<typeof groups>[number]; defaultOpen: boolean }) => {
-    const id = cardProps.group.providerID
-    const isOpen = () =>
-      cardProps.defaultOpen ? !collapsedActive().includes(id) : expandedInactive().includes(id)
-    const toggle = () =>
-      cardProps.defaultOpen
-        ? setCollapsedActive((current) =>
-            current.includes(id) ? current.filter((entry) => entry !== id) : [...current, id],
-          )
-        : setExpandedInactive((current) =>
-            current.includes(id) ? current.filter((entry) => entry !== id) : [...current, id],
-          )
-
-    return (
-      <div
-        style={{
-          display: "flex",
-          "flex-direction": "column",
-          gap: "6px",
-          padding: "9px 10px",
-          "border-radius": "8px",
-          border: `1px solid ${theme.border}`,
-          background: cardProps.defaultOpen ? theme.surface : "transparent",
-        }}
-      >
-        <Disclosure
-          id={id}
-          open={isOpen()}
-          onToggle={toggle}
-          hovered={hovered() === id}
-          onHover={setHovered}
-          aside={
-            <>
-              <span style={{ color: theme.faint, "font-size": "10.5px" }}>
-                {cardProps.group.approvedCount} of {cardProps.group.totalCount} approved
-              </span>
-              <span
-                style={{
-                  color: cardProps.defaultOpen ? theme.good : theme.faint,
-                  "font-size": "10px",
-                  "text-transform": "uppercase",
-                  "letter-spacing": "0.04em",
-                  "font-weight": 600,
-                }}
-              >
-                {cardProps.defaultOpen ? "active" : "not configured"}
-              </span>
-            </>
-          }
+  const ProviderRow = (rowProps: { group: ReturnType<typeof groups>[number] }) => (
+    <div
+      style={{
+        display: "flex",
+        "justify-content": "space-between",
+        gap: "8px",
+        "align-items": "baseline",
+        padding: "7px 10px",
+        "border-radius": "7px",
+        border: `1px solid ${theme.border}`,
+        background: rowProps.group.state === "active" ? theme.surface : "transparent",
+      }}
+    >
+      <span style={{ display: "flex", "flex-direction": "column", gap: "2px", "min-width": 0 }}>
+        <span style={{ "font-size": "12.5px", "font-weight": 550, color: theme.text }}>
+          {rowProps.group.label}
+        </span>
+        <Show when={rowProps.group.note}>
+          <span style={{ color: theme.warn, "font-size": "10.5px", "line-height": 1.4 }}>
+            {rowProps.group.note}
+          </span>
+        </Show>
+      </span>
+      <span style={{ display: "flex", gap: "8px", "align-items": "baseline", "flex-shrink": 0 }}>
+        <span style={{ color: theme.faint, "font-size": "10.5px" }}>
+          {rowProps.group.approvedCount} of {rowProps.group.totalCount} models
+        </span>
+        <span
+          style={{
+            color: rowProps.group.state === "active" ? theme.good : theme.faint,
+            "font-size": "10px",
+            "text-transform": "uppercase",
+            "letter-spacing": "0.04em",
+            "font-weight": 600,
+          }}
         >
-          <span style={{ "font-size": "12.5px", "font-weight": 550, color: theme.text }}>
-            {cardProps.group.label}
-          </span>
-        </Disclosure>
-
-        <Show when={cardProps.group.note}>
-          <span style={{ color: theme.warn, "font-size": "10.5px", "line-height": 1.45 }}>
-            {cardProps.group.note}
-          </span>
-        </Show>
-
-        <Show when={isOpen()}>
-          <div style={{ display: "flex", "flex-direction": "column", gap: "3px", "margin-top": "2px" }}>
-            {/* Approved models only, and only the cheapest few of them.
-                The question this panel answers is "what can route right now",
-                not "what does the catalog contain". A provider with 39 entries
-                buried the decision, the allowances and the settings under a
-                scroll of model names nobody reads. */}
-            <For each={visibleModels(cardProps.group)}>
-              {(model) => (
-                <div style={{ display: "flex", "justify-content": "space-between", gap: "8px", "align-items": "baseline" }}>
-                  <span
-                    style={{
-                      "font-family": mono,
-                      "font-size": "10.5px",
-                      color: theme.text,
-                      overflow: "hidden",
-                      "text-overflow": "ellipsis",
-                      "white-space": "nowrap",
-                    }}
-                  >
-                    {model.key.split("/").slice(1).join("/")}
-                  </span>
-                  <span style={{ display: "flex", gap: "8px", "flex-shrink": 0, "align-items": "baseline" }}>
-                    <span style={{ color: theme.faint, "font-size": "10.5px" }}>{model.contextLabel}</span>
-                    <span style={{ color: theme.faint, "font-size": "10.5px" }}>{model.costLabel}</span>
-                  </span>
-                </div>
-              )}
-            </For>
-
-            <Show when={hiddenCount(cardProps.group) > 0}>
-              <button
-                type="button"
-                onClick={() => toggleAll(id)}
-                onMouseEnter={() => setHovered(`all:${id}`)}
-                onMouseLeave={() => setHovered(undefined)}
-                style={{
-                  background: hovered() === `all:${id}` ? theme.surface : "transparent",
-                  border: "none",
-                  "border-radius": "5px",
-                  padding: "3px 6px",
-                  margin: "1px -6px -2px",
-                  color: theme.muted,
-                  font: "inherit",
-                  "font-size": "10.5px",
-                  cursor: "pointer",
-                  "text-align": "left",
-                }}
-              >
-                {expandedAll().includes(id)
-                  ? "Show fewer"
-                  : `${hiddenCount(cardProps.group)} more${unapprovedCount(cardProps.group) > 0 ? ` · ${unapprovedCount(cardProps.group)} not routable` : ""}`}
-              </button>
-            </Show>
-          </div>
-        </Show>
-      </div>
-    )
-  }
+          {rowProps.group.state === "active" ? "active" : "not configured"}
+        </span>
+      </span>
+    </div>
+  )
 
   return (
     <div style={{ display: "flex", "flex-direction": "column", gap: "8px" }}>
@@ -941,25 +830,20 @@ function ProviderModels(props: { status: RouterStatus | undefined }) {
             "letter-spacing": "0.04em",
           }}
         >
-          Providers &amp; models
+          Providers
         </span>
       </Disclosure>
 
       <Show when={sectionOpen()}>
-        <For each={activeGroups()}>
-          {(group) => <ProviderCard group={group} defaultOpen={true} />}
-        </For>
+        <For each={activeGroups()}>{(group) => <ProviderRow group={group} />}</For>
 
-        {/* Providers with nothing to route to are their own section: not part of
-            the current picture, but hiding them is how a user never discovers
-            the router supports a service they already pay for. */}
         <Show when={inactiveGroups().length > 0}>
           <div
             style={{
               display: "flex",
               "flex-direction": "column",
               gap: "6px",
-              "padding-top": "2px",
+              "padding-top": "4px",
               "border-top": `1px solid ${theme.border}`,
             }}
           >
@@ -975,15 +859,11 @@ function ProviderModels(props: { status: RouterStatus | undefined }) {
                 </span>
               }
             >
-              <span style={{ color: theme.muted, "font-size": "11.5px" }}>
-                Not configured
-              </span>
+              <span style={{ color: theme.muted, "font-size": "11.5px" }}>Not configured</span>
             </Disclosure>
 
             <Show when={notConfiguredOpen()}>
-              <For each={inactiveGroups()}>
-                {(group) => <ProviderCard group={group} defaultOpen={false} />}
-              </For>
+              <For each={inactiveGroups()}>{(group) => <ProviderRow group={group} />}</For>
             </Show>
           </div>
         </Show>
