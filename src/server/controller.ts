@@ -16,6 +16,8 @@ import type {
 import { classifyTask, type ClassifierFile } from "../core/classify/classifier.js"
 import { computeContextHealth } from "../core/context-health.js"
 import { decideCompaction, describeMode } from "../core/context/strategy.js"
+import { repairMessages } from "../core/reprompt.js"
+import { providerProtocol } from "../core/models/protocol.js"
 import { buildProviderUsageReport } from "../core/quota/report.js"
 import { resolvePlan, resolvePlanWithReason } from "../core/plans/catalog.js"
 import { loadSettings, validateSettings, type SettingsLoadResult } from "../core/config.js"
@@ -220,6 +222,12 @@ export class RouterController {
   private quota!: QuotaService
   private bridgeID = ""
   private readonly expectedSwitch = new Map<string, { key: string; at: number }>()
+  /**
+   * Request-kind latch keyed by session, written by the `model.request` hook
+   * and consumed one-shot by the `context` hook (whose event carries no kind).
+   * The agent loop folds prompts; title and compaction runs do not.
+   */
+  private readonly requestKinds = new Map<string, { kind: string; at: number }>()
   /** Memoized calibrated floor; see routingFloor(). */
   private floorCache?: { at: number; value: { floor: number; calibration?: CalibrationResult } }
   /**
@@ -1569,12 +1577,47 @@ export class RouterController {
     this.registrations.push(
       await this.ctx.session.hook("model.request", (event: any) => {
         if (sharedCore.ownerOf(event.sessionID) !== this.bridgeID) return
+        // Latch the request kind so the context hook (whose event carries no
+        // kind) can tell the agent loop apart from title and compaction runs.
+        // One-shot consumption keeps a stale latch from leaking to a later
+        // request of another kind.
+        if (typeof event.kind === "string" && event.kind) {
+          if (this.requestKinds.size > 500) {
+            const cutoff = Date.now() - 60_000
+            for (const [sid, entry] of this.requestKinds) if (entry.at < cutoff) this.requestKinds.delete(sid)
+            if (this.requestKinds.size > 500) {
+              const oldest = this.requestKinds.keys().next().value
+              if (oldest) this.requestKinds.delete(oldest)
+            }
+          }
+          this.requestKinds.set(event.sessionID, { kind: event.kind, at: Date.now() })
+        }
         if (event.model?.providerID === "opencode-go") {
           event.headers["x-opencode-session"] = event.headers["x-opencode-session"] ?? event.sessionID
         }
         if (this.settings.privacy.requireZdr && event.model?.providerID === "commandcode") {
           event.headers["x-cmd-zdr"] = "1"
         }
+      }),
+    )
+
+    this.registrations.push(
+      await this.ctx.session.hook("context", async (event: any) => {
+        if (!(await this.ensureOwnership(event.sessionID))) return
+        const latched = this.requestKinds.get(event.sessionID)
+        this.requestKinds.delete(event.sessionID)
+        if (latched && latched.kind !== "primary") return
+        const session = this.ledger.getSession(event.sessionID)
+        const model = event.model ?? session?.lastModel
+        const record = model ? this.registry.get(model.providerID, model.id) : undefined
+        const protocol = providerProtocol({
+          ...(record ?? {}),
+          providerID: model?.providerID ?? "",
+          modelID: model?.id ?? "",
+        })
+        if (protocol !== "anthropic") return
+        const result = repairMessages(event.messages, { protocol })
+        if (result.folded > 0) event.messages = result.messages
       }),
     )
 
