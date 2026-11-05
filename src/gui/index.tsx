@@ -1305,7 +1305,6 @@ function SmartRouterPanel(props: { sessionID: string | undefined }) {
   const [expandedCandidates, setExpandedCandidates] = createSignal(false)
   const [hovered, setHovered] = createSignal<string | undefined>(undefined)
   const [onboarding, setOnboarding] = createSignal<any | undefined>(undefined)
-  const [checkedFirstRun, setCheckedFirstRun] = createSignal(false)
 
   const load = async () => {
     const sessionID = props.sessionID
@@ -1322,16 +1321,29 @@ function SmartRouterPanel(props: { sessionID: string | undefined }) {
 
   onMount(() => {
     void load()
-    // First run is decided once, at mount. Re-checking on every poll would let a
-    // half-finished onboarding flicker back to the dashboard and then return.
+    /**
+     * Ask about first run, but never wait for the answer.
+     *
+     * This used to be a gate: nothing rendered until the call settled. When the
+     * method did not settle — an older server build that does not know it — the
+     * panel rendered as an empty box forever. An optional check must never be
+     * able to blank the whole surface.
+     *
+     * So the dashboard paints immediately and onboarding replaces it if it
+     * arrives and says this is a fresh install. On a fresh install that swap
+     * happens within a frame or two; everywhere else the answer is "no" and
+     * nothing changes.
+     */
     void (async () => {
       try {
-        const state: any = await ctx.client.rpc(SmartRouterRpc).onboarding({})
+        const state: any = await Promise.race([
+          ctx.client.rpc(SmartRouterRpc).onboarding({}),
+          // A stuck call must not hold the panel open on a blank state.
+          new Promise((resolve) => setTimeout(() => resolve(undefined), 1_500)),
+        ])
         if (state?.firstRun) setOnboarding(state)
       } catch {
         // A router that cannot describe itself should still show the panel.
-      } finally {
-        setCheckedFirstRun(true)
       }
     })()
     const timer = setInterval(() => void load(), 3_000)
@@ -1342,13 +1354,6 @@ function SmartRouterPanel(props: { sessionID: string | undefined }) {
   const providers = (): ProviderRow[] =>
     ((status()?.quota ?? []) as never[]).map((snapshot) => toProviderRow(snapshot))
   const needsReading = () => providers().some((provider) => provider.source === "estimate")
-
-  // Nothing is drawn until the first-run check has answered. Otherwise the
-  // dashboard would paint for a frame and then be replaced by onboarding, which
-  // reads as a glitch on the one screen where the product is being judged.
-  if (!checkedFirstRun()) {
-    return <div style={{ height: "100%" }} aria-busy="true" />
-  }
 
   return (
     <Show
