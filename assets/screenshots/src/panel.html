@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="styles.css">
+<title>Smart Router — panel</title>
+</head>
+<body>
+<div class="stage">
+<div class="panel">
+  <div class="body">
+
+    <!-- Header -->
+    <div style="display:flex;flex-direction:column;gap:3px;">
+      <div class="brandhead">
+        <div class="bh-left">
+          <svg width="22" height="22" viewBox="0 0 60 60" aria-hidden="true" style="flex-shrink:0;display:block;">
+            <defs>
+              <linearGradient id="sr" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#0f766e"/>
+                <stop offset="100%" stop-color="#0891b2"/>
+              </linearGradient>
+            </defs>
+            <g fill="none" stroke="url(#sr)" stroke-width="4" stroke-linecap="round">
+              <path d="M8 30h12"/>
+              <path d="M20 30c7 0 8-14 15-14h8"/>
+              <path d="M20 30c7 0 8 14 15 14h8"/>
+              <path d="M20 30h23"/>
+            </g>
+            <circle cx="5" cy="30" r="4.5" fill="url(#sr)"/>
+            <g fill="url(#sr)">
+              <rect x="45" y="10" width="9" height="9" rx="2.5"/>
+              <rect x="45" y="25.5" width="9" height="9" rx="2.5"/>
+              <rect x="45" y="41" width="9" height="9" rx="2.5"/>
+            </g>
+          </svg>
+          <div style="display:flex;flex-direction:column;gap:0;">
+            <span class="bh-name">Smart Router</span>
+            <span class="bh-for">FOR OPENCODE</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center;"><span class="chip brand">auto</span></div>
+      </div>
+      <div class="subrow">
+        <span class="cur mono">opendesign/glm-5.3-flash</span>
+        <span class="ago">12s ago</span>
+      </div>
+    </div>
+
+    <!-- AutoSwitch -->
+    <div class="autoswitch on">
+      <div class="as-col">
+        <span class="as-title">Automatic routing</span>
+        <span class="as-sub as-sub-on">The router picks the model for you</span>
+      </div>
+      <div class="toggle on" style="position:relative;">
+        <span class="knob knob-right"></span>
+      </div>
+    </div>
+
+    <!-- Last decision -->
+    <div class="section not-first">
+      <div class="sec-head">
+        <span class="label">Last decision</span>
+        <span class="sec-aside">6 eligible · 2 blocked</span>
+      </div>
+
+      <div class="card accent">
+        <div class="dec-head">
+          <span class="dec-key">opendesign/glm-5.3-flash</span>
+          <span class="chip good">chosen</span>
+        </div>
+        <div class="dec-stats">
+          <span class="stat"><span class="k">est. cost</span><span class="v">$0.0005</span></span>
+          <span class="stat"><span class="k">task</span><span class="v">refactor · T2</span></span>
+          <span class="stat"><span class="k">context</span><span class="v">92k</span></span>
+        </div>
+        <div class="why">
+          <span class="why-h">Why</span>
+          <div class="why-row"><span class="why-caret">›</span><span class="why-text">Cheapest capable model for this work, and above the 39.5 intelligence floor</span></div>
+          <div class="why-row"><span class="why-caret">›</span><span class="why-text">Funded by Design Plan credits at the 0.5× multiplier</span></div>
+          <div class="why-row"><span class="why-caret">›</span><span class="why-text">Same provider as your current model — no switch cost</span></div>
+        </div>
+      </div>
+
+      <button class="disc" type="button">
+        <span class="disc-l"><span class="caret open">▸</span><span class="disc-t">Candidates</span></span>
+        <span class="disc-aside">8 considered</span>
+      </button>
+
+      <div class="cands">
+        <div class="cand chosen">
+          <div class="cand-head">
+            <span class="cand-key">opendesign/glm-5.3-flash</span>
+            <span class="cand-nums"><span class="cand-eff">$0.0005</span><span class="cand-p">91%</span></span>
+          </div>
+          <span class="cand-reason">Meets every hard requirement · 0.5x plan credits</span>
+        </div>
+        <div class="cand">
+          <div class="cand-head">
+            <span class="cand-key">opendesign/deepseek-v4.1-flash</span>
+            <span class="cand-nums"><span class="cand-eff">$0.0012</span><span class="cand-p">89%</span></span>
+          </div>
+          <span class="cand-reason">Meets every hard requirement · 0.5x plan credits</span>
+        </div>
+        <div class="cand">
+          <div class="cand-head">
+            <span class="cand-key">opendesign/mimo-v2.6-pro</span>
+            <span class="cand-nums"><span class="cand-eff">$0.0018</span><span class="cand-p">86%</span></span>
+          </div>
+          <span class="cand-reason">Meets every hard requirement</span>
+        </div>
+        <div class="cand">
+          <div class="cand-head">
+            <span class="cand-key">opendesign/claude-haiku-5.5</span>
+            <span class="cand-nums"><span class="cand-eff">$0.0020</span><span class="cand-p">84%</span></span>
+          </div>
+          <span class="cand-reason">Meets every hard requirement</span>
+        </div>
+        <div class="cand">
+          <div class="cand-head">
+            <span class="cand-key">commandcode/claude-haiku-5-5</span>
+            <span class="cand-nums"><span class="cand-eff">$0.0025</span><span class="cand-p">88%</span></span>
+          </div>
+          <span class="cand-reason">Meets every hard requirement · $0.0001 switch cost</span>
+        </div>
+        <div class="cand">
+          <div class="cand-head">
+            <span class="cand-key">commandcode/z-ai/glm-5.3-flash</span>
+            <span class="cand-nums"><span class="cand-eff">$0.0027</span><span class="cand-p">90%</span></span>
+          </div>
+          <span class="cand-reason">Meets every hard requirement · $0.0001 switch cost</span>
+        </div>
+        <div class="cand blocked">
+          <div class="cand-head">
+            <span class="cand-key">commandcode/gpt-6.1-sol</span>
+            <span class="cand-nums"><span class="cand-eff">—</span><span class="cand-p">—</span></span>
+          </div>
+          <span class="cand-reason">Explicit approval required</span>
+        </div>
+        <div class="cand blocked">
+          <div class="cand-head">
+            <span class="cand-key">opencode-go/gpt-6-luna</span>
+            <span class="cand-nums"><span class="cand-eff">—</span><span class="cand-p">—</span></span>
+          </div>
+          <span class="cand-reason">Intelligence 38.1 is below the 39.5 floor for substantive work</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Allowances -->
+    <div class="section not-first">
+      <div class="sec-head">
+        <span class="label">Allowances</span>
+        <span class="sec-aside">2 providers</span>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">
+          <span style="font-size:14px;font-weight:550;color:var(--text);">OpenDesign Pro</span>
+          <span style="display:flex;gap:4px;align-items:center;"><span class="chip">estimated</span></span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <div class="win-row">
+            <span class="win-label">5h</span>
+            <span class="win-gap"></span>
+            <span class="win-val none">—</span>
+          </div>
+          <div class="win-row">
+            <span class="win-label">7d</span>
+            <div class="win-meter"><div class="win-fill fill-brand" style="width:53%;"></div></div>
+            <span class="win-val">≥53% · in 3d</span>
+          </div>
+          <div class="win-row">
+            <span class="win-label">Monthly</span>
+            <div class="win-meter"><div class="win-fill fill-good" style="width:15%;"></div></div>
+            <span class="win-val">≥15% · in 21d</span>
+          </div>
+        </div>
+        <div class="pools">
+          <div class="pool-row"><span class="pool-name">Design Plan credits</span><span class="pool-val">$307.01 of $360.00</span></div>
+          <div class="pool-row"><span class="pool-name">Plan model credits</span><span class="pool-val">$108.40 of $120.00</span></div>
+        </div>
+        <span class="caveat">Lower bound: the router only counts what it routed itself. Whatever you spent in other tools is invisible to it.</span>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">
+          <span style="font-size:14px;font-weight:550;color:var(--text);">Command Code Pro</span>
+          <span style="display:flex;gap:4px;align-items:center;"><span class="chip good">verified</span></span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <div class="win-row">
+            <span class="win-label">5h</span>
+            <div class="win-meter"><div class="win-fill fill-good" style="width:23%;"></div></div>
+            <span class="win-val">23% · in 2h</span>
+          </div>
+          <div class="win-row">
+            <span class="win-label">7d</span>
+            <div class="win-meter"><div class="win-fill fill-good" style="width:41%;"></div></div>
+            <span class="win-val">41% · in 5d</span>
+          </div>
+          <div class="win-row">
+            <span class="win-label">Monthly</span>
+            <div class="win-meter"><div class="win-fill fill-good" style="width:36%;"></div></div>
+            <span class="win-val">36% · in 15d</span>
+          </div>
+        </div>
+        <div class="pools">
+          <div class="pool-row"><span class="pool-name">Monthly credits</span><span class="pool-val">$57.60 of $90.00</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Account reading -->
+    <div class="section not-first">
+      <div class="sec-head">
+        <span class="label">Account reading</span>
+      </div>
+      <span class="acct-intro">OpenDesign exposes no usage API, so the router can only count what it routed itself. Paste your <strong>Plan &amp; balance</strong> page to replace the estimate with your real position — it carries the percentage, the window it belongs to, and when it resets.</span>
+      <div class="card">
+        <span style="color:var(--text);font-size:13px;line-height:1.5;">Plan &amp; balance: Design Plan credits 15% of $360.00 this month; seven-day window 53% of $90.00; plan model credits $11.60 of $120.00.</span>
+        <span style="color:var(--good);font-size:13px;line-height:1.45;">Ledger agrees with the account within $0.40 for the past week.</span>
+      </div>
+      <div class="btnrow">
+        <span class="btn enabled">Use this</span>
+        <span class="btn enabled">Cancel</span>
+      </div>
+    </div>
+
+    <!-- Providers -->
+    <div class="section not-first">
+      <div class="sec-head">
+        <span class="label">Providers</span>
+        <span class="sec-aside">3 active · 1 off</span>
+      </div>
+
+      <button class="disc" type="button">
+        <span class="disc-l"><span class="caret open">▸</span><span class="disc-t">Configured</span></span>
+        <span class="disc-aside">hide</span>
+      </button>
+
+      <div class="prow active">
+        <span class="pcol"><span class="pname">Command Code Pro</span></span>
+        <span class="pright"><span class="pcount">12/24</span><span class="chip brand">active</span></span>
+      </div>
+      <div class="prow active">
+        <span class="pcol"><span class="pname">OpenDesign Pro</span></span>
+        <span class="pright"><span class="pcount">9/21</span><span class="chip brand">active</span></span>
+      </div>
+      <div class="prow active">
+        <span class="pcol"><span class="pname">OpenCode Go</span></span>
+        <span class="pright"><span class="pcount">4/11</span><span class="chip brand">active</span></span>
+      </div>
+
+      <button class="disc" type="button">
+        <span class="disc-l"><span class="caret">▸</span><span class="disc-t">Not configured</span></span>
+        <span class="disc-aside">1</span>
+      </button>
+    </div>
+
+  </div>
+</div>
+</div>
+</body>
+</html>
+<script>addEventListener("load",()=>{document.title="H"+Math.ceil(document.querySelector(".panel").getBoundingClientRect().bottom+28)})</script>

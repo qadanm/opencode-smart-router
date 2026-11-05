@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="styles.css">
+<title>Smart Router — decision</title>
+</head>
+<body>
+<div class="stage">
+<div class="panel">
+  <div class="body">
+
+    <div class="section">
+      <div class="sec-head">
+        <span class="label">Last decision</span>
+        <span class="sec-aside">6 eligible · 2 blocked</span>
+      </div>
+
+      <div class="card accent">
+        <div class="dec-head">
+          <span class="dec-key">opendesign/glm-5.3-flash</span>
+          <span class="chip good">chosen</span>
+        </div>
+        <div class="dec-stats">
+          <span class="stat"><span class="k">est. cost</span><span class="v">$0.0005</span></span>
+          <span class="stat"><span class="k">task</span><span class="v">refactor · T2</span></span>
+          <span class="stat"><span class="k">context</span><span class="v">92k</span></span>
+        </div>
+        <div class="why">
+          <span class="why-h">Why</span>
+          <div class="why-row"><span class="why-caret">›</span><span class="why-text">Cheapest capable model for this work, and above the 39.5 intelligence floor</span></div>
+          <div class="why-row"><span class="why-caret">›</span><span class="why-text">Funded by Design Plan credits at the 0.5× multiplier</span></div>
+          <div class="why-row"><span class="why-caret">›</span><span class="why-text">Same provider as your current model — no switch cost</span></div>
+        </div>
+      </div>
+
+      <button class="disc" type="button">
+        <span class="disc-l"><span class="caret open">▸</span><span class="disc-t">Candidates</span></span>
+        <span class="disc-aside">8 considered</span>
+      </button>
+
+      <div class="cands">
+        <div class="cand chosen">
+          <div class="cand-head">
+            <span class="cand-key">opendesign/glm-5.3-flash</span>
+            <span class="cand-nums"><span class="cand-eff">$0.0005</span><span class="cand-p">91%</span></span>
+          </div>
+          <span class="cand-reason">Meets every hard requirement · 0.5x plan credits</span>
+        </div>
+        <div class="cand">
+          <div class="cand-head">
+            <span class="cand-key">opendesign/deepseek-v4.1-flash</span>
+            <span class="cand-nums"><span class="cand-eff">$0.0012</span><span class="cand-p">89%</span></span>
+          </div>
+          <span class="cand-reason">Meets every hard requirement · 0.5x plan credits</span>
+        </div>
+        <div class="cand">
+          <div class="cand-head">
+            <span class="cand-key">opendesign/mimo-v2.6-pro</span>
+            <span class="cand-nums"><span class="cand-eff">$0.0018</span><span class="cand-p">86%</span></span>
+          </div>
+          <span class="cand-reason">Meets every hard requirement</span>
+        </div>
+        <div class="cand">
+          <div class="cand-head">
+            <span class="cand-key">opendesign/claude-haiku-5.5</span>
+            <span class="cand-nums"><span class="cand-eff">$0.0020</span><span class="cand-p">84%</span></span>
+          </div>
+          <span class="cand-reason">Meets every hard requirement</span>
+        </div>
+        <div class="cand">
+          <div class="cand-head">
+            <span class="cand-key">commandcode/claude-haiku-5-5</span>
+            <span class="cand-nums"><span class="cand-eff">$0.0025</span><span class="cand-p">88%</span></span>
+          </div>
+          <span class="cand-reason">Meets every hard requirement · $0.0001 switch cost</span>
+        </div>
+        <div class="cand">
+          <div class="cand-head">
+            <span class="cand-key">commandcode/z-ai/glm-5.3-flash</span>
+            <span class="cand-nums"><span class="cand-eff">$0.0027</span><span class="cand-p">90%</span></span>
+          </div>
+          <span class="cand-reason">Meets every hard requirement · $0.0001 switch cost</span>
+        </div>
+        <div class="cand blocked">
+          <div class="cand-head">
+            <span class="cand-key">commandcode/gpt-6.1-sol</span>
+            <span class="cand-nums"><span class="cand-eff">—</span><span class="cand-p">—</span></span>
+          </div>
+          <span class="cand-reason">Explicit approval required</span>
+        </div>
+        <div class="cand blocked">
+          <div class="cand-head">
+            <span class="cand-key">opencode-go/gpt-6-luna</span>
+            <span class="cand-nums"><span class="cand-eff">—</span><span class="cand-p">—</span></span>
+          </div>
+          <span class="cand-reason">Intelligence 38.1 is below the 39.5 floor for substantive work</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+</body>
+</html>
+<script>addEventListener("load",()=>{document.title="H"+Math.ceil(document.querySelector(".panel").getBoundingClientRect().bottom+28)})</script>
