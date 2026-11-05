@@ -57,6 +57,13 @@ export type FailureClass =
    * window resets.
    */
   | "quota_exhausted"
+  /**
+   * The provider rejected the request shape itself (an Anthropic-protocol
+   * discriminator failure is the observed case) before generating anything.
+   * Retrying is useless; the router repairs, or fails the turn over to the
+   * next best choice.
+   */
+  | "prompt_rejected"
   | "unknown"
 
 export interface CostTier {

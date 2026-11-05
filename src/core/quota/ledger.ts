@@ -63,6 +63,7 @@ const emptyFailureCounts = (): Record<FailureClass, number> => ({
   capability: 0,
   interrupted: 0,
   quota_exhausted: 0,
+  prompt_rejected: 0,
   unknown: 0,
 })
 

@@ -180,6 +180,38 @@ export const classifyFailure = (input: FailureInput, session?: SessionState): Fa
     }
   }
 
+  // A deterministic request-shape rejection: the provider refused the prompt
+  // before generating anything (HTTP 400 carries no billing, rate or capacity
+  // meaning). Retry cannot change the outcome; the request itself is the
+  // problem, so the router repairs or fails over instead of retrying.
+  const promptRejected =
+    type.includes("invalid-request") ||
+    type.includes("invalid_request") ||
+    includes(message, [
+      "invalid_request_error",
+      "expected 'user' | 'assistant'",
+      'expected "user" | "assistant"',
+      "invalid discriminator value",
+    ]) ||
+    /messages\.\d+\.role/i.test(input.message)
+
+  if (promptRejected) {
+    return {
+      class: "prompt_rejected",
+      retryable: false,
+      capabilityFailure: false,
+      escalate: false,
+      cooldownMs: 5 * 60_000,
+      reason:
+        "The provider rejected the request shape before generating anything, so retrying cannot help. The router repairs the prompt or fails the turn over to the next best choice instead.",
+      // The model is healthy; the prompt shape was the problem. With prompt
+      // repair this class should not fire at all, and when it does the
+      // session's prompt shape, not the model, is what changed.
+      countAgainstModel: false,
+      providerScoped: false,
+    }
+  }
+
   // A stream that starts and then dies reports HTTP 200 with a provider
   // error inside the stream body, so the status code alone never identifies
   // it. OpenCode surfaces these as a `provider.*` error type, most often
