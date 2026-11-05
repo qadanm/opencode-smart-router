@@ -349,6 +349,17 @@ describe("OpenDesign credit semantics", () => {
   })
 
   it("estimates credits from token counts", () => {
+    /**
+     * The model catalog stores the published API price, and the Design Plan
+     * multiplier is applied on top of it. These are two different numbers and
+     * conflating them is how the catalog drifted: the seed used to carry 0.15,
+     * which is 0.3 x 0.5 — a base price with the multiplier already baked in
+     * and then applied a second time.
+     *
+     * Published CoRouter price for deepseek-v4.1-flash is $0.30 / 1M input
+     * tokens; its Design Plan multiplier is 0.5; so one million input tokens
+     * costs 0.15 USD of Design Plan credits.
+     */
     const credits = estimateDesignPlanCredits({
       modelID: "deepseek-v4.1-flash",
       input: 1_000_000,
@@ -356,7 +367,7 @@ describe("OpenDesign credit semantics", () => {
       cacheRead: 0,
       now: NOW,
     })
-    expect(credits.creditsUsd).toBeCloseTo(0.075, 6)
+    expect(credits.creditsUsd).toBeCloseTo(0.15, 6)
     expect(credits.multiplier).toBe(0.5)
   })
 })

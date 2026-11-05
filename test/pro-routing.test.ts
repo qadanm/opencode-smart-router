@@ -132,11 +132,18 @@ const run = (input: {
 }
 
 describe("routing with the Pro plan", () => {
-  it("prefers DeepSeek V4.1 Flash on OpenDesign for ordinary coding", () => {
+  it("prefers the cheapest qualifying Design Plan model for ordinary coding", () => {
+    /**
+     * GLM-5.3 Flash, not DeepSeek V4.1 Flash. This changed when the catalog was
+     * corrected against the published CoRouter prices on 2026-11-04: DeepSeek
+     * V4.1 Flash costs $0.30 / 1M input, not $0.15, while GLM-5.3 Flash is
+     * $0.075 and scores higher on intelligence (41.8 vs 39.5). The old
+     * expectation was an artefact of the wrong price, not a preference.
+     */
     const result = run({ text: "Implement a small feature in src/app.ts" })
     expect(result.decision.chosen).toBeDefined()
     expect(result.decision.chosen!.providerID).toBe("opendesign")
-    expect(result.decision.chosen!.id).toBe("deepseek-v4.1-flash")
+    expect(result.decision.chosen!.id).toBe("glm-5.3-flash")
   })
 
   it("does not route routine work to a plan-model (escalation) model", () => {
@@ -469,19 +476,25 @@ describe("a transcript that outgrows the default model", () => {
 })
 
 describe("the displacement warning stays quiet when it would be noise", () => {
-  it("does not warn about a model that was never a cheaper winner", () => {
-    // GLM-5.3-Flash costs more than DeepSeek here, so its 232k window losing
-    // eligibility changes nothing. Reporting it would teach users to ignore
-    // the warning that actually matters.
+  it("does not warn about a model that was never the cheaper winner", () => {
+    /**
+     * The warning exists to tell a user "the model you were on got skipped
+     * because it no longer fits". It is only worth saying for a model that
+     * could otherwise have won on price; otherwise it is noise that teaches
+     * people to ignore the warning that matters.
+     *
+     * At 205k tokens an expensive 228k-window model cannot fit the request, so
+     * it drops out. It was never the cheaper winner, so its elimination must
+     * not be reported. Cheaper models that ARE skipped for the same reason may
+     * still be reported, which is correct and not what this test is about.
+     */
     const result = run({
       text: "Implement a small feature in src/app.ts",
       contextTokens: 205_283,
-      current: { providerID: "opendesign", id: "glm-5.3-flash" },
+      current: { providerID: "opendesign", id: "claude-haiku-5.5" },
     })
-    expect(`${result.decision.chosen!.providerID}/${result.decision.chosen!.id}`).toBe(
-      "opendesign/deepseek-v4.1-flash",
-    )
-    expect(result.decision.warnings.join(" ")).not.toMatch(/was skipped for this turn/)
+    expect(result.decision.chosen).toBeDefined()
+    expect(result.decision.warnings.join(" ")).not.toMatch(/Claude Haiku 5\.5 was skipped/i)
   })
 })
 

@@ -34,6 +34,23 @@ describe("context management on an idle session", () => {
   const goIdle = () =>
     controller.handleEvent({ type: "session.idle", data: { sessionID, outcome: "succeeded" } })
 
+  /**
+   * Put the session on the one model with a 1M window.
+   *
+   * Several tests below are about that window's thresholds, not about which
+   * model wins on price. Without pinning, a catalog price change silently
+   * re-points them at a 232k model and they fail for the right reason in the
+   * wrong place.
+   */
+  const pinToDeepSeek = async () => {
+    const s = (ledger as any).ledger.sessions[sessionID]
+    // Compaction reads `lastModel`, not the pin, so both are set: the pin keeps
+    // the router from switching away, and lastModel is what the window check sees.
+    s.pinnedModel = { providerID: "opendesign", id: "deepseek-v4.1-flash" }
+    s.lastModel = { providerID: "opendesign", id: "deepseek-v4.1-flash" }
+    s.manualOverride = true
+  }
+
   const decision = () => (controller as any).lastCompactionDecision.get(sessionID)
 
   const build = async (contextManagement?: Record<string, unknown>) => {
@@ -86,6 +103,12 @@ describe("context management on an idle session", () => {
     it("does not compact an ordinary long session", async () => {
       // 900k is 86% of the measured 1,048,000 window: past any old early
       // threshold, and 920k with the margin is inside the 995,600 safe limit.
+      //
+      // Pinned to DeepSeek deliberately. Since the 2026-11-04 price correction
+      // the cheapest qualifying model is GLM-5.3 Flash with a 232k window, and
+      // 900k on that model genuinely overflows. This test is about the 1M
+      // window's threshold, so it must run on the model that has one.
+      await pinToDeepSeek()
       setContext(900_000)
       await goIdle()
       expect(fake.compactions.length).toBe(0)
@@ -152,7 +175,9 @@ describe("context management on an idle session", () => {
 
     it("preserves history far into the window", async () => {
       // 900k + the 20k margin is inside the measured 1,048,000 window's
-      // 995,600 safe limit, so conservative mode must leave it alone.
+      // 995,600 safe limit, so conservative mode must leave it alone. Pinned to
+      // the 1M model for the same reason as the native-mode test above.
+      await pinToDeepSeek()
       setContext(900_000)
       await goIdle()
       expect(fake.compactions.length).toBe(0)

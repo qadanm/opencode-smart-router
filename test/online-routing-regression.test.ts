@@ -76,31 +76,35 @@ describe("online routing is unchanged by offline mode", () => {
       tier: number
     }> = [
       {
+        // Was deepseek-v4.1-flash until the OpenDesign catalog was corrected
+        // against published CoRouter prices on 2026-11-04. DeepSeek costs
+        // $0.30 / 1M input; GLM-5.3 Flash is $0.075 and scores higher, so the
+        // recorded decision moved. See test/opendesign-pricing.test.ts.
         text: "Implement a small feature in src/app.ts",
         contextTokens: 10_000,
         providerID: "opendesign",
-        id: "deepseek-v4.1-flash",
+        id: "glm-5.3-flash",
         tier: 2,
       },
       {
         text: "Implement a small feature in src/app.ts",
         contextTokens: 200_000,
         providerID: "opendesign",
-        id: "deepseek-v4.1-flash",
+        id: "glm-5.3-flash",
         tier: 2,
       },
       {
         text: "Fix this visual bug in the screenshot",
         contextTokens: 10_000,
         providerID: "opendesign",
-        id: "deepseek-v4.1-flash",
+        id: "glm-5.3-flash",
         tier: 2,
       },
       {
         text: "Design a complex architecture for this app",
         contextTokens: 50_000,
         providerID: "opendesign",
-        id: "deepseek-v4.1-flash",
+        id: "glm-5.3-flash",
         tier: 3,
       },
     ]

@@ -325,11 +325,11 @@ describe("the offline flag is the only switch", () => {
     const online = run(withOffline(false), "Implement a small feature in src/app.ts")
     const offline = run(withOffline(true), "Implement a small feature in src/app.ts")
     expect(`${online.decision.chosen?.providerID}/${online.decision.chosen?.id}`).toBe(
-      "opendesign/deepseek-v4.1-flash",
+      "opendesign/glm-5.3-flash",
     )
     // The same task in offline mode must NOT produce the online answer.
     expect(`${offline.decision.chosen?.providerID}/${offline.decision.chosen?.id}`).not.toBe(
-      "opendesign/deepseek-v4.1-flash",
+      "opendesign/glm-5.3-flash",
     )
   })
 })
@@ -419,7 +419,7 @@ describe("offline routing reaches the local model and nothing else", () => {
   })
 
   it("still selects DeepSeek when online", () => {
-    expect(chosenKey(route(online(), 4_000))).toBe("opendesign/deepseek-v4.1-flash")
+    expect(chosenKey(route(online(), 4_000))).toBe("opendesign/glm-5.3-flash")
   })
 
   it("keeps the local model out of online routing even though it is registered", () => {

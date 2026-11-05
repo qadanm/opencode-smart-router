@@ -309,6 +309,47 @@ Two rules keep this honest:
   monthly one ($360). 42% of the week is $37.80, which is 10.5% of the month.
   Entering `151.20` because "42% of 360" would overstate usage fourfold.
 
+### Where the prices come from, and why they drifted
+
+The model catalog stores the **published API price** per million tokens. The
+Design Plan multiplier is a separate factor applied on top, so the credit cost of
+a request is `published price x multiplier`. Conflating the two is the mistake the
+catalog made for thirteen of its thirty-three models.
+
+Checked against CoRouter's public model pages on 2026-11-04. That page is
+machine-readable: every model panel carries `data-model-panel` with the exact API
+model ID, so the mapping is read rather than inferred from display names.
+
+What was wrong:
+
+| Model | Was | Published | Effect |
+|---|---|---|---|
+| `deepseek-v4.1-flash` | 0.15 | **0.30** | **charged a quarter of real cost** |
+| `deepseek-v4-pro` | 0.66 | 1.32 | half |
+| `deepseek-v4-flash` | 0.66 | 0.44 | 1.5x too high |
+| `glm-5.3-flash` | 0.15 | 0.075 | 2x too high |
+| `hy4-preview` | 0.14 | 0.834 | 6x too low |
+| `kimi-k2.7-code` | 3.00 | 0.95 | 3x too high |
+| plus 7 more | | | |
+
+The model in daily use was the worst case, and it looked like a double-applied
+multiplier: 0.15 is 0.30 x 0.5. But there was no single rule, which is why this
+was fixed model by model rather than by scaling.
+
+Two consequences worth stating:
+
+- **Routing changed.** With real prices, GLM-5.3 Flash ($0.075, intelligence
+  41.8) beats DeepSeek V4.1 Flash ($0.30, 39.5) for ordinary work. Several tests
+  had recorded the old winner; they were updated, and the reasoning is in the
+  diff rather than silently rebaselined.
+- **`test/opendesign-pricing.test.ts` now pins every published price.** A failure
+  there means either the provider changed its rates (update both) or somebody
+  hand-edited the catalog.
+
+The plan caps were checked at the same time and were already correct: Pro is
+$360 Design Plan plus $120 plan models, which is the $480 total the pricing page
+advertises, and Design Plan credits are consumed before plan model credits.
+
 ### The control key is not obtainable through the product
 
 Checked on 2026-11-04 against the account's API keys page. It offers exactly one
