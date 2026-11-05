@@ -26,6 +26,7 @@ export interface SeedModel {
   tier: 1 | 2 | 3
   approved?: boolean
   monthlyAllowanceUsd: number
+  protocol?: "anthropic" | "openai-compat"
   notes?: string
 }
 

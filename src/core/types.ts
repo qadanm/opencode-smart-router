@@ -117,6 +117,12 @@ export interface ModelRecord {
   readonly approvalSource: "seed" | "user" | "discovered"
   /** Monthly included usage allowance in US dollars at public list prices. */
   readonly monthlyAllowanceUsd: number
+  /**
+   * Which wire protocol the provider's serving path speaks. Seeded records
+   * may state it; `src/core/models/protocol.ts` otherwise infers it from the
+   * model family. Only the Anthropic Messages protocol forces prompt repair.
+   */
+  readonly protocol?: "anthropic" | "openai-compat"
   readonly notes?: string
 }
 
