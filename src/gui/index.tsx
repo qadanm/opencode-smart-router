@@ -970,6 +970,95 @@ function AccountPaste(props: { onChanged: () => void }) {
  * ordering is the whole design: trust is built by being right about small things
  * before asking for a decision.
  */
+
+/**
+ * Open the console, as a button that admits it is working.
+ *
+ * Two problems with the link it replaces.
+ *
+ * It did not look clickable. `↗` on tinted text at 10px reads as a footnote, not
+ * an action, so it needed hover, underline and a border to say so.
+ *
+ * It also hung. An `<a target="_blank">` inside a panel hands the URL to the host
+ * and waits for it to decide, which can take seconds with no feedback — the
+ * exact conditions under which a user concludes the app has frozen. Opening
+ * through `ctx.system.openExternal` is direct, and because this is a button it
+ * can report that something happened.
+ *
+ * The fallback matters more than the happy path: if the system call throws, the
+ * URL is shown so the page can still be reached. An action that fails silently is
+ * worse than one that never existed.
+ */
+function OpenConsoleButton() {
+  const ctx = usePlugin<typeof definition>()
+  const [state, setState] = createSignal<"idle" | "opening" | "failed">("idle")
+  const [hovered, setHovered] = createSignal(false)
+  const url = "https://open-design.ai/cloud/dashboard"
+
+  const open = () => {
+    if (state() === "opening") return
+    setState("opening")
+    try {
+      ctx.system.openExternal(url)
+      // There is no completion signal from the OS, so the spinner is cleared on
+      // a timer rather than pretending to know when the browser appeared.
+      setTimeout(() => setState("idle"), 900)
+    } catch {
+      setState("failed")
+    }
+  }
+
+  return (
+    <div style={{ display: "flex", "flex-direction": "column", gap: space.xs }}>
+      <button
+        type="button"
+        onClick={open}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        disabled={state() === "opening"}
+        aria-busy={state() === "opening"}
+        title={url}
+        style={{
+          display: "inline-flex",
+          "align-items": "center",
+          gap: "6px",
+          "align-self": "flex-start",
+          padding: "6px 10px",
+          "border-radius": radius.sm,
+          border: `1px solid ${hovered() ? theme.brandTo : theme.borderStrong}`,
+          background: hovered() ? "rgba(8,145,178,0.12)" : "transparent",
+          color: theme.brandTo,
+          "font-size": type.caption,
+          "font-weight": 550,
+          "font-family": "inherit",
+          cursor: state() === "opening" ? "default" : "pointer",
+          "text-decoration": hovered() ? "underline" : "none",
+          "text-underline-offset": "2px",
+          transition: "background 120ms ease, border-color 120ms ease",
+        }}
+      >
+        <span aria-hidden="true" style={{ "font-size": "11px" }}>
+          {state() === "opening" ? "◌" : "↗"}
+        </span>
+        {state() === "opening" ? "Opening…" : "Open Plan & balance"}
+      </button>
+
+      <Show when={state() === "opening"}>
+        <span style={{ color: theme.faint, "font-size": type.micro }}>
+          Handing off to your browser — the page opens in a new tab.
+        </span>
+      </Show>
+
+      <Show when={state() === "failed"}>
+        <span style={{ color: theme.warn, "font-size": type.micro, "line-height": 1.45 }}>
+          Could not open the browser automatically. Open this address yourself:{" "}
+          <span style={{ "font-family": mono, color: theme.text }}>{url}</span>
+        </span>
+      </Show>
+    </div>
+  )
+}
+
 function Onboarding(props: { state: any; onDone: () => void }) {
   const ctx = usePlugin<typeof definition>()
   const [busy, setBusy] = createSignal(false)
@@ -1184,14 +1273,8 @@ function Onboarding(props: { state: any; onDone: () => void }) {
             </span>
 
             <Show when={!readingDone()}>
-              <a
-                href="https://open-design.ai/cloud/dashboard"
-                target="_blank"
-                rel="noreferrer"
-                style={{ color: theme.brandTo, "font-size": type.micro, "text-decoration": "none" }}
-              >
-                Open Plan &amp; balance ↗
-              </a>
+              <OpenConsoleButton />
+
               <textarea
                 value={reading()}
                 onInput={(event) => setReading((event.currentTarget as HTMLTextAreaElement).value)}
