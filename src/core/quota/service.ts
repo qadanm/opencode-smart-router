@@ -145,6 +145,24 @@ export class QuotaService {
     return this.getCached()
   }
 
+  /**
+   * Drop every cached snapshot.
+   *
+   * Called when settings change underneath the service — a pasted baseline is the
+   * case that matters. The cache holds snapshots computed from the *previous*
+   * settings, and a stale one is served with `stale: true` while a fresh probe is
+   * still pending. Without this the panel can show a percentage that predates the
+   * reading it was given, which reads as "my paste did nothing" even though it was
+   * applied.
+   */
+  invalidate(): void {
+    for (const state of Object.values(this.state)) {
+      state.snapshot = undefined
+      state.lastAttempt = 0
+      state.nextAllowed = 0
+    }
+  }
+
   async refresh(providerID: QuotaProviderID | string, force = false): Promise<ProviderQuotaSnapshot> {
     const settings = this.options.getSettings()[providerID]
     const state = this.state[providerID]

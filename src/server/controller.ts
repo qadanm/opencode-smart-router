@@ -688,6 +688,9 @@ export class RouterController {
      */
     await this.applyProviderDetection()
     this.rebuildRegistry()
+    // Snapshots in the cache were computed from the settings that just changed,
+    // so they must go before the re-probe rather than being served as stale.
+    this.quota?.invalidate()
     // Re-probe what can be probed, so the panel reflects the new reading at once.
     await Promise.allSettled([
       this.quota?.refresh("opencode-go", true),
