@@ -39,6 +39,8 @@ export interface DecisionView {
   readonly estimatedUsd: number
   readonly reasons: ReadonlyArray<string>
   readonly warnings: ReadonlyArray<string>
+  /** One line about a self-healed deterministic rejection, when the decision is one. */
+  readonly selfheal?: string
   readonly eligibleCount: number
   readonly blockedCount: number
   readonly rows: ReadonlyArray<CandidateRow>
@@ -314,6 +316,11 @@ export const summariseDecision = (decision: RoutingDecision | undefined | null):
     estimatedUsd: decision.estimatedUsd,
     reasons: decision.reasons ?? [],
     warnings: decision.warnings ?? [],
+    selfheal: decision.selfheal?.rejected
+      ? `rejected ${decision.selfheal.rejected} · ${
+          decision.selfheal.action === "noted" ? "noted for the next prompt" : decision.selfheal.action
+        }`
+      : undefined,
     eligibleCount: rows.filter((row) => row.verdict !== "blocked").length,
     blockedCount: rows.filter((row) => row.verdict === "blocked").length,
     rows,
