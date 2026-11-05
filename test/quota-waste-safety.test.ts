@@ -104,7 +104,7 @@ describe("a discount on expiring allowance is not permission to overspend", () =
     ]
     const decision: any = route(quota, 20_000)
     const cc = (decision.candidates ?? []).find(
-      (c: any) => c.model.providerID === "commandcode" && c.model.modelID === "deepseek-v4.1-flash",
+      (c: any) => c.model.providerID === "commandcode" && c.model.modelID === "deepseek/deepseek-v4.1-flash",
     )
     expect(cc).toBeDefined()
     // The discount is visible, and it is strictly a ranking adjustment.

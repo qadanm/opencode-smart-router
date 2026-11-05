@@ -136,7 +136,7 @@ describe("routing engine", () => {
   it("separates Haiku's standard intelligence from sophisticated-design eligibility", () => {
     const registry = buildRegistry({ live: [], settings: settings() })
     const haiku = registry.get("commandcode", "claude-haiku-5-5")!
-    const deepseek = registry.get("commandcode", "deepseek-v4.1-flash")!
+    const deepseek = registry.get("commandcode", "deepseek/deepseek-v4.1-flash")!
     expect(deepseek.intelligence).toBe(DEFAULT_SETTINGS.routing.intelligenceFloor)
     expect(haiku.intelligence).toBeGreaterThanOrEqual(DEFAULT_SETTINGS.routing.intelligenceFloor)
     expect(haiku.design).toBeLessThan(DEFAULT_SETTINGS.routing.sophisticatedDesignFloor)
@@ -295,7 +295,7 @@ describe("routing engine", () => {
       quota: [snapshot],
     })
     expect(blocked.result.decision.chosen).toBeUndefined()
-    const model = buildRegistry({ live: [], settings: blockedConfig }).get("commandcode", "deepseek-v4.1-flash")!
+    const model = buildRegistry({ live: [], settings: blockedConfig }).get("commandcode", "deepseek/deepseek-v4.1-flash")!
     const eligibility = evaluateEligibility({
       model,
       task: classifyTask({ text: "Implement a feature in src/app.ts" }),
@@ -399,7 +399,7 @@ describe("routing engine", () => {
       model,
       task,
       contextTokens: 600_000,
-      currentModelKey: "commandcode/deepseek-v4.1-flash",
+      currentModelKey: "commandcode/deepseek/deepseek-v4.1-flash",
       now: NOW,
     })
     expect(different.usd).toBeGreaterThan(same.usd)
@@ -408,7 +408,7 @@ describe("routing engine", () => {
 
   it("applies Command Code's documented 2x peak rate only inside weekday peak windows", () => {
     const registry = buildRegistry({ live: [], settings: settings() })
-    const model = registry.get("commandcode", "deepseek-v4.1-flash")!
+    const model = registry.get("commandcode", "deepseek/deepseek-v4.1-flash")!
     const task = classifyTask({ text: "Implement a feature in src/app.ts" })
     const offPeak = estimateTaskCost({
       model,
@@ -452,7 +452,7 @@ describe("routing engine", () => {
       ],
       settings: settings(),
     })
-    expect(registry.get("commandcode", "deepseek-v4.1-flash")?.peakPricing?.multiplier).toBe(2)
+    expect(registry.get("commandcode", "deepseek/deepseek-v4.1-flash")?.peakPricing?.multiplier).toBe(2)
   })
 })
 

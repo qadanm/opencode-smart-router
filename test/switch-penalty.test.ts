@@ -65,7 +65,7 @@ const estimate = (input: { providerID: string; modelID: string; contextTokens: n
 describe("the reported switch penalty is the cost actually charged for switching", () => {
   const cases = [
     { providerID: "opendesign", modelID: "deepseek-v4.1-flash" },
-    { providerID: "commandcode", modelID: "deepseek-v4.1-flash" },
+    { providerID: "commandcode", modelID: "deepseek/deepseek-v4.1-flash" },
   ]
 
   for (const target of cases) {

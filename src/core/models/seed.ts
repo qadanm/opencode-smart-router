@@ -314,9 +314,9 @@ const BASE_SEED_MODELS: ReadonlyArray<SeedModel> = [
   // Command Code GOAT: standard
   // ---------------------------------------------------------------------------
   {
-    key: "commandcode/deepseek-v4.1-flash",
+    key: "commandcode/deepseek/deepseek-v4.1-flash",
     providerID: "commandcode",
-    modelID: "deepseek-v4.1-flash",
+    modelID: "deepseek/deepseek-v4.1-flash",
     name: "DeepSeek V4.1 Flash (GOAT)",
     context: 1_000_000,
     maxOutput: 384_000,
@@ -680,24 +680,6 @@ const BASE_SEED_MODELS: ReadonlyArray<SeedModel> = [
     approved: false,
     monthlyAllowanceUsd: 60,
     notes: "Below the current standard floor and text only. Not approved automatically.",
-  },
-  {
-    key: "commandcode/deepseek/deepseek-v4.1-flash",
-    providerID: "commandcode",
-    modelID: "deepseek/deepseek-v4.1-flash",
-    name: "DeepSeek V4.1 Flash (upstream ID)",
-    context: 1_000_000,
-    maxOutput: 384_000,
-    input: ["text", "image"],
-    cost: cost(0.15, 0.6, 0.003),
-    peakPricing: COMMAND_CODE_DEEPSEEK_PEAK,
-    intelligence: 39.5,
-    design: 65,
-    designEvidence: "observed",
-    tier: 2,
-    approved: false,
-    monthlyAllowanceUsd: 80,
-    notes: "Duplicate route for the same upstream model. The GOAT ID is approved instead. Off-peak list price; 2x during 01-04 and 06-10 UTC Mon-Fri.",
   },
 ]
 

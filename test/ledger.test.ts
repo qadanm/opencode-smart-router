@@ -109,10 +109,10 @@ describe("usage ledger", () => {
   it("does not attribute provider account deltas to a model ledger", () => {
     const ledger = new LedgerStore()
     const registry = buildRegistry({ live: [], settings: DEFAULT_SETTINGS })
-    const model = registry.get("commandcode", "deepseek-v4.1-flash")!
+    const model = registry.get("commandcode", "deepseek/deepseek-v4.1-flash")!
     ledger.recordUsage({
       sessionID: "ses_1",
-      model: { providerID: "commandcode", id: "deepseek-v4.1-flash" },
+      model: { providerID: "commandcode", id: "deepseek/deepseek-v4.1-flash" },
       cost: 0.0015,
       tokens: { input: 10_000, output: 10, cache: { read: 0, write: 0 } },
       at: NOW,
@@ -127,7 +127,7 @@ describe("usage ledger", () => {
       extraCredits: { purchasedUsd: 0, freeUsd: 0, totalUsd: 0 },
     })
     const enriched = ledger.attachModelQuotas(provider, [model], DEFAULT_SETTINGS.providers.commandcode!, NOW)
-    const quota = enriched.models["commandcode/deepseek-v4.1-flash"]!
+    const quota = enriched.models["commandcode/deepseek/deepseek-v4.1-flash"]!
     expect(quota.monthlyUsedUsd).toBeCloseTo(0.0015, 8)
     expect(quota.monthlyRemainingUsd).toBeCloseTo(80 - 0.0015, 8)
     expect(quota.monthlyUsedPct).toBeCloseTo((0.0015 / 80) * 100, 6)

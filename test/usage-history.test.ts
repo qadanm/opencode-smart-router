@@ -253,7 +253,7 @@ describe("provider usage report", () => {
   })
 
   it("includes a forecast for a plan that does meter a five-hour window", () => {
-    const s = store([event(HOUR, 0, { providerID: "commandcode", modelID: "deepseek-v4.1-flash" })])
+    const s = store([event(HOUR, 0, { providerID: "commandcode", modelID: "deepseek/deepseek-v4.1-flash" })])
     s.prune(NOW)
     const report = buildProviderUsageReport({
       providerID: "commandcode",
