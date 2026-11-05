@@ -1583,6 +1583,38 @@ export default Plugin.define({
       render: (props: PanelProps) => <SmartRouterPanel sessionID={props.session.id} />,
     })
 
+    /**
+     * Open the panel by itself, once, when a session first becomes available.
+     *
+     * Two constraints shape this.
+     *
+     * A side panel belongs to a session — `sessions.current()` is undefined on
+     * Home and on a draft — so there is nothing to attach to until the user opens
+     * a conversation. That is why this cannot fire at launch.
+     *
+     * And it must not fight the user. Closing the panel is a decision, so this
+     * runs at most once per window and only when the tab is genuinely closed. The
+     * `layout.ready()` guard matters: before the layout loads, every read reports
+     * an empty layout, so acting earlier would reopen a tab somebody had
+     * deliberately closed in a previous session.
+     */
+    const panelKey = `${ctx.id}:router`
+    let autoOpened = false
+    const tryAutoOpen = () => {
+      if (autoOpened) return
+      if (!ctx.layout.ready()) return
+      const session = ctx.sessions.current()
+      if (!session) return
+      autoOpened = true
+      if (ctx.layout.state(panelKey, session) === "closed") {
+        ctx.layout.open(panelKey, session)
+      }
+    }
+    const autoOpenTimer = setInterval(tryAutoOpen, 400)
+    // Give up after a while rather than polling for the life of the window.
+    const autoOpenDeadline = setTimeout(() => clearInterval(autoOpenTimer), 30_000)
+    tryAutoOpen()
+
     ctx.add(Slot, {
       at: "window.bottom",
       render: () => (
@@ -1592,5 +1624,12 @@ export default Plugin.define({
         </span>
       ),
     })
+
+    // Cleanup: the interval and deadline belong to this plugin's lifetime. Placed
+    // after every registration, because a return before `ctx.add` would skip it.
+    return () => {
+      clearInterval(autoOpenTimer)
+      clearTimeout(autoOpenDeadline)
+    }
   },
 })
