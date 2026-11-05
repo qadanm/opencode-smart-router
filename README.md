@@ -9,7 +9,7 @@
 <p>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/OpenCode-2.x-000000.svg" alt="OpenCode 2.x">
-  <img src="https://img.shields.io/badge/tests-718%20passing-2ea44f.svg" alt="718 tests">
+  <img src="https://img.shields.io/badge/tests-721%20passing-2ea44f.svg" alt="718 tests">
   <img src="https://img.shields.io/badge/runtime-Node%2020.12%2B-339933.svg" alt="Node 20.12+">
 </p>
 
@@ -228,7 +228,7 @@ npm run verify    # clean room: empty HOME, fresh install, typecheck, tests, bui
 npm run mutate    # prove each safety test fails when its property breaks
 ```
 
-718 tests across 56 files cover classification, eligibility, quota parsing,
+721 tests across 56 files cover classification, eligibility, quota parsing,
 credential discovery and its security properties, ledger accounting, pool
 reconciliation, documented peak pricing, cache-aware routing, premium protection,
 purchased-credit blocking, manual overrides, failure classification, configuration
