@@ -1599,39 +1599,48 @@ export default Plugin.define({
      * deliberately closed in a previous session.
      */
     const panelKey = `${ctx.id}:router`
-    let autoOpened = false
     /**
-     * Every step is wrapped, because this runs inside `setup`.
+     * Open once per session, not once per window.
      *
-     * A GUI whose setup throws does not load at all — it does not lose the panel,
-     * it loses the plugin — and the host reports it as a generic request failure
-     * rather than a stack. Auto-opening is a convenience; it must not be able to
-     * take the surface down with it.
+     * The first version wrote a single `autoOpened` flag and gave up after thirty
+     * seconds. Both were wrong for the ordinary sequence — launch the app, look
+     * around on Home, then open a session — because no session exists for the
+     * first thirty seconds, and the flag could never be reset for the next one.
+     *
+     * Keying on the session means each conversation gets the panel once, and
+     * closing it stays closed for that conversation.
+     */
+    const openedFor = new Set<string>()
+    /**
+     * Every step is wrapped: this runs inside `setup`, and a GUI whose setup throws
+     * does not lose its panel, it loses the plugin.
      */
     const tryAutoOpen = () => {
       try {
-        if (autoOpened) return
         if (!ctx.layout.ready()) return
         const session = ctx.sessions.current()
         if (!session) return
-        autoOpened = true
-        if (ctx.layout.state(panelKey, session) === "closed") {
-          ctx.layout.open(panelKey, session)
+        if (openedFor.has(session.key)) return
+        // Before the stored layout loads every read reports an empty layout, so
+        // this must not act until `ready()` is true or it reopens a tab the user
+        // deliberately closed.
+        if (ctx.layout.state(panelKey, session) !== "closed") {
+          openedFor.add(session.key)
+          return
         }
+        openedFor.add(session.key)
+        ctx.layout.open(panelKey, session)
       } catch {
-        // Auto-open is best effort. Never let it surface as a plugin failure.
-        autoOpened = true
+        // Auto-open is best effort; never surface as a plugin failure.
       }
     }
-    const autoOpenTimer = setInterval(() => {
-      try {
-        tryAutoOpen()
-      } catch {
-        clearInterval(autoOpenTimer)
-      }
-    }, 400)
-    // Give up after a while rather than polling for the life of the window.
-    const autoOpenDeadline = setTimeout(() => clearInterval(autoOpenTimer), 30_000)
+    /**
+     * A slow poll rather than an event, because there is no session-routed event
+     * to subscribe to and 800ms costs nothing. It runs for the life of the window
+     * instead of stopping: the window is what owns the panel, and the user may
+     * open their first session minutes after launch.
+     */
+    const autoOpenTimer = setInterval(tryAutoOpen, 800)
 
     ctx.add(Slot, {
       at: "window.bottom",
@@ -1643,11 +1652,10 @@ export default Plugin.define({
       ),
     })
 
-    // Cleanup: the interval and deadline belong to this plugin's lifetime. Placed
-    // after every registration, because a return before `ctx.add` would skip it.
+    // Cleanup: the interval belongs to this plugin's lifetime. Placed after every
+    // registration, because a return before `ctx.add` would skip that contribution.
     return () => {
       clearInterval(autoOpenTimer)
-      clearTimeout(autoOpenDeadline)
     }
   },
 })
