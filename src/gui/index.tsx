@@ -766,6 +766,34 @@ function ProviderModels(props: { status: RouterStatus | undefined }) {
     })
   }
 
+  /**
+   * How many models to show per provider before asking.
+   *
+   * Five is enough to see what will be chosen and what it costs; the rest is
+   * reference. The full list is one click away.
+   */
+  const PREVIEW_MODELS = 5
+  const [expandedAll, setExpandedAll] = createSignal<ReadonlyArray<string>>([])
+
+  const approvedModelsOf = (group: ReturnType<typeof groups>[number]) =>
+    group.models.filter((model) => model.state === "approved")
+  const unapprovedCount = (group: ReturnType<typeof groups>[number]) =>
+    group.models.length - approvedModelsOf(group).length
+
+  const visibleModels = (group: ReturnType<typeof groups>[number]) => {
+    const approved = approvedModelsOf(group)
+    if (expandedAll().includes(group.providerID)) return approved
+    return approved.slice(0, PREVIEW_MODELS)
+  }
+
+  const hiddenCount = (group: ReturnType<typeof groups>[number]) =>
+    approvedModelsOf(group).length - visibleModels(group).length
+
+  const toggleAll = (providerID: string) =>
+    setExpandedAll((current) =>
+      current.includes(providerID) ? current.filter((id) => id !== providerID) : [...current, providerID],
+    )
+
   const activeGroups = () => groups().filter((group) => group.state === "active")
   const inactiveGroups = () => groups().filter((group) => group.state !== "active")
 
@@ -832,15 +860,22 @@ function ProviderModels(props: { status: RouterStatus | undefined }) {
 
         <Show when={isOpen()}>
           <div style={{ display: "flex", "flex-direction": "column", gap: "3px", "margin-top": "2px" }}>
-            <For each={cardProps.group.models}>
+            {/* Approved models only, and only the cheapest few of them.
+                The question this panel answers is "what can route right now",
+                not "what does the catalog contain". A provider with 39 entries
+                buried the decision, the allowances and the settings under a
+                scroll of model names nobody reads. */}
+            <For each={visibleModels(cardProps.group)}>
               {(model) => (
                 <div style={{ display: "flex", "justify-content": "space-between", gap: "8px", "align-items": "baseline" }}>
                   <span
                     style={{
                       "font-family": mono,
                       "font-size": "10.5px",
-                      color: model.state === "approved" ? theme.text : theme.faint,
-                      "text-decoration": model.state === "excluded" ? "line-through" : "none",
+                      color: theme.text,
+                      overflow: "hidden",
+                      "text-overflow": "ellipsis",
+                      "white-space": "nowrap",
                     }}
                   >
                     {model.key.split("/").slice(1).join("/")}
@@ -848,23 +883,35 @@ function ProviderModels(props: { status: RouterStatus | undefined }) {
                   <span style={{ display: "flex", gap: "8px", "flex-shrink": 0, "align-items": "baseline" }}>
                     <span style={{ color: theme.faint, "font-size": "10.5px" }}>{model.contextLabel}</span>
                     <span style={{ color: theme.faint, "font-size": "10.5px" }}>{model.costLabel}</span>
-                    <span
-                      style={{
-                        "font-size": "10px",
-                        color:
-                          model.state === "approved"
-                            ? theme.good
-                            : model.state === "excluded"
-                              ? theme.bad
-                              : theme.faint,
-                      }}
-                    >
-                      {model.state}
-                    </span>
                   </span>
                 </div>
               )}
             </For>
+
+            <Show when={hiddenCount(cardProps.group) > 0}>
+              <button
+                type="button"
+                onClick={() => toggleAll(id)}
+                onMouseEnter={() => setHovered(`all:${id}`)}
+                onMouseLeave={() => setHovered(undefined)}
+                style={{
+                  background: hovered() === `all:${id}` ? theme.surface : "transparent",
+                  border: "none",
+                  "border-radius": "5px",
+                  padding: "3px 6px",
+                  margin: "1px -6px -2px",
+                  color: theme.muted,
+                  font: "inherit",
+                  "font-size": "10.5px",
+                  cursor: "pointer",
+                  "text-align": "left",
+                }}
+              >
+                {expandedAll().includes(id)
+                  ? "Show fewer"
+                  : `${hiddenCount(cardProps.group)} more${unapprovedCount(cardProps.group) > 0 ? ` · ${unapprovedCount(cardProps.group)} not routable` : ""}`}
+              </button>
+            </Show>
           </div>
         </Show>
       </div>
