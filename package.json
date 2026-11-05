@@ -30,6 +30,7 @@
     ".": "./src/index.ts",
     "./rpc": "./src/rpc.ts",
     "./allowance": "./src/allowance.ts",
+    "./tui": "./dist/tui.js",
     "./gui-experimental": "./dist/gui-experimental.cjs"
   },
   "files": [
@@ -59,7 +60,8 @@
     "build:server": "esbuild src/index.ts --bundle --format=esm --platform=node --target=node22 --external:@opencode/plugin --external:@opencode/plugin/* --outfile=dist/index.js --legal-comments=none",
     "build:allowance": "esbuild src/allowance.ts --bundle --format=esm --platform=neutral --target=node20 --outfile=dist/allowance.js --legal-comments=none",
     "build:gui": "vite build --config vite.gui.config.ts",
-    "build:all": "npm run build:server && npm run build:allowance && npm run build:gui",
+    "build:tui": "esbuild src/tui/index.tsx --bundle --format=esm --platform=node --target=node22 --external:@opencode/plugin --external:@opencode/plugin/* --external:@opentui/core --external:@opentui/solid --external:solid-js --outfile=dist/tui.js --legal-comments=none",
+    "build:all": "npm run build:server && npm run build:allowance && npm run build:gui && npm run build:tui",
     "mutate": "python3 scripts/mutate.py",
     "verify": "bash scripts/cleanroom-verify.sh",
     "prepublishOnly": "npm run check && npm run build:server"

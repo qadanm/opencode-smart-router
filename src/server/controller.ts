@@ -1151,6 +1151,22 @@ export class RouterController {
         vision: model.inputModalities.includes("image"),
         premium: model.premium,
       })),
+      models: this.registry.all().map((model) => ({
+        key: model.key,
+        providerID: model.providerID,
+        name: model.name,
+        tier: model.tier,
+        intelligence: model.intelligence,
+        design: model.design,
+        vision: model.inputModalities.includes("image"),
+        premium: model.premium,
+        context: model.context,
+        costInput: model.cost[0]?.input ?? 0,
+        costOutput: model.cost[0]?.output ?? 0,
+        approved: model.approved,
+        excluded: this.settings.models.excluded.includes(model.key),
+        ...(model.notes ? { approvalNote: model.notes } : {}),
+      })),
       warnings,
     }
   }

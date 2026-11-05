@@ -17,6 +17,7 @@ import {
 import { OPEN_DESIGN_MODEL_BY_ID } from "../providers/opendesign-models.js"
 import { OPENDESIGN_DESIGN_PLAN_POOL, OPENDESIGN_PLAN_MODEL_POOL, isEscalationOnlyPool, resolvePlan } from "../plans/catalog.js"
 import { creditMultiplierFor } from "../providers/opendesign-credits.js"
+import { calibrationSamples, effectiveMarginPct } from "./calibration.js"
 
 /**
  * OpenDesign quota integration.
@@ -894,7 +895,21 @@ const applyBaseline = (
 
 const probeEstimated = (input: OpenDesignQuotaInput, now: number): OpenDesignQuotaResult => {
   const caps = capsFor(input.settings)
-  const marginPct = input.uncertaintyMarginPct ?? OPENDESIGN_DEFAULT_UNCERTAINTY_MARGIN_PCT
+  /**
+   * The margin is measured, not assumed.
+   *
+   * A fresh install has no evidence, so the default stands. Once the router has
+   * routed a few requests it can compare its own arithmetic with the charges the
+   * provider reported and shrink the margin to the error it actually observes.
+   * That is what removes the need to paste a balance every week: drift is
+   * corrected from traffic the router already handled.
+   *
+   * A caller that states a margin explicitly still wins — configuration is an
+   * instruction, and calibration is a convenience.
+   */
+  const marginPct =
+    input.uncertaintyMarginPct ??
+    effectiveMarginPct(calibrationSamples(input.usage), OPENDESIGN_DEFAULT_UNCERTAINTY_MARGIN_PCT)
   const local = localTotals(
     input.usage,
     "opendesign",

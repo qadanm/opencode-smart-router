@@ -1,4 +1,5 @@
 import type { LiveModel } from "../core/models/registry.js"
+import { readOpenCodeHistory } from "../core/history/opencode.js"
 import { LedgerStore } from "../core/quota/ledger.js"
 import { QuotaService } from "../core/quota/service.js"
 import { discoverOpenDesignModels, toLiveModels } from "../core/providers/opendesign.js"
@@ -210,6 +211,31 @@ class SharedCore {
       if (!settings) return
       const limit = settings.quota.bootstrapSessions
       if (limit <= 0) return
+
+      /**
+       * Prefer OpenCode's own message history.
+       *
+       * It is strictly better than session summaries: every message carries its
+       * own timestamp, which is what a fixed seven-day window needs, and the
+       * model that actually served it rather than whatever the session has
+       * selected now. When it yields anything at all, the session-level import
+       * is skipped — mixing the two would double-count every session.
+       */
+      const history = readOpenCodeHistory({
+        sinceMs: Date.now() - settings.quota.bootstrapDays * 24 * 60 * 60 * 1000,
+        limit: Math.max(limit, 1) * 100,
+      })
+      if (history.entries.length > 0) {
+        const imported = this.ledger.importHistory(history.entries)
+        if (imported.added > 0) {
+          this.persistSoon()
+          return
+        }
+      } else if (history.reason) {
+        // Silence here would leave a user wondering why day one started at zero.
+        this.pushError(`history: ${history.reason}`)
+      }
+
       const result = await this.ownerCtx.session.list({ limit })
       const sessions = Array.isArray(result) ? result : (result?.data ?? [])
       const rows = sessions.map((session: any) => ({

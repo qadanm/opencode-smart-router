@@ -837,6 +837,72 @@ export class LedgerStore {
     return { added: eligible.length, skipped: false }
   }
 
+  /**
+   * Seed the ledger from OpenCode's own message history.
+   *
+   * Better than `bootstrap` in three ways, all of which matter for a fixed
+   * seven-day window:
+   *
+   *   - it is per MESSAGE, so each event carries its real timestamp and lands in
+   *     the correct window instead of being smeared onto the session's last
+   *     update time
+   *   - it records the model that actually served each request, not the session's
+   *     currently selected model
+   *   - it can be re-read, because the database keeps growing and a one-shot
+   *     import stops being true the moment a new session runs
+   *
+   * Rows already present are skipped by id, so re-reading is idempotent.
+   */
+  importHistory(
+    entries: ReadonlyArray<{
+      readonly id: string
+      readonly at: number
+      readonly providerID: string
+      readonly modelID: string
+      readonly cost: number
+      readonly input: number
+      readonly output: number
+      readonly cacheRead: number
+      readonly cacheWrite: number
+    }>,
+    input: { readonly now?: number; readonly source?: string } = {},
+  ): { added: number; skipped: number } {
+    const now = input.now ?? Date.now()
+    const existing = new Set(this.ledger.usage.map((event) => event.id))
+    let added = 0
+    let skipped = 0
+    for (const entry of entries) {
+      const id = `hist:${entry.id}`
+      if (existing.has(id)) {
+        skipped += 1
+        continue
+      }
+      this.ledger.usage.push({
+        id,
+        at: Math.min(now, entry.at),
+        providerID: entry.providerID,
+        modelID: entry.modelID,
+        usd: Math.max(0, entry.cost),
+        input: Math.max(0, entry.input),
+        output: Math.max(0, entry.output),
+        cacheRead: Math.max(0, entry.cacheRead),
+        cacheWrite: Math.max(0, entry.cacheWrite),
+        source: "bootstrap",
+      })
+      existing.add(id)
+      added += 1
+    }
+    if (added > 0) {
+      this.ledger.bootstrappedAt = now
+      this.ledger.bootstrapSource =
+        input.source ??
+        `Imported ${added} messages from OpenCode history, each attributed to the model that actually served it.`
+      this.prune(now)
+      this.touch()
+    }
+    return { added, skipped }
+  }
+
   totalsForModel(providerID: string, modelID: string, input: { now?: number; periodStart?: number } = {}): ModelUsageTotals {
     const now = input.now ?? Date.now()
     const periodStart = input.periodStart ?? now - MONTH_MS

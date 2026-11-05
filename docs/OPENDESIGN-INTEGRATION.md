@@ -427,6 +427,42 @@ The lesson is in `test/opendesign-window-and-cost.test.ts`: assert on computed
 figures, never on declarations. A test that checks a constant is a test that the
 constant was typed, not that anything uses it.
 
+### Calibration, and reading OpenCode's own history
+
+Two sources of truth now replace most of the guessing.
+
+**Calibration reads the charges it already handled.** Every completed step carries
+the provider's real charge, so the router can compare its own arithmetic with the
+truth on each request. The safety margin becomes measured rather than assumed: a
+fresh install has no evidence and keeps the wide default; after a handful of
+agreeing requests the margin narrows to the error actually observed. It never
+narrows below a floor, and a systematic disagreement keeps the wide margin and
+raises a warning — that is a catalog problem, not something to absorb.
+
+**OpenCode's own database has the history the ledger lacks.** Everything routed
+before the router existed is recorded per message, with its own model, tokens,
+cost and timestamp. That is strictly better than the session-level bootstrap this
+replaced:
+
+| | Session summary | Message history |
+|---|---|---|
+| Timestamp | the session's last update | each request's own |
+| Model | whatever is selected now | the one that served it |
+| Re-read | never | yes, idempotently |
+
+The per-message timestamp is what matters for a fixed seven-day window: a session
+summary smears a week of work onto one instant, so every request in it lands in
+whichever window that instant fell into.
+
+Read with `readOnly: true`, always. The module must be incapable of damaging a
+user's history, and making a write impossible is cheaper than remembering not to.
+`node:sqlite` is experimental and may be absent; every failure returns a reason
+and the router routes without it.
+
+Together these remove the recurring paste. What remains impossible to see is
+usage from *other* clients on the same account, which is why the paste survives
+as a one-time seed.
+
 ### Reading the account: paste any console page
 
 There is no API for usage — upstream `nexu-io/open-design#8674` asks for one and

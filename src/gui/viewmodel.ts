@@ -330,3 +330,120 @@ export const statusLine = (input: {
   parts.push(input.current ? `${input.current.providerID}/${input.current.id}` : "no model yet")
   return parts.join(" · ")
 }
+
+// ---------------------------------------------------------------------------
+// Providers and models (P3)
+// ---------------------------------------------------------------------------
+
+export interface ModelRowView {
+  readonly key: string
+  readonly providerID: string
+  readonly name: string
+  readonly tier: number
+  readonly intelligence: number
+  readonly design: number
+  readonly contextLabel: string
+  readonly costLabel: string
+  readonly vision: boolean
+  readonly state: "approved" | "excluded" | "not approved"
+}
+
+export interface ProviderGroupView {
+  readonly providerID: string
+  readonly label: string
+  readonly state: "active" | "not configured"
+  readonly models: ReadonlyArray<ModelRowView>
+  readonly approvedCount: number
+  readonly totalCount: number
+  /** Why this provider is not being used, when it is not. */
+  readonly note?: string
+}
+
+const contextLabel = (tokens: number): string => {
+  if (!Number.isFinite(tokens) || tokens <= 0) return "unknown"
+  // "1M" reads better than "1.0M"; a fraction still needs its decimal.
+  return tokens >= 1_000_000
+    ? `${Number((tokens / 1_000_000).toFixed(1))}M`
+    : `${Math.round(tokens / 1000)}k`
+}
+
+/**
+ * Providers and their models, as a user needs them to answer "why is that model
+ * not being used?".
+ *
+ * The distinction that matters is between a provider that is off and a model
+ * that is unapproved: one is a decision about an account, the other about a
+ * model. Collapsing them into "unavailable" is what makes people think a model
+ * is missing when it is simply not enabled.
+ */
+export const providerGroups = (input: {
+  models: ReadonlyArray<{
+    key: string
+    providerID: string
+    name: string
+    tier: number
+    intelligence: number
+    design: number
+    vision: boolean
+    context: number
+    costInput: number
+    costOutput: number
+    approved: boolean
+    excluded: boolean
+  }>
+  quota: ReadonlyArray<{ providerID: string; label?: string }>
+  /** Provider ids the router will route to right now. */
+  activeProviders: ReadonlyArray<string>
+}): ReadonlyArray<ProviderGroupView> => {
+  const byProvider = new Map<string, ModelRowView[]>()
+  for (const model of input.models) {
+    const state: ModelRowView["state"] = model.excluded
+      ? "excluded"
+      : model.approved
+        ? "approved"
+        : "not approved"
+    const row: ModelRowView = {
+      key: model.key,
+      providerID: model.providerID,
+      name: model.name,
+      tier: model.tier,
+      intelligence: model.intelligence,
+      design: model.design,
+      contextLabel: contextLabel(model.context),
+      costLabel: `${formatUsd(model.costInput)} / ${formatUsd(model.costOutput)} per 1M`,
+      vision: model.vision,
+      state,
+    }
+    const list = byProvider.get(model.providerID) ?? []
+    list.push(row)
+    byProvider.set(model.providerID, list)
+  }
+
+  const quotaLabel = new Map(input.quota.map((entry) => [entry.providerID, entry.label ?? entry.providerID]))
+
+  return [...byProvider.entries()]
+    .map(([providerID, models]) => {
+      const active = input.activeProviders.includes(providerID)
+      const approvedCount = models.filter((model) => model.state === "approved").length
+      return {
+        providerID,
+        label: quotaLabel.get(providerID) ?? providerID,
+        state: active ? ("active" as const) : ("not configured" as const),
+        // Approved first, then by tier and cost: the order a routing decision
+        // would consider them.
+        models: [...models].sort((left, right) => {
+          const rank = (row: ModelRowView) => (row.state === "approved" ? 0 : row.state === "excluded" ? 2 : 1)
+          return rank(left) - rank(right) || left.tier - right.tier || left.key.localeCompare(right.key)
+        }),
+        approvedCount,
+        totalCount: models.length,
+        ...(active
+          ? {}
+          : { note: "Not routing here: no credential found for this provider on this machine." }),
+      }
+    })
+    .sort((left, right) => {
+      if (left.state !== right.state) return left.state === "active" ? -1 : 1
+      return left.label.localeCompare(right.label)
+    })
+}

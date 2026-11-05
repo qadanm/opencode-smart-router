@@ -5,6 +5,7 @@ import {
   formatPercent,
   formatUsd,
   formatWindowUsed,
+  providerGroups,
   statusLine,
   summariseDecision,
   toProviderRow,
@@ -53,6 +54,7 @@ interface RouterStatus {
   quota?: ReadonlyArray<unknown>
   lastDecision?: unknown
   approvedModels?: ReadonlyArray<unknown>
+  models?: Parameters<typeof providerGroups>[0]["models"]
 }
 
 const relative = (at: number): string => {
@@ -244,6 +246,10 @@ function DecisionInspector(props: { sessionID: string | undefined }) {
           </div>
         )}
       </Show>
+
+      <div style={{ height: "1px", background: theme.border }} />
+
+      <ProviderModels status={status()} />
 
       <div style={{ height: "1px", background: theme.border }} />
 
@@ -645,6 +651,140 @@ const buttonStyle = (enabled: boolean) => ({
   "font-family": "inherit",
   cursor: enabled ? "pointer" : "default",
 })
+
+
+/**
+ * Providers and their models.
+ *
+ * The question this answers is "why is that model not being used?", which has
+ * three different answers that must not be collapsed into one: the provider has
+ * no credential on this machine, the model is deliberately excluded, or the
+ * model simply is not approved. "Unavailable" for all three is what makes people
+ * think a model has gone missing.
+ */
+function ProviderModels(props: { status: RouterStatus | undefined }) {
+  const [expanded, setExpanded] = createSignal<ReadonlyArray<string>>([])
+
+  const groups = () => {
+    const status = props.status
+    if (!status?.models) return []
+    const active = ((status.quota ?? []) as Array<{ providerID?: string; error?: string }>)
+      .filter((snapshot) => !snapshot.error)
+      .map((snapshot) => snapshot.providerID ?? "")
+    return providerGroups({
+      models: status.models,
+      quota: (status.quota ?? []) as Array<{ providerID: string; label?: string }>,
+      activeProviders: active,
+    })
+  }
+
+  const toggle = (providerID: string) =>
+    setExpanded((current) =>
+      current.includes(providerID) ? current.filter((id) => id !== providerID) : [...current, providerID],
+    )
+
+  return (
+    <div style={{ display: "flex", "flex-direction": "column", gap: "8px" }}>
+      <span style={{ color: theme.faint, "font-size": "11px", "text-transform": "uppercase", "letter-spacing": "0.04em" }}>
+        Providers &amp; models
+      </span>
+      <For each={groups()}>
+        {(group) => (
+          <div
+            style={{
+              display: "flex",
+              "flex-direction": "column",
+              gap: "6px",
+              padding: "9px 10px",
+              "border-radius": "8px",
+              border: `1px solid ${theme.border}`,
+              background: group.state === "active" ? theme.surface : "transparent",
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => toggle(group.providerID)}
+              aria-expanded={expanded().includes(group.providerID)}
+              style={{
+                display: "flex",
+                "justify-content": "space-between",
+                "align-items": "baseline",
+                gap: "8px",
+                width: "100%",
+                background: "transparent",
+                border: "none",
+                padding: 0,
+                color: "inherit",
+                font: "inherit",
+                cursor: "pointer",
+                "text-align": "left",
+              }}
+            >
+              <span style={{ "font-size": "12.5px", "font-weight": 550, color: theme.text }}>{group.label}</span>
+              <span style={{ display: "flex", gap: "8px", "align-items": "baseline" }}>
+                <span style={{ color: theme.faint, "font-size": "10.5px" }}>
+                  {group.approvedCount} of {group.totalCount} approved
+                </span>
+                <span
+                  style={{
+                    color: group.state === "active" ? theme.good : theme.faint,
+                    "font-size": "10.5px",
+                    "text-transform": "uppercase",
+                    "letter-spacing": "0.03em",
+                  }}
+                >
+                  {group.state === "active" ? "active" : "not configured"}
+                </span>
+              </span>
+            </button>
+
+            <Show when={group.note}>
+              <span style={{ color: theme.warn, "font-size": "10.5px", "line-height": 1.45 }}>{group.note}</span>
+            </Show>
+
+            <Show when={expanded().includes(group.providerID)}>
+              <div style={{ display: "flex", "flex-direction": "column", gap: "3px", "margin-top": "2px" }}>
+                <For each={group.models}>
+                  {(model) => (
+                    <div style={{ display: "flex", "justify-content": "space-between", gap: "8px", "align-items": "baseline" }}>
+                      <span
+                        style={{
+                          "font-family": mono,
+                          "font-size": "10.5px",
+                          color: model.state === "approved" ? theme.text : theme.faint,
+                          "text-decoration": model.state === "excluded" ? "line-through" : "none",
+                        }}
+                      >
+                        {model.key.split("/").slice(1).join("/")}
+                      </span>
+                      <span style={{ display: "flex", gap: "8px", "flex-shrink": 0, "align-items": "baseline" }}>
+                        <span style={{ color: theme.faint, "font-size": "10.5px" }}>{model.contextLabel}</span>
+                        <span style={{ color: theme.faint, "font-size": "10.5px" }}>{model.costLabel}</span>
+                        <span
+                          style={{
+                            "font-size": "10px",
+                            color:
+                              model.state === "approved"
+                                ? theme.good
+                                : model.state === "excluded"
+                                  ? theme.bad
+                                  : theme.faint,
+                          }}
+                        >
+                          {model.state}
+                        </span>
+                      </span>
+                    </div>
+                  )}
+                </For>
+              </div>
+            </Show>
+          </div>
+        )}
+      </For>
+    </div>
+  )
+}
 
 const definition = Plugin.define({
   i18n: {

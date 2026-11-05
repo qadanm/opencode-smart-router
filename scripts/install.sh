@@ -199,6 +199,17 @@ if [[ -n "$GUI_BUNDLE" && -f "$GUI_BUNDLE" ]]; then
   say "  desktop GUI: installed"
 fi
 
+# The terminal part. Optional for the same reason as the GUI: a headless server
+# has no terminal to draw in, and a failed TUI build must not fail the install.
+if ! $DRY_RUN; then
+  if [[ -x "$ROOT/node_modules/.bin/esbuild" ]] && npm --prefix "$ROOT" run build:tui >/dev/null 2>&1; then
+    run cp "$ROOT/dist/tui.js" "$TARGET/tui.js"
+    say "  terminal UI: installed"
+  else
+    warn "terminal UI not built; the desktop panel and slash commands still work"
+  fi
+fi
+
 # The router resolves @opencode/plugin at runtime, so the host's copy must be reachable
 # from the plugin directory. A symlink to the repo's node_modules keeps the install
 # small and lets OpenCode resolve it the same way it resolves any other plugin dep.

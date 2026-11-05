@@ -779,5 +779,29 @@ export interface RouterStatus {
     vision: boolean
     premium: boolean
   }>
+  /**
+   * Every model in the catalog, with the facts a routing decision turns on.
+   *
+   * The panel needs to answer "why is this model not being used" without the
+   * user reading the source. That means carrying approval and exclusion, not
+   * just the approved subset, plus the cost and window that drove the ranking.
+   */
+  readonly models: ReadonlyArray<{
+    readonly key: string
+    readonly providerID: string
+    readonly name: string
+    readonly tier: 1 | 2 | 3
+    readonly intelligence: number
+    readonly design: number
+    readonly vision: boolean
+    readonly premium: boolean
+    readonly context: number
+    readonly costInput: number
+    readonly costOutput: number
+    readonly approved: boolean
+    readonly excluded: boolean
+    /** Why it is not approved, when that is a decision rather than a gap. */
+    readonly approvalNote?: string
+  }>
   readonly warnings: ReadonlyArray<string>
 }
