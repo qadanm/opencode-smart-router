@@ -10,5 +10,5 @@ import { gui } from "@opencode/plugin/gui/vite"
  * Output path is what `./gui-experimental` in package.json points at.
  */
 export default defineConfig({
-  plugins: [gui()],
+  plugins: [gui({ entry: "src/gui/index.tsx" })],
 })
