@@ -51,7 +51,8 @@
     "docs/MODELS.md",
     "docs/OPENDESIGN-INTEGRATION.md",
     "docs/SHARED-CORE.md",
-    "docs/QA.md"
+    "docs/QA.md",
+    "docs/DEBUGGING-GUI.md"
   ],
   "scripts": {
     "typecheck": "tsc --noEmit",
