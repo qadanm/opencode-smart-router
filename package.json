@@ -1,16 +1,18 @@
 {
   "name": "@qadanm/opencode-smart-router",
-  "version": "0.3.0",
-  "description": "Subscription-aware model routing for OpenCode: nested usage windows, multi-pool credit accounting, and context policy.",
+  "version": "0.4.0",
+  "description": "Subscription-aware model routing for OpenCode: nested usage windows, multi-pool credit accounting, context policy, and self-healing routing that repairs prompts and fails over deterministic rejections.",
   "keywords": [
     "opencode",
+    "opencode-plugin",
     "plugin",
     "router",
     "llm",
     "quota",
-    "openrouter",
     "ai",
-    "coding-agent"
+    "coding-agent",
+    "anthropic",
+    "model-routing"
   ],
   "homepage": "https://github.com/qadanm/opencode-smart-router#readme",
   "bugs": {
@@ -27,7 +29,8 @@
     "node": ">=20.12"
   },
   "exports": {
-    ".": "./src/index.ts",
+    ".": "./dist/npm/index.js",
+    "./source": "./src/index.ts",
     "./rpc": "./src/rpc.ts",
     "./allowance": "./src/allowance.ts",
     "./tui": "./dist/tui.js",
@@ -66,7 +69,8 @@
     "build:all": "npm run build:server && npm run build:allowance && npm run build:gui && npm run build:tui",
     "mutate": "python3 scripts/mutate.py",
     "verify": "bash scripts/cleanroom-verify.sh",
-    "prepublishOnly": "npm run check && npm run build:server"
+    "prepublishOnly": "npm run check && npm run build:npm",
+    "build:npm": "esbuild src/index.ts --bundle --format=esm --platform=node --target=node22 --packages=bundle --outfile=dist/npm/index.js --legal-comments=none --minify"
   },
   "dependencies": {
     "@opencode/plugin": "2.2.5"

@@ -3,7 +3,9 @@
 Notable changes to OpenCode Smart Router. Dates are the day the change landed on
 `main`.
 
-## Unreleased
+## 0.4.0 — 2026-11-05
+
+Self-healing routing, and npm distribution.
 
 ### Added
 
@@ -15,6 +17,10 @@ Notable changes to OpenCode Smart Router. Dates are the day the change landed on
   Discovered on a live Command Code session where a rebuilt prompt reached
   the Anthropic path with a system role inside `messages[]` and died with
   "Invalid discriminator value. Expected 'user' | 'assistant'".
+- **npm package** (`@qadanm/opencode-smart-router`). One self-contained file
+  with no runtime dependencies, loadable with a single `plugin` entry so the
+  router appears in OpenCode's own ecosystem path. The full experience stays
+  with the installer.
 
 ## 0.3.0 — 2026-11-05
 

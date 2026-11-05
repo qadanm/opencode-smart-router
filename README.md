@@ -87,6 +87,23 @@ free. When a pool is nearly gone, it stops being attractive.
 
 Requires Node 20.12+, npm and git. No `jq`, no global CLI, nothing to configure.
 
+### From npm
+
+Add the plugin to your `opencode.json`; OpenCode installs it from npm at startup:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "plugin": ["@qadanm/opencode-smart-router"]
+}
+```
+
+That is the routing core in one self-contained file. The full experience (desktop
+panel, terminal commands, history import, first-run onboarding) comes from the
+installer below.
+
+### Full experience (recommended)
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/qadanm/opencode-smart-router/main/install | bash
 ```
