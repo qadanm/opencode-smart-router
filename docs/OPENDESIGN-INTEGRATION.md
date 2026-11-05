@@ -397,6 +397,36 @@ The plan caps were checked at the same time and were already correct: Pro is
 $360 Design Plan plus $120 plan models, which is the $480 total the pricing page
 advertises, and Design Plan credits are consumed before plan model credits.
 
+### Two estimator defects, and why the tests missed them
+
+Both shipped with green tests. Recording them because the pattern matters more
+than the bugs.
+
+**The reported cost was thrown away.** Every completed step carries the cost the
+host actually charged, and the ledger already stores it (`usage[].usd`).
+`localTotals` ignored it and recomputed price from the static table, then applied
+the Design Plan multiplier — re-deriving an approximation of a number that was
+sitting right there. It also drifted in a specific case: a step funded from plan
+model credits after the Design Plan allowance is spent is charged at the plain
+rate, while the table still applied the Design Plan multiplier.
+
+Now: a non-zero reported cost is used, with the multiplier applied only when the
+step is funded from the Design Plan pool. A reported cost of **zero means "not
+reported", not "free"**, so it falls back to the table.
+
+**The fixed window never took effect.** The catalog was corrected to
+`fixed-7-day` and a test asserted it — but the test checked the catalog, not the
+estimator, and `localTotals` still bucketed by `now - 7 days`. The declaration
+and the behavior disagreed, with every test passing.
+
+Now `weeklyWindowStart()` anchors the window to the known reset time from a
+pasted reading, so the window is the subscription's, not a sliding seven days.
+The monthly bucket is untouched: it follows the billing cycle.
+
+The lesson is in `test/opendesign-window-and-cost.test.ts`: assert on computed
+figures, never on declarations. A test that checks a constant is a test that the
+constant was typed, not that anything uses it.
+
 ### Reading the account: paste any console page
 
 There is no API for usage — upstream `nexu-io/open-design#8674` asks for one and

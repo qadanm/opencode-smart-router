@@ -179,6 +179,22 @@ interface LocalWindowTotals {
  * attribution for forecasting: it asks "which allowance is this consuming?"
  * rather than "what is the cheapest rate this model ever gets?".
  */
+/**
+ * Start of the current fixed seven-day Design Plan window.
+ *
+ * OpenDesign anchors the window to the subscription, which the router cannot
+ * read. It can, however, be told: a pasted "resets in 0d 22h" gives the end,
+ * and the start is exactly seven days before it. Without that anchor the best
+ * available assumption is a window ending seven days from now, which is wrong
+ * for everyone but no more wrong than the rolling window it replaces.
+ */
+export const weeklyWindowStart = (now: number, resetsAt?: number): number => {
+  if (resetsAt !== undefined && Number.isFinite(resetsAt) && resetsAt > now) {
+    return resetsAt - WEEK_MS
+  }
+  return now - WEEK_MS
+}
+
 const localTotals = (
   usage: ReadonlyArray<UsageEvent>,
   providerID: string,
@@ -186,9 +202,24 @@ const localTotals = (
   marginPct: number,
   plan: ReturnType<typeof resolvePlan>,
   multiplierOverrides?: Readonly<Record<string, number>>,
+  /** When the current seven-day window resets, when the caller knows it. */
+  windowResetsAt?: number,
 ): LocalWindowTotals => {
+  /**
+   * Window boundaries.
+   *
+   * The seven-day Design Plan window is FIXED: the vendor documents that it
+   * starts when the subscription starts and repeats every seven days, so
+   * "Wednesday 10:00 to the following Wednesday 10:00" — not "the last seven
+   * days". Bucketing by `now - 7 days` is a rolling window and overstates the
+   * current window's usage by including events from the previous one, which is
+   * the difference between "40% used" and "60% used" for most of a week.
+   *
+   * The anchor comes from the caller when known (a pasted reset time), because
+   * the true start is a property of the subscription, not of the clock.
+   */
   const rollingCutoff = now - FIVE_HOURS_MS
-  const weekCutoff = now - WEEK_MS
+  const weekCutoff = weeklyWindowStart(now, windowResetsAt)
   const monthCutoff = now - MONTH_MS
   let rollingUsd = 0
   let weeklyUsd = 0
@@ -213,16 +244,36 @@ const localTotals = (
         ? OPENDESIGN_PLAN_MODEL_POOL
         : OPENDESIGN_DESIGN_PLAN_POOL
 
-    const credits = estimateDesignPlanCredits({
-      modelID: event.modelID,
-      input: event.input,
-      output: event.output,
-      cacheRead: event.cacheRead,
-      cacheWrite: event.cacheWrite,
-      now,
-      multiplierApplies: poolID === OPENDESIGN_DESIGN_PLAN_POOL,
-      ...(multiplierOverrides ? { multiplierOverrides } : {}),
-    }).creditsUsd
+    /**
+     * Prefer what the request actually cost.
+     *
+     * The host reports a real charge per step and it is stored in the ledger, so
+     * recomputing the price from a static table is re-deriving a number that
+     * arrived for free — and it drifts whenever the charge does not match the
+     * model: a step funded from plan model credits after the Design Plan
+     * allowance is spent is charged at the plain rate, while the table still
+     * applies the Design Plan multiplier.
+     *
+     * A reported cost of zero is not a charge, though: some hosts omit pricing,
+     * and treating "unknown" as "free" would make the estimate forget real
+     * usage. So zero falls back to the table.
+     */
+    const reported = event.usd > 0 ? event.usd : undefined
+    const credits =
+      reported !== undefined && poolID === OPENDESIGN_DESIGN_PLAN_POOL
+        ? reported * creditMultiplierFor(event.modelID, { now, ...(multiplierOverrides ? { overrides: multiplierOverrides } : {}) }).multiplier
+        : reported !== undefined
+          ? reported
+          : estimateDesignPlanCredits({
+              modelID: event.modelID,
+              input: event.input,
+              output: event.output,
+              cacheRead: event.cacheRead,
+              cacheWrite: event.cacheWrite,
+              now,
+              multiplierApplies: poolID === OPENDESIGN_DESIGN_PLAN_POOL,
+              ...(multiplierOverrides ? { multiplierOverrides } : {}),
+            }).creditsUsd
     if (credits <= 0) continue
     observedRequests += 1
     const target = bucket(poolID)
@@ -851,6 +902,9 @@ const probeEstimated = (input: OpenDesignQuotaInput, now: number): OpenDesignQuo
     marginPct,
     caps.plan,
     input.multiplierOverrides,
+    // The pasted reset time is the only trustworthy anchor for the fixed
+    // window; without it the estimator falls back to a week ending now.
+    input.settings.baseline?.weeklyResetsAt,
   )
   const seeded = applyBaseline(local, input.settings.baseline, now, {
     ...(caps.weekly !== undefined ? { weekly: caps.weekly } : {}),
