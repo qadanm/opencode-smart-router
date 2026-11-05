@@ -263,6 +263,50 @@ agents that rely on tool calls. The router warns when it sees this combination.
 Verify with `/router-opendesign`, which lists the entitled models the gateway
 actually returned and makes no inference request.
 
+### Getting closer to exact numbers without a control key
+
+Re-probed against the live gateway on 2026-11-04, with a valid inference key:
+
+| Request | Result |
+|---|---|
+| `GET /v1/models` | 200 |
+| `GET /v1/usage`, `/v1/me`, `/v1/credits`, `/v1/billing`, `/v1/account`, `/v1/subscription`, `/v1/limits`, `/v1/quota`, `/v1/workspaces` | 404 |
+| `GET https://amr-api.open-design.ai/api/v1/workspaces/current` (inference key) | 401 |
+| any `chat/completions` response | no credit or quota headers; `usage` carries tokens only |
+
+So the inference key still cannot see account usage, and the router still will not
+scrape a browser session. If you can read your own account page, you can give the
+router the number instead of letting it guess:
+
+```json
+{
+  "providers": {
+    "opendesign": {
+      "baseline": {
+        "at": "2026-11-04T12:00:00Z",
+        "designPlanUsedUsd": 37.8
+      }
+    }
+  }
+}
+```
+
+The router adds every OpenDesign request it routes after `at` to that figure, and
+labels the result as starting from your reading rather than from zero.
+
+Two rules keep this honest:
+
+- **The baseline expires with its window.** A reading taken 10 days ago still
+  describes the month, but no longer describes the current seven-day window, so
+  it stops seeding that window. A stale reading inside a fresh window would
+  overstate usage as badly as omitting it understates it.
+- **Read the percentage off the window it belongs to.** On Pro, the account page
+  shows Design Plan credits as a share of the seven-day allowance ($90), not the
+  monthly one ($360). 42% of the week is $37.80, which is 10.5% of the month.
+  Entering `151.20` because "42% of 360" would overstate usage fourfold.
+
+A control key remains the only path to figures the provider confirms.
+
 A control key is optional and only changes quota reporting from estimated to
 verified. Supply it only if you accept that it is a privileged credential:
 

@@ -694,10 +694,77 @@ const probeVerified = async (
 /**
  * Model the router's own credit consumption against the published plan caps.
  */
+
+/**
+ * Fold a user-supplied account reading into the local totals.
+ *
+ * A baseline is a real figure the user read from their own account, so it is
+ * stronger evidence than the router's own traffic — but only inside the window
+ * it was taken in. Once a window has reset, the reading describes the previous
+ * window and including it would overstate usage just as badly as omitting it
+ * understated it. So each window accepts the baseline only while the reading is
+ * newer than that window's start.
+ */
+const applyBaseline = (
+  totals: LocalWindowTotals,
+  baseline: ProviderSettings["baseline"],
+  now: number,
+): { totals: LocalWindowTotals; applied: boolean; windows: string[] } => {
+  if (!baseline) return { totals, applied: false, windows: [] }
+  const designPlan = Math.max(0, baseline.designPlanUsedUsd ?? 0)
+  const planModels = Math.max(0, baseline.planModelsUsedUsd ?? 0)
+  if (designPlan === 0 && planModels === 0) return { totals, applied: false, windows: [] }
+
+  const withinRolling = baseline.at >= now - FIVE_HOURS_MS
+  const withinWeekly = baseline.at >= now - WEEK_MS
+  const withinMonthly = baseline.at >= now - MONTH_MS
+  if (!withinMonthly) return { totals, applied: false, windows: [] }
+
+  const windows: string[] = []
+  if (withinRolling) windows.push("5h")
+  if (withinWeekly) windows.push("7d")
+  windows.push("monthly")
+
+  const designRolling = withinRolling ? designPlan : 0
+  const designWeekly = withinWeekly ? designPlan : 0
+  const planRolling = withinRolling ? planModels : 0
+  const planWeekly = withinWeekly ? planModels : 0
+
+  const byPool = { ...totals.byPool }
+  const designBucket = byPool[OPENDESIGN_DESIGN_PLAN_POOL] ?? { rollingUsd: 0, weeklyUsd: 0, monthlyUsd: 0 }
+  const planBucket = byPool[OPENDESIGN_PLAN_MODEL_POOL] ?? { rollingUsd: 0, weeklyUsd: 0, monthlyUsd: 0 }
+  if (designPlan > 0) {
+    byPool[OPENDESIGN_DESIGN_PLAN_POOL] = {
+      rollingUsd: designBucket.rollingUsd + designRolling,
+      weeklyUsd: designBucket.weeklyUsd + designWeekly,
+      monthlyUsd: designBucket.monthlyUsd + designPlan,
+    }
+  }
+  if (planModels > 0) {
+    byPool[OPENDESIGN_PLAN_MODEL_POOL] = {
+      rollingUsd: planBucket.rollingUsd + planRolling,
+      weeklyUsd: planBucket.weeklyUsd + planWeekly,
+      monthlyUsd: planBucket.monthlyUsd + planModels,
+    }
+  }
+
+  return {
+    applied: true,
+    windows,
+    totals: {
+      rollingUsd: totals.rollingUsd + designRolling + planRolling,
+      weeklyUsd: totals.weeklyUsd + designWeekly + planWeekly,
+      monthlyUsd: totals.monthlyUsd + designPlan + planModels,
+      observedRequests: totals.observedRequests,
+      byPool,
+    },
+  }
+}
+
 const probeEstimated = (input: OpenDesignQuotaInput, now: number): OpenDesignQuotaResult => {
   const caps = capsFor(input.settings)
   const marginPct = input.uncertaintyMarginPct ?? OPENDESIGN_DEFAULT_UNCERTAINTY_MARGIN_PCT
-  const totals = localTotals(
+  const local = localTotals(
     input.usage,
     "opendesign",
     now,
@@ -705,6 +772,8 @@ const probeEstimated = (input: OpenDesignQuotaInput, now: number): OpenDesignQuo
     caps.plan,
     input.multiplierOverrides,
   )
+  const seeded = applyBaseline(local, input.settings.baseline, now)
+  const totals = seeded.totals
   // A window the plan does not have is never reported as a measured 0%.
   // Reporting "0% of a five-hour window" would imply a ceiling that could be
   // hit, when the plan has no such limit.
@@ -724,18 +793,29 @@ const probeEstimated = (input: OpenDesignQuotaInput, now: number): OpenDesignQuo
     creditsPerUsd: OPENDESIGN_DEFAULT_CREDITS_PER_USD,
   })
   const notes = [
-    "Estimated from this router's own OpenDesign usage. OpenDesign publishes no quota API for an inference key.",
-    `A ${marginPct}% safety margin is applied. Usage from the OpenDesign app or other clients on the same subscription is not visible, so this is a lower bound.`,
+    seeded.applied
+      ? `Starts from the usage you reported on ${new Date(input.settings.baseline!.at).toISOString().slice(0, 10)} and adds every OpenDesign request this router has routed since.`
+      : "Estimated from this router's own OpenDesign usage. OpenDesign publishes no quota API for an inference key.",
+    seeded.applied
+      ? `The reported reading still excludes other clients, and a ${marginPct}% margin is applied, so this remains a lower bound. A control key gives the account's exact figures.`
+      : `A ${marginPct}% safety margin is applied. Usage from the OpenDesign app or other clients on the same subscription is not visible, so this is a lower bound.`,
     "Wallet balance is not included and is never used for automatic routing.",
     ...planNotes(caps),
   ]
+  if (seeded.applied) {
+    notes.push(`The reported reading applies to: ${seeded.windows.join(", ")}. Windows older than the reading are not seeded.`)
+  }
   if (caps.unresolved) {
     notes.push(
       `The configured plan "${input.settings.plan}" is not in the catalog, so the allowance is unknown rather than zero. Set a plan id from the catalog or an explicit monthlyCreditsUsd.`,
     )
   }
   if (totals.observedRequests === 0) {
-    notes.push("No OpenDesign requests have been routed through this router yet, so the estimate starts at zero.")
+    notes.push(
+      seeded.applied
+        ? "No OpenDesign requests have been routed through this router since that reading, so the figure is still exactly what you reported."
+        : "No OpenDesign requests have been routed through this router yet, so the estimate starts at zero.",
+    )
   }
   const snapshot: ProviderQuotaSnapshot = {
     providerID: "opendesign",

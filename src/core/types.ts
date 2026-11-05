@@ -464,6 +464,30 @@ export interface ProviderSettings {
   /** Optional explicit credential file for a read-only quota probe. */
   readonly credentialPath?: string
   /**
+   * A reading of the account's own usage, supplied by the user, that the router
+   * adds its own traffic to.
+   *
+   * This exists because OpenDesign publishes no quota endpoint for an inference
+   * key and the router refuses to scrape a browser session. Without a control
+   * key the best available number was "traffic this router routed", which
+   * under-reports badly on any account that was used before the router was
+   * installed — one user saw 5% while the account was 42% used.
+   *
+   * A baseline is not a guess: it is a figure the user read off their own
+   * account, with the time they read it. The router labels the result as
+   * "reported by your account at <time> plus this router's traffic" and drops it
+   * once the relevant window has reset, because a stale reading inside a fresh
+   * window would be a new lie in the other direction.
+   */
+  readonly baseline?: {
+    /** Epoch ms when the user read these figures. */
+    readonly at: number
+    /** Design Plan credits used at that moment, in USD-equivalent. */
+    readonly designPlanUsedUsd?: number
+    /** Plan model credits used at that moment, in USD-equivalent. */
+    readonly planModelsUsedUsd?: number
+  }
+  /**
    * Whether the router may read well-known credential files without being
    * told exactly where. `explicit` (the default) reads only configured paths
    * and the environment; `auto` also scans the provider's own files; `off`

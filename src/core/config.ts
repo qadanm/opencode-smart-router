@@ -178,6 +178,24 @@ export const DEFAULT_SETTINGS: RouterSettings = {
   offline: DEFAULT_OFFLINE_SETTINGS,
 }
 
+const numberOr = (value: unknown): number | undefined => {
+  if (typeof value === "number" && Number.isFinite(value)) return value
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value)
+    if (Number.isFinite(parsed)) return parsed
+  }
+  return undefined
+}
+
+const timeValue = (value: unknown): number | undefined => {
+  if (typeof value === "number" && Number.isFinite(value)) return value
+  if (typeof value === "string") {
+    const parsed = Date.parse(value)
+    if (Number.isFinite(parsed)) return parsed
+  }
+  return undefined
+}
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value)
 
@@ -287,6 +305,38 @@ const validateProvider = (
       value.controlKeyPath === undefined
         ? base.controlKeyPath
         : asString(value.controlKeyPath, base.controlKeyPath ?? "", warnings, `${path}.controlKeyPath`) || undefined,
+    /**
+     * A user-supplied reading of their own account usage. Deliberately strict:
+     * an unusable baseline is dropped with a warning rather than half-applied,
+     * because a malformed baseline would silently corrupt every quota figure.
+     */
+    baseline: (() => {
+      if (value.baseline === undefined) return base.baseline
+      if (!isRecord(value.baseline)) {
+        warnings.push(`${path}.baseline must be an object; ignoring it`)
+        return base.baseline
+      }
+      const at = timeValue(value.baseline.at)
+      if (at === undefined) {
+        warnings.push(`${path}.baseline.at must be a timestamp; ignoring the baseline`)
+        return base.baseline
+      }
+      const design = numberOr(value.baseline.designPlanUsedUsd)
+      const planModels = numberOr(value.baseline.planModelsUsedUsd)
+      if (design === undefined && planModels === undefined) {
+        warnings.push(`${path}.baseline needs designPlanUsedUsd or planModelsUsedUsd; ignoring it`)
+        return base.baseline
+      }
+      if (at > Date.now()) {
+        warnings.push(`${path}.baseline.at is in the future; ignoring the baseline`)
+        return base.baseline
+      }
+      return {
+        at,
+        ...(design !== undefined ? { designPlanUsedUsd: Math.max(0, design) } : {}),
+        ...(planModels !== undefined ? { planModelsUsedUsd: Math.max(0, planModels) } : {}),
+      }
+    })(),
     subscriptionOnly:
       value.subscriptionOnly === undefined
         ? base.subscriptionOnly
@@ -927,14 +977,20 @@ export const loadSettings = (input: LoadSettingsInput = {}): SettingsLoadResult 
   const explicit = new Set<string>()
 
   if (input.options !== undefined) {
-    settings = validateSettings(input.options, settings).settings
+    const validated = validateSettings(input.options, settings)
+    settings = validated.settings
+    // Validation warnings used to be thrown away here, so a malformed option was
+    // repaired silently and the user never learned why their setting did nothing.
+    warnings.push(...validated.warnings)
     sources.push("plugin options")
     for (const id of explicitProviderEnable(input.options)) explicit.add(id)
   }
 
   const globalInput = readJson(globalPath, warnings)
   if (globalInput !== undefined) {
-    settings = validateSettings(globalInput, settings).settings
+    const validated = validateSettings(globalInput, settings)
+    settings = validated.settings
+    warnings.push(...validated.warnings)
     sources.push(globalPath)
     for (const id of explicitProviderEnable(globalInput)) explicit.add(id)
   }
