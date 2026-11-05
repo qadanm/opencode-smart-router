@@ -323,8 +323,19 @@ const validateProvider = (
       }
       const design = numberOr(value.baseline.designPlanUsedUsd)
       const planModels = numberOr(value.baseline.planModelsUsedUsd)
-      if (design === undefined && planModels === undefined) {
-        warnings.push(`${path}.baseline needs designPlanUsedUsd or planModelsUsedUsd; ignoring it`)
+      const designPct = numberOr(value.baseline.designPlanUsedPct)
+      const planModelsPct = numberOr(value.baseline.planModelsUsedPct)
+      const pctOfRaw = value.baseline.pctOf
+      const pctOf = pctOfRaw === "weekly" || pctOfRaw === "monthly" ? pctOfRaw : undefined
+      if (pctOfRaw !== undefined && pctOf === undefined) {
+        warnings.push(`${path}.baseline.pctOf must be "weekly" or "monthly"; defaulting to weekly`)
+      }
+      const clampPct = (value: number | undefined) =>
+        value === undefined ? undefined : Math.min(100, Math.max(0, value))
+      if (design === undefined && planModels === undefined && designPct === undefined && planModelsPct === undefined) {
+        warnings.push(
+          `${path}.baseline needs a figure: designPlanUsedUsd, designPlanUsedPct, planModelsUsedUsd or planModelsUsedPct`,
+        )
         return base.baseline
       }
       if (at > Date.now()) {
@@ -338,6 +349,9 @@ const validateProvider = (
         at,
         ...(design !== undefined ? { designPlanUsedUsd: Math.max(0, design) } : {}),
         ...(planModels !== undefined ? { planModelsUsedUsd: Math.max(0, planModels) } : {}),
+        ...(clampPct(designPct) !== undefined ? { designPlanUsedPct: clampPct(designPct)! } : {}),
+        ...(clampPct(planModelsPct) !== undefined ? { planModelsUsedPct: clampPct(planModelsPct)! } : {}),
+        ...(pctOf ? { pctOf } : {}),
         ...(weeklyResetsAt !== undefined ? { weeklyResetsAt } : {}),
         ...(monthlyResetsAt !== undefined ? { monthlyResetsAt } : {}),
         ...(source ? { source } : {}),

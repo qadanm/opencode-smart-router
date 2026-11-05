@@ -194,3 +194,66 @@ describe("a reading stops applying when its window resets", () => {
     expect(result.snapshot.notes.some((note) => note.includes("weeklyResetsAt"))).toBe(true)
   })
 })
+
+describe("a percentage from the account page is converted, not guessed", () => {
+  it("reads 42% as the seven-day window by default and lands where the user could check", async () => {
+    // On Pro the seven-day Design Plan cap is $90, so 42% is $37.80.
+    const result = await probeOpenDesignQuota({
+      settings: settings({ baseline: { at: NOW - HOUR, designPlanUsedPct: 42 } }),
+      apiKey: "test-key",
+      usage: [],
+      now: () => NOW,
+    })
+    expect(result.snapshot.weekly.usedPct).toBeCloseTo(42, 0)
+    expect(result.snapshot.weekly.usedUsd ?? 0).toBeCloseTo(37.8, 2)
+    expect(result.snapshot.monthly.usedPct).toBeCloseTo(10.5, 0)
+  })
+
+  it("honours an explicit monthly reading", async () => {
+    const result = await probeOpenDesignQuota({
+      settings: settings({ baseline: { at: NOW - HOUR, designPlanUsedPct: 42, pctOf: "monthly" } }),
+      apiKey: "test-key",
+      usage: [],
+      now: () => NOW,
+    })
+    expect(result.snapshot.monthly.usedPct).toBeCloseTo(42, 0)
+  })
+
+  it("prefers an explicit dollar figure over a percentage", async () => {
+    const result = await probeOpenDesignQuota({
+      settings: settings({ baseline: { at: NOW - HOUR, designPlanUsedUsd: 45, designPlanUsedPct: 5 } }),
+      apiKey: "test-key",
+      usage: [],
+      now: () => NOW,
+    })
+    expect(result.snapshot.weekly.usedUsd ?? 0).toBeCloseTo(45, 2)
+  })
+
+  it("says so instead of silently using zero when the cap is unknown", async () => {
+    const result = await probeOpenDesignQuota({
+      // An unrecognised plan leaves no cap to divide by.
+      settings: { ...settings({ baseline: { at: NOW - HOUR, designPlanUsedPct: 42 } }), plan: "mystery-tier" },
+      apiKey: "test-key",
+      usage: [],
+      now: () => NOW,
+    })
+    expect(result.snapshot.notes.some((note) => note.includes("could not be converted"))).toBe(true)
+  })
+
+  it("clamps a nonsensical percentage through config validation", () => {
+    const loaded = loadSettings({
+      home: "/nonexistent-home",
+      options: { providers: { opendesign: { baseline: { at: NOW, designPlanUsedPct: 420 } } } },
+    })
+    expect(loaded.settings.providers.opendesign?.baseline?.designPlanUsedPct).toBe(100)
+  })
+
+  it("accepts a percentage on its own with no dollar figure", () => {
+    const loaded = loadSettings({
+      home: "/nonexistent-home",
+      options: { providers: { opendesign: { baseline: { at: NOW, designPlanUsedPct: 42 } } } },
+    })
+    expect(loaded.settings.providers.opendesign?.baseline?.designPlanUsedPct).toBe(42)
+    expect(loaded.warnings.filter((w) => w.includes("baseline"))).toHaveLength(0)
+  })
+})

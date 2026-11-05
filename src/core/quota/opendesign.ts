@@ -709,11 +709,76 @@ const applyBaseline = (
   totals: LocalWindowTotals,
   baseline: ProviderSettings["baseline"],
   now: number,
-): { totals: LocalWindowTotals; applied: boolean; windows: string[]; usedFallbackReset?: boolean } => {
+  caps: {
+    readonly weekly?: number
+    readonly monthly: number
+    readonly planModelsMonthly: number
+  },
+): {
+  totals: LocalWindowTotals
+  applied: boolean
+  windows: string[]
+  usedFallbackReset?: boolean
+  /** Windows whose percentage could not be converted, with the reason. */
+  unconverted?: ReadonlyArray<string>
+} => {
   if (!baseline) return { totals, applied: false, windows: [] }
-  const designPlan = Math.max(0, baseline.designPlanUsedUsd ?? 0)
-  const planModels = Math.max(0, baseline.planModelsUsedUsd ?? 0)
-  if (designPlan === 0 && planModels === 0) return { totals, applied: false, windows: [] }
+
+  /**
+   * Convert a percentage the user copied off the account page into dollars.
+   *
+   * The page shows a percentage and the router works in dollars, so somebody has
+   * to do the division. Doing it here means it is done against the cap for the
+   * window the page was describing, which is the part users get wrong: on Pro the
+   * seven-day window is $90 and the month is $360, so "42%" means $37.80, not
+   * $151.20.
+   */
+  const unconverted: string[] = []
+  const fromPct = (pct: number | undefined, cap: number | undefined, label: string): number => {
+    if (pct === undefined) return 0
+    if (cap === undefined || cap <= 0) {
+      unconverted.push(`the ${label} cap is unknown, so ${pct}% could not be converted`)
+      return 0
+    }
+    return (pct / 100) * cap
+  }
+  const pctWindow = baseline.pctOf ?? "weekly"
+
+  /**
+   * A reading is meaningful when the user entered it, not when it is above zero.
+   *
+   * A brand-new account reports 0%, and that is a real reading: it means the
+   * allowance is untouched. Treating zero as "no information" would throw away
+   * the best possible starting point, and treating a missing field as zero would
+   * invent usage the user never reported. So presence decides, not magnitude.
+   */
+  const hasDesignReading =
+    baseline.designPlanUsedUsd !== undefined || baseline.designPlanUsedPct !== undefined
+  const hasPlanModelsReading =
+    baseline.planModelsUsedUsd !== undefined || baseline.planModelsUsedPct !== undefined
+
+  const designPlan = hasDesignReading
+    ? Math.max(0, baseline.designPlanUsedUsd ?? 0) ||
+      fromPct(
+        baseline.designPlanUsedPct,
+        pctWindow === "weekly" ? (caps.weekly ?? caps.monthly) : caps.monthly,
+        pctWindow === "weekly" ? "seven-day Design Plan" : "monthly Design Plan",
+      )
+    : 0
+
+  const planModels = hasPlanModelsReading
+    ? Math.max(0, baseline.planModelsUsedUsd ?? 0) ||
+      fromPct(baseline.planModelsUsedPct, caps.planModelsMonthly, "plan model")
+    : 0
+
+  // Only bail when there was nothing to read. A genuine 0% reading must be
+  // applied, because it is the strongest statement of "untouched allowance".
+  if (!hasDesignReading && !hasPlanModelsReading) {
+    // Carry the reason out even though nothing was applied: a percentage that
+    // could not be converted is worth saying, and silently using zero is the
+    // failure this whole mechanism exists to avoid.
+    return { totals, applied: false, windows: [], ...(unconverted.length > 0 ? { unconverted } : {}) }
+  }
 
   /**
    * A window accepts the reading until that window RESETS — not merely until the
@@ -765,6 +830,7 @@ const applyBaseline = (
     applied: true,
     windows,
     usedFallbackReset: baseline.weeklyResetsAt === undefined,
+    ...(unconverted.length > 0 ? { unconverted } : {}),
     totals: {
       rollingUsd: totals.rollingUsd + designRolling + planRolling,
       weeklyUsd: totals.weeklyUsd + designWeekly + planWeekly,
@@ -786,7 +852,11 @@ const probeEstimated = (input: OpenDesignQuotaInput, now: number): OpenDesignQuo
     caps.plan,
     input.multiplierOverrides,
   )
-  const seeded = applyBaseline(local, input.settings.baseline, now)
+  const seeded = applyBaseline(local, input.settings.baseline, now, {
+    ...(caps.weekly !== undefined ? { weekly: caps.weekly } : {}),
+    monthly: caps.monthly,
+    planModelsMonthly: caps.planModelsMonthly,
+  })
   const totals = seeded.totals
   // A window the plan does not have is never reported as a measured 0%.
   // Reporting "0% of a five-hour window" would imply a ceiling that could be
@@ -816,6 +886,7 @@ const probeEstimated = (input: OpenDesignQuotaInput, now: number): OpenDesignQuo
     "Wallet balance is not included and is never used for automatic routing.",
     ...planNotes(caps),
   ]
+  for (const reason of seeded.unconverted ?? []) notes.push(`The reported percentage was not used: ${reason}.`)
   if (seeded.applied) {
     notes.push(
       seeded.usedFallbackReset

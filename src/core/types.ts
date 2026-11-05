@@ -495,6 +495,24 @@ export interface ProviderSettings {
     readonly at: number
     /** Design Plan credits used at that moment, in USD-equivalent. */
     readonly designPlanUsedUsd?: number
+    /**
+     * Design Plan credits used at that moment, as the percentage the account
+     * page displays.
+     *
+     * The page shows a percentage, not dollars, so asking for a dollar figure
+     * asks the user to do conversion arithmetic against a cap they may not know.
+     * Taking the percentage and converting it here removes that step and the
+     * mistake it invites — reading "42%" as 42% of the month when the page means
+     * 42% of the week overstates usage fourfold.
+     */
+    readonly designPlanUsedPct?: number
+    /** Plan model credits used at that moment, as the percentage shown. */
+    readonly planModelsUsedPct?: number
+    /**
+     * Which window a supplied percentage refers to. Defaults to `weekly`,
+     * because that is the window OpenDesign's account page reports.
+     */
+    readonly pctOf?: "weekly" | "monthly"
     /** Plan model credits used at that moment, in USD-equivalent. */
     readonly planModelsUsedUsd?: number
     /**

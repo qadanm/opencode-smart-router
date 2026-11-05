@@ -3,6 +3,7 @@ import { homedir } from "node:os"
 import { resolve } from "node:path"
 import type {
   ModelRecord,
+  RuntimeMode,
   ModelRef,
   PremiumState,
   ProviderQuotaSnapshot,
@@ -17,7 +18,8 @@ import { computeContextHealth } from "../core/context-health.js"
 import { decideCompaction, describeMode } from "../core/context/strategy.js"
 import { buildProviderUsageReport } from "../core/quota/report.js"
 import { resolvePlan, resolvePlanWithReason } from "../core/plans/catalog.js"
-import { loadSettings, type SettingsLoadResult } from "../core/config.js"
+import { loadSettings, validateSettings, type SettingsLoadResult } from "../core/config.js"
+import { parseAccountReading, parseResetIn, writeSettingsPatch } from "../core/config-writer.js"
 import {
   applyCredentialDefaults,
   credentialEnvVars,
@@ -298,6 +300,22 @@ export class RouterController {
     return applyRuntime(this.settingsBase, this.runtime)
   }
 
+  /**
+   * The runtime mode for one session.
+   *
+   * A session can be paused on its own, without touching any other session and
+   * without disabling the plugin. `SessionState.paused` existed but nothing ever
+   * read it, so the switch in the panel would have done nothing. Keeping the
+   * rule in one place is what stops the prompt path, the status panel and the
+   * compaction path from disagreeing about whether a session is routed.
+   */
+  private runtimeFor(session: SessionState | undefined): RuntimeMode {
+    if (!this.settings.enabled) return "paused"
+    if (this.runtime.paused === true) return "paused"
+    if (session?.paused === true) return "paused"
+    return session?.manualOverride ? "manual" : "automatic"
+  }
+
   /** RPC and storage require plain JSON values; optional undefined is not JSON. */
   private safe<T>(value: T): any {
     return JSON.parse(JSON.stringify(value))
@@ -466,6 +484,89 @@ export class RouterController {
       // Detection is a convenience. A failure must never stop routing.
       this.settingsWarnings.push(`Provider detection skipped: ${safeError(error)}`)
     }
+  }
+
+  /**
+   * Record what the account page showed.
+   *
+   * The whole point is that the user pastes what they see. They should not have
+   * to know that Pro's seven-day window is $90, or divide 42% by anything — the
+   * server owns the caps, so the server does the arithmetic.
+   *
+   * Writes through config-writer, which preserves every other key, validates the
+   * result and keeps a backup, so a mistake here is recoverable.
+   */
+  private async recordAccountReading(input: {
+    reading?: string
+    pool?: string
+    pctOf?: string
+    resetsIn?: string
+  }): Promise<{ ok: boolean; message: string; config?: unknown; backup?: string }> {
+    const parsed = parseAccountReading(input.reading ?? "")
+    if (!parsed) {
+      return { ok: false, message: "Enter the figure from your account page, for example 42% or $37.80." }
+    }
+    const at = Date.now()
+    const pool = input.pool === "plan-models" ? "plan-models" : "design-plan"
+    const baseline: Record<string, unknown> = { at }
+    if (parsed.kind === "pct") {
+      if (pool === "plan-models") baseline.planModelsUsedPct = parsed.value
+      else baseline.designPlanUsedPct = parsed.value
+      if (input.pctOf === "monthly" || input.pctOf === "weekly") baseline.pctOf = input.pctOf
+      else baseline.pctOf = "weekly"
+    } else if (pool === "plan-models") {
+      baseline.planModelsUsedUsd = parsed.value
+    } else {
+      baseline.designPlanUsedUsd = parsed.value
+    }
+    if (input.resetsIn) {
+      const resetsAt = parseResetIn(input.resetsIn, at)
+      if (resetsAt !== undefined) baseline.weeklyResetsAt = resetsAt
+    }
+
+    try {
+      const result = writeSettingsPatch({
+        patch: { providers: { opendesign: { baseline } } },
+        validate: (merged) => {
+          // Round-trip through the real loader so the file can never contain
+          // something the router would then reject or silently repair.
+          const loaded = validateSettings(merged)
+          if (loaded.settings.providers.opendesign?.baseline === undefined) {
+            return "That reading could not be applied. Check the value and try again."
+          }
+          return undefined
+        },
+      })
+      await this.reloadSettingsFromDisk()
+      return {
+        ok: true,
+        message: parsed.kind === "pct"
+          ? `Recorded ${parsed.value}% of the ${input.pctOf === "monthly" ? "monthly" : "seven-day"} allowance.`
+          : `Recorded ${parsed.value} US dollars of usage.`,
+        ...(result.backup ? { backup: result.backup } : {}),
+      }
+    } catch (error) {
+      return { ok: false, message: safeError(error) }
+    }
+  }
+
+  /** Re-read settings after the GUI writes, so the panel reflects the change at once. */
+  private async reloadSettingsFromDisk(): Promise<void> {
+    const loaded = loadSettings({
+      options: this.ctx.options,
+      directory: this.ctx.location?.directory,
+      projectDirectory: this.ctx.location?.directory,
+    })
+    this.settingsBase = loaded.settings
+    this.settingsWarnings = loaded.warnings
+    this.settingsSources = loaded.sources
+    this.rebuildRegistry()
+    // Re-probe what can be probed, so the panel reflects the new reading at once.
+    await Promise.allSettled([
+      this.quota?.refresh("opencode-go", true),
+      this.quota?.refresh("commandcode", true),
+      this.quota?.refresh("opendesign", true),
+    ])
   }
 
   /**
@@ -954,8 +1055,7 @@ export class RouterController {
     if (this.settingsWarnings.length > 50) this.settingsWarnings = this.settingsWarnings.slice(-50)
     const session = sessionID ? this.ledger.getSession(sessionID) : undefined
     const current = session?.lastModel
-    const paused = !this.settings.enabled || this.runtime.paused === true
-    const runtime = paused ? "paused" : session?.manualOverride ? "manual" : "automatic"
+    const runtime = this.runtimeFor(session)
     const currentModel = this.registry.get(current?.providerID ?? "", current?.id ?? "")
     const decisions = sessionID
       ? this.ledger.decisions(20).filter((decision) => decision.sessionID === sessionID)
@@ -1025,7 +1125,7 @@ export class RouterController {
       contextTokens: session.contextTokens,
       recentFailures: session.failures.length,
     })
-    const runtime = !this.settings.enabled || this.runtime.paused === true ? "paused" : session.manualOverride ? "manual" : "automatic"
+    const runtime = this.runtimeFor(session)
     const decision: RoutingDecision = {
       id: nowId("dec"),
       at: Date.now(),
@@ -1081,7 +1181,7 @@ export class RouterController {
     if (session.indicatorTitle?.startsWith("BLOCKED ·")) {
       this.ledger.patchSession(sessionID, { indicatorTitle: undefined })
     }
-    const runtime = !settings.enabled || this.runtime.paused === true ? "paused" : session.manualOverride ? "manual" : "automatic"
+    const runtime = this.runtimeFor(session)
     void this.ensureContextTokens(sessionID)
 
     if (runtime !== "automatic") {
@@ -1689,6 +1789,7 @@ export class RouterController {
   private maybeCompactForCost(sessionID: string) {
     const settings = this.settings
     if (!settings.enabled || this.runtime.paused === true) return
+    if (this.ledger.getSession(sessionID)?.paused === true) return
     if (!settings.contextManagement.enabled) return
     const session = this.ledger.getSession(sessionID)
     const model = session?.lastModel
@@ -1999,6 +2100,7 @@ export class RouterController {
   private async registerRpc() {
     const implementation: any = {
       status: async (input: any) => this.statusFor(input?.sessionID),
+      recordAccountReading: async (input: any) => this.recordAccountReading(input),
       preview: async (input: any) => {
         const sessionID = input?.sessionID ?? "preview"
         const session = this.ledger.getSession(sessionID)
@@ -2046,6 +2148,29 @@ export class RouterController {
         )
         const summary = this.statusFor()
         void this.emit("status", { summary })
+        return summary
+      },
+      setSessionAuto: async (input: any) => {
+        const sessionID = input.sessionID
+        await this.loadSessionInfo(sessionID)
+        const auto = Boolean(input.auto)
+        this.ledger.patchSession(sessionID, { paused: !auto })
+        if (auto) {
+          // Handing control back means letting the router pick again; leaving a
+          // manual override in place would make the switch look broken.
+          this.ledger.clearManual(sessionID)
+          this.ledger.patchSession(sessionID, { pinnedModel: undefined })
+        }
+        this.persistLedgerSoon()
+        await this.queueTitle(sessionID)
+        this.modelNotice(
+          sessionID,
+          auto ? "AUTO" : "MANUAL",
+          this.ledger.getSession(sessionID)?.lastModel,
+          auto ? "automatic routing resumed" : "automatic routing off for this session",
+        )
+        const summary = this.statusFor(sessionID)
+        void this.emit("status", { sessionID, summary })
         return summary
       },
       setDryRun: async (input: any) => {

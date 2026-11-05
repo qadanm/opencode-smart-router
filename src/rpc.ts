@@ -41,6 +41,19 @@ export const SmartRouterRpc = Rpc.define({
       required: ["paused"],
       additionalProperties: false,
     }),
+    /**
+     * Turn automatic routing on or off for one session.
+     *
+     * Not the same as disabling the plugin or pausing every session: the router
+     * stays loaded, keeps reporting quota and decisions, and simply stops
+     * changing the model. The user keeps whatever model they have.
+     */
+    setSessionAuto: method({
+      type: "object",
+      properties: { sessionID: { type: "string" }, auto: { type: "boolean" } },
+      required: ["sessionID", "auto"],
+      additionalProperties: false,
+    }),
     setDryRun: method({
       type: "object",
       properties: { dryRun: { type: "boolean" } },
@@ -103,6 +116,29 @@ export const SmartRouterRpc = Rpc.define({
       additionalProperties: false,
     }),
     refreshQuota: method(emptyInput),
+    /**
+     * Record what the user's account page showed, so the estimate reflects the
+     * whole account rather than only the traffic this router routed.
+     *
+     * Takes the percentage the page displays, not a dollar figure: asking a user
+     * to divide by a cap they may not know is where the arithmetic mistakes come
+     * from. The server converts it against the window the page was describing.
+     */
+    recordAccountReading: method({
+      type: "object",
+      properties: {
+        /** The figure as copied: "42%", "$37.80", or "42". */
+        reading: { type: "string" },
+        /** Which allowance it came from. Defaults to the Design Plan. */
+        pool: { type: "string", enum: ["design-plan", "plan-models"] },
+        /** Which window the percentage refers to. Defaults to weekly, as the page reports. */
+        pctOf: { type: "string", enum: ["weekly", "monthly"] },
+        /** The page's "resets in" text, or an ISO timestamp. */
+        resetsIn: { type: "string" },
+      },
+      required: ["reading"],
+      additionalProperties: false,
+    }),
     report: method(emptyInput),
     usage: method(emptyInput),
     getConfig: method(emptyInput),
