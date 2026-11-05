@@ -618,7 +618,15 @@ export class RouterController {
     if (reading.resetsAt !== undefined) baseline.weeklyResetsAt = reading.resetsAt
     if (reading.periodEndsAt !== undefined) baseline.monthlyResetsAt = reading.periodEndsAt
 
-    const patch: Record<string, unknown> = { providers: { opendesign: { baseline } } }
+    /**
+     * Pasting a balance is an opt-in.
+     *
+     * Nobody records their OpenDesign usage in order to leave it switched off, so
+     * the write states `enabled: true` explicitly. That also makes the intent
+     * survive: an explicit flag is something detection will never overrule, which
+     * is the correct relationship between a config file and a guess.
+     */
+    const patch: Record<string, unknown> = { providers: { opendesign: { baseline, enabled: true } } }
     if (reading.plan && resolvePlan("opendesign", reading.plan.toLowerCase())) {
       ;(patch.providers as any).opendesign.plan = reading.plan.toLowerCase()
     }
@@ -668,6 +676,17 @@ export class RouterController {
     this.settingsBase = loaded.settings
     this.settingsWarnings = loaded.warnings
     this.settingsSources = loaded.sources
+
+    /**
+     * Detection must run again after a reload.
+     *
+     * Without this, writing any config fragment that omits a provider's
+     * `enabled` flag silently disables it: the file no longer says "enabled",
+     * DEFAULT_SETTINGS says disabled, and the only thing that had been turning it
+     * back on was startup detection. The visible symptom was a provider showing
+     * as disabled immediately after the user pasted their balance into it.
+     */
+    await this.applyProviderDetection()
     this.rebuildRegistry()
     // Re-probe what can be probed, so the panel reflects the new reading at once.
     await Promise.allSettled([
