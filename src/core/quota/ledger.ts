@@ -759,6 +759,18 @@ export class LedgerStore {
     this.ledger.cooldowns = { ...(this.ledger.cooldowns ?? {}), [key]: Math.max(previous, until) }
   }
 
+  /**
+   * Hold one model back from routing for the given window, without touching
+   * its reliability record or its failure history.
+   *
+   * The prompt-rejection failover uses this: the model that rejected a
+   * request is healthy, the request shape was not, and the next prompt should
+   * route elsewhere while the shape stays what it is.
+   */
+  holdModel(model: ModelRef, cooldownMs: number): void {
+    this.armModelCooldown(model, cooldownMs, 1)
+  }
+
   /** Active provider outage backoffs, keyed by provider id. */
   providerCooldowns(): Readonly<Record<string, number>> {
     return this.ledger.providerCooldowns ?? {}

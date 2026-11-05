@@ -314,6 +314,11 @@ export interface RoutingDecision {
   readonly needsPremiumApproval: boolean
   readonly manualOverride: boolean
   readonly error?: string
+  /**
+   * Present when the router recovered a deterministic provider rejection for
+   * this prompt: which model rejected the request and what happened next.
+   */
+  readonly selfheal?: { readonly rejected: string; readonly action: string }
 }
 
 export interface ModelFailureRecord {

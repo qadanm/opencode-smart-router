@@ -1635,7 +1635,7 @@ export class RouterController {
     )
 
     this.registrations.push(
-      await this.ctx.session.hook("retry", (event: any) => {
+      await this.ctx.session.hook("retry", async (event: any) => {
         if (sharedCore.ownerOf(event.sessionID) !== this.bridgeID) return
         const session = this.ledger.getSession(event.sessionID)
         const assessment = classifyFailure(
@@ -1696,6 +1696,20 @@ export class RouterController {
         }
         if (assessment.class === "capability") {
           event.decision = { retry: false }
+          return
+        }
+        if (assessment.class === "prompt_rejected") {
+          // A deterministic rejection: the provider refused the request shape
+          // before generating anything. Retrying reproduces the same 400, so
+          // the turn stops immediately and the router repairs (next request)
+          // or fails over to the next best choice.
+          event.decision = { retry: false }
+          try {
+            await this.attemptSelfHeal(event.sessionID, event)
+          } catch (error) {
+            this.settingsWarnings.push(`Prompt-rejection failover failed: ${safeError(error)}`)
+          }
+          this.persistLedgerSoon()
           return
         }
         if (assessment.class === "rate_limit") {
@@ -1788,6 +1802,109 @@ export class RouterController {
       providerScoped: assessment.providerScoped,
       saturation: assessment.saturation === true,
     })
+  }
+
+  /** Hold-back window applied to a model that deterministically rejected a prompt. */
+  private static readonly PROMPT_REJECTED_HOLD_MS = 5 * 60_000
+
+  /**
+   * Recover a turn whose provider rejected the request shape.
+   *
+   * The model is healthy and the request cost nothing, so the router re-routes
+   * the prompt's stored task with the rejecting model held back, moves the
+   * session onto the next best choice, and continues the turn with one
+   * router-marked synthetic notice. Everything that can be missing is missing
+   * in a defined way: no banked routing, no other eligible model, or a host
+   * without the needed API all degrade to leaving the failed turn as it is,
+   * with the rejecting model held back so the next prompt routes elsewhere.
+   * One failover per prompt, ever.
+   */
+  private async attemptSelfHeal(sessionID: string, event: any): Promise<void> {
+    const route = this.promptRoutes.get(sessionID)
+    const rejected = modelRefFrom(event.model) ?? this.ledger.getSession(sessionID)?.lastModel
+    if (!rejected) return
+    const rejectedKey = modelKey(rejected.providerID, rejected.id)
+    const hold = (model: ModelRef) => this.ledger.holdModel(model, RouterController.PROMPT_REJECTED_HOLD_MS)
+
+    const note = (action = "noted") => {
+      hold(rejected)
+      if (!route) return
+      this.ledger.recordDecision({
+        ...route.decision,
+        selfheal: { rejected: `${rejected.providerID}/${rejected.id}`, action },
+      })
+      this.persistLedgerSoon()
+    }
+
+    if (route?.healedAt || !route) {
+      note()
+      return
+    }
+    // Automatic routing only: a manual model is the owner's pick, and a paused
+    // session answers for itself on the next prompt.
+    if (this.runtimeFor(this.sessionState(sessionID)) !== "automatic") {
+      note()
+      return
+    }
+
+    const session = this.sessionState(sessionID)
+    const result = routeTask({
+      task: route.task,
+      settings: this.settings,
+      mode: session.parentID && this.settings.mode === "premium" ? "balanced" : this.settings.mode,
+      runtime: "automatic",
+      models: this.routingModels(),
+      intelligenceFloor: this.routingFloor(this.routingModels()).floor,
+      current: rejected,
+      session,
+      quota: this.quotaSnapshots(),
+      premium: this.premiumState(session),
+      contextTokens: session.contextTokens,
+      cachedTokens: session.cacheReadTokens,
+      dryRun: this.settings.dryRun,
+      modelHistory: this.ledger.snapshotMetrics().byModel,
+      cooldowns: { ...this.ledger.cooldowns(), [rejectedKey]: Date.now() + RouterController.PROMPT_REJECTED_HOLD_MS },
+      providerCooldowns: this.ledger.providerCooldowns(),
+      speed: this.speedSnapshot(),
+    })
+    const chosen = result.chosenModel
+    if (!chosen || modelKey(chosen.providerID, chosen.modelID) === rejectedKey) {
+      note()
+      return
+    }
+    if (this.sessionBusy(sessionID)) {
+      this.settingsWarnings.push("Self-heal deferred: the session is still busy; the next prompt routes to the fallback model.")
+      note()
+      return
+    }
+    if (typeof this.ctx.session.switchModel !== "function" || typeof this.ctx.session.synthetic !== "function") {
+      note()
+      return
+    }
+
+    await this.ctx.session.switchModel({ sessionID, model: { providerID: chosen.providerID, id: chosen.modelID } })
+    this.expectedSwitch.set(sessionID, { key: modelKey(chosen.providerID, chosen.modelID), at: Date.now() })
+    await this.ctx.session.synthetic({
+      sessionID,
+      text: `[router] ${rejected.providerID}/${rejected.id} rejected the request (invalid request). Continuing on ${chosen.providerID}/${chosen.modelID}.`,
+      description: "Smart Router",
+      resume: false,
+    })
+    route.healedAt = Date.now()
+    hold(rejected)
+    const annotated: RoutingDecision = {
+      ...result.decision,
+      id: `${result.decision.id}+heal`,
+      switched: true,
+      switchReason: "selfheal",
+      selfheal: {
+        rejected: `${rejected.providerID}/${rejected.id}`,
+        action: `continued on ${chosen.providerID}/${chosen.modelID}`,
+      },
+    }
+    this.ledger.recordDecision(annotated)
+    void this.emit("decision", { decision: annotated })
+    this.persistLedgerSoon()
   }
 
   /** Record that a session has been on a model, so a later change back to
