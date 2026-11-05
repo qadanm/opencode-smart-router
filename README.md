@@ -7,6 +7,8 @@
 <p>Every other router asks what a token costs. This one asks what your plan allows, what is about to expire, and what you already paid for. MIT licensed.</p>
 
 <p>
+  <a href="https://www.npmjs.com/package/@qadanm/opencode-smart-router/v/0.4.0"><img src="https://img.shields.io/npm/v/%40qadanm%2Fopencode-smart-router?label=npm&color=cb3837&logo=npm&logoColor=white" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/@qadanm/opencode-smart-router"><img src="https://img.shields.io/npm/dm/%40qadanm%2Fopencode-smart-router?label=installs&color=cb3837&logo=npm&logoColor=white" alt="npm monthly installs"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/OpenCode-2.x-000000.svg" alt="OpenCode 2.x">
   <img src="https://img.shields.io/badge/tests-759%20passing-2ea44f.svg" alt="759 tests">
