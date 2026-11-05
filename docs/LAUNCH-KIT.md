@@ -3,15 +3,13 @@
 Copy pieces for announcing the router. Written to be pasted as-is. Adjust the
 first line of the Discord post to your own voice before posting.
 
-## npm publish (run this yourself, needs your 2FA)
+## npm — published
 
-```bash
-cd ~/.opencode-smart-router && npm publish
-```
+`@qadanm/opencode-smart-router@0.4.0` is live on the registry:
+https://registry.npmjs.org/@qadanm/opencode-smart-router
 
-The tarball is verified: one 634 KB ESM file (`dist/npm/index.js`), no runtime
-dependencies, loads from a bare directory. npm marketplace entry is what
-OpenCode's docs ecosystem page links to.
+The npm tarball ships the routing core (one 634 KB ESM file, no runtime
+dependencies). Future releases publish with the same one-liner:
 
 ## Discord (show-and-tell)
 
@@ -68,6 +66,9 @@ Title: `Show HN: Smart Router: subscription-aware model routing for OpenCode`
 > https://github.com/qadanm/opencode-smart-router
 
 ## X/Twitter thread
+
+The demo film is `assets/smart-router-demo.gif` (4.3 MB); `assets/smart-router-demo.mp4`
+for uploads that prefer video. Panels remain as stills.
 
 1/ Every other model router asks what a token costs. Mine asks what your
 subscription allows. Smart Router for OpenCode routes on your actual allowance:
