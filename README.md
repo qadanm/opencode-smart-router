@@ -9,7 +9,7 @@
 <p>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/OpenCode-2.x-000000.svg" alt="OpenCode 2.x">
-  <img src="https://img.shields.io/badge/tests-721%20passing-2ea44f.svg" alt="718 tests">
+  <img src="https://img.shields.io/badge/tests-721%20passing-2ea44f.svg" alt="721 tests">
   <img src="https://img.shields.io/badge/runtime-Node%2020.12%2B-339933.svg" alt="Node 20.12+">
 </p>
 
