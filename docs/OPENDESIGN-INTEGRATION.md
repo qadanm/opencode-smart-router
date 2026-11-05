@@ -309,6 +309,53 @@ Two rules keep this honest:
   monthly one ($360). 42% of the week is $37.80, which is 10.5% of the month.
   Entering `151.20` because "42% of 360" would overstate usage fourfold.
 
+### What the vendor documentation settles
+
+Read from <https://open-design.ai/model-credits/> and
+<https://open-design.ai/help/billing/> on 2026-11-04. These are public pages, so
+every claim below is verifiable and should be re-checked when terms change.
+
+**The seven-day window is fixed, not rolling.** "For new subscriptions, the 7-day
+window starts when the subscription begins and resets every 7 days… subscribe on
+Wednesday at 10:00 AM, it resets the following Wednesday at 10:00 AM." The catalog
+called this `rolling-7-day`, which would slide continuously and understate
+available headroom for most of the week. Now `fixed-7-day`.
+
+**The pools spill.** "Design Plan models use Design Plan credits first, then any
+remaining plan model credits." The catalog already modelled the draw order
+correctly; its prose did not (it claimed the pools are "never added together",
+which reads as "never interact"). Go has no plan model pool, so a spent window
+there really does mean waiting.
+
+**Only Design Plan credits have windows.** Plan model credits have neither a
+five-hour nor a seven-day window and reset per billing cycle. Unused subscription
+credits do not roll over.
+
+**Per-plan ceilings, corrected:**
+
+| Plan | Monthly max | Plan models | Design Plan | 7-day | 5-hour |
+|---|---|---|---|---|---|
+| Go | $120 | $0 | $120 | $30 | $10 |
+| Plus | $180 | $20 | $160 | **$40** | — |
+| Pro | $480 | $120 | $360 | $90 | — |
+| Max | $900 | $300 | $600 | $150 | — |
+
+Plus had **no** weekly ceiling in the catalog, which made it look able to spend
+its entire $160 in one week — a 4x understatement of the real limit.
+
+**Multipliers are confirmed, not inferred.** The published table matches ours
+exactly: DeepSeek V4.1 Flash 0.5×, the majority 1×, Claude Haiku 5.5 and
+GLM-5.3 Flash-X 2×, GPT-6 Luna 4×. Also documented: MiniMax M3.1 Flash is 1×,
+and the October off-peak 0.25× promotion expired on 2026-10-27 and applies to
+the app only, never to API usage.
+
+**Still no usage endpoint.** Upstream issue `nexu-io/open-design#8674` asks for
+exactly the endpoint this router needs — per-window `used_percent` and
+`resets_at` for API key holders — and remains open. The account host rejects an
+inference key with 401 and bot-blocks non-browser requests. So the estimate plus
+the user-supplied baseline remain the only path, and this is a vendor gap rather
+than something to work around.
+
 ### Where the prices come from, and why they drifted
 
 The model catalog stores the **published API price** per million tokens. The

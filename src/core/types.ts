@@ -233,7 +233,7 @@ export interface CreditPoolSnapshot {
   readonly weeklyUsedPct?: number
   readonly fiveHourUsd?: number
   readonly fiveHourUsedPct?: number
-  readonly resetKind: "billing-cycle" | "rolling-7-day"
+  readonly resetKind: "billing-cycle" | "fixed-7-day" | "rolling-7-day"
   readonly resetsAt?: number
   readonly note: string
 }

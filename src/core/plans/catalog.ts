@@ -24,7 +24,17 @@
  *  - Command Code account endpoints (read live by the quota adapter)
  */
 
-export type PoolResetKind = "billing-cycle" | "rolling-7-day"
+/**
+ * How a pool's window resets.
+ *
+ * `fixed-7-day` is not `rolling-7-day`, and the difference is not cosmetic.
+ * OpenDesign documents that the seven-day window "starts when the subscription
+ * begins and resets every 7 days" — subscribe Wednesday at 10:00 and it resets
+ * the following Wednesday at 10:00. A rolling window would instead slide
+ * continuously, so a request made today would still count tomorrow, and the
+ * router would under-report headroom for most of the week.
+ */
+export type PoolResetKind = "billing-cycle" | "fixed-7-day" | "rolling-7-day"
 
 export interface CreditPoolDefinition {
   readonly id: string
@@ -116,7 +126,7 @@ const opendesign = (
       monthlyUsd: designPlanMonthlyUsd,
       ...(weeklyUsd !== undefined ? { weeklyUsd } : {}),
       ...(fiveHourUsd !== undefined ? { fiveHourUsd } : {}),
-      resetKind: "rolling-7-day",
+      resetKind: "fixed-7-day",
       drawOrder: 1,
       note:
         fiveHourUsd === undefined
@@ -144,7 +154,10 @@ const opendesign = (
     ...(concurrency > 0 ? { concurrency } : {}),
     notes: [
       "Credits are not cash and are not a fixed request count.",
-      "Design Plan credits and plan model credits are separate allowances and are never added together.",
+      "Design Plan credits and plan model credits are separate pools, but they do spill: on Plus, Pro and Max, Design Plan usage draws from plan model credits once the Design Plan allowance is spent. Go has no plan model credits, so a spent window means waiting for the reset.",
+      "The seven-day Design Plan window starts when the subscription starts and repeats every seven days. It is not a rolling window and does not align to Monday or the first of the month.",
+      "Plan model credits have no five-hour or seven-day window; they are granted and reset per billing cycle.",
+      "Unused subscription credits do not roll over.",
       ...extraNotes,
     ],
   }
@@ -158,7 +171,10 @@ const OPENDESIGN_PLANS: ReadonlyArray<PlanDefinition> = [
   opendesign("go", "OpenDesign Go", 10, 120, 0, 30, 10, 10, [
     "Go includes Design Plan credits only and no plan model credits.",
   ]),
-  opendesign("plus", "OpenDesign Plus", 20, 160, 20, undefined, undefined, 20, [
+  // The seven-day Design Plan ceiling for Plus is $40, not "no cap". It was
+  // undefined here, which made Plus look like it could spend the whole $160 in
+  // one week — understating the real limit by 4x for anyone on that tier.
+  opendesign("plus", "OpenDesign Plus", 20, 160, 20, 40, undefined, 20, [
     "Plus has a seven-day Design Plan window and no five-hour window.",
   ]),
   opendesign("pro", "OpenDesign Pro", 100, 360, 120, 90, undefined, 30, [

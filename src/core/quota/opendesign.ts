@@ -465,7 +465,7 @@ const buildPoolSnapshots = (input: {
       ...(caps.rolling !== undefined
         ? { fiveHourUsd: caps.rolling, fiveHourUsedPct: pct(designUsed.rollingUsd, caps.rolling) }
         : {}),
-      resetKind: "rolling-7-day",
+      resetKind: "fixed-7-day",
       ...(input.resetsAt !== undefined ? { resetsAt: input.resetsAt } : {}),
       note: caps.hasFiveHourWindow
         ? "Five-hour and seven-day ceilings nest inside the monthly maximum."
