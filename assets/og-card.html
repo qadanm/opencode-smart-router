@@ -1,0 +1,78 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>og</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1200px; height: 675px; overflow: hidden; position: relative;
+    background:
+      radial-gradient(1050px 720px at 4% -30%, rgba(19, 78, 74, 0.9), transparent 68%),
+      radial-gradient(860px 640px at 108% 118%, rgba(8, 145, 178, 0.5), transparent 62%),
+      linear-gradient(155deg, #051512 0%, #072A26 52%, #06181F 100%);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    color: #fff;
+    -webkit-font-smoothing: antialiased;
+  }
+  .halo {
+    position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(700px 500px at 88% 58%, rgba(45, 212, 191, 0.16), transparent 66%);
+  }
+  .brand {
+    position: absolute; left: 70px; top: 64px; display: flex; align-items: center; gap: 16px;
+  }
+  .mark { width: 46px; height: 46px; }
+  .brand .wm .n { font-size: 30px; font-weight: 700; letter-spacing: -0.02em; }
+  .brand .wm .s { font-size: 13px; letter-spacing: 0.3em; color: #7EDDD2; font-weight: 600; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; margin-top: 2px; }
+  .headline { position: absolute; left: 66px; top: 190px; }
+  .headline .l {
+    font-size: 82px; font-weight: 800; letter-spacing: -0.045em; line-height: 1.07;
+  }
+  .headline .l.acc { color: #40E8D0; }
+  .sub { position: absolute; left: 70px; top: 448px; font-size: 28px; font-weight: 500; color: #C9E7E0; letter-spacing: -0.012em; }
+  .sub b { color: #fff; font-weight: 650; }
+  .chiprow { position: absolute; left: 70px; bottom: 38px; display: flex; gap: 14px; align-items: center; }
+  .chip {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    background: rgba(15, 118, 110, 0.32); border: 2px solid rgba(64, 232, 208, 0.75);
+    color: #D8FFF6; border-radius: 999px; padding: 11px 24px;
+    font-size: 22px; font-weight: 600; letter-spacing: -0.01em;
+  }
+  .chip.ghost { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.28); color: #E7F4F1; }
+  .window {
+    position: absolute; right: 46px; top: 40px;
+    width: 400px; border-radius: 20px; overflow: hidden;
+    border: 2.5px solid rgba(94, 234, 212, 0.65);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.14) inset, 0 34px 90px rgba(0, 0, 0, 0.62), 0 0 130px rgba(45, 212, 191, 0.24);
+  }
+  .window img { display: block; width: 100%; height: auto; }
+  .npmridgetop { position: absolute; left: 66px; top: 168px; width: 240px; height: 5px; border-radius: 3px;
+    background: linear-gradient(90deg, #2DD4BF, rgba(56, 189, 248, 0.4)); }
+</style>
+</head>
+<body>
+  <div class="halo"></div>
+  <div class="brand">
+    <svg class="mark" viewBox="0 0 32 32"><circle cx="16" cy="16" r="15" fill="none" stroke="#2DD4BF" stroke-width="2.5"/><path d="M7 19c3-2 6-2 9-4s5-4 9-4" fill="none" stroke="#2DD4BF" stroke-width="2.5" stroke-linecap="round"/></svg>
+    <span class="wm">
+      <span class="n">Smart Router</span><br>
+      <span class="s">FOR OPENCODE</span>
+    </span>
+  </div>
+  <div class="npmridgetop"></div>
+  <div class="headline">
+    <div class="l">Routes by</div>
+    <div class="l" style="color:#fff">your plan,</div>
+    <div class="l acc">not a price list.</div>
+  </div>
+  <div class="sub"><b>Self-healing</b> model routing for OpenCode.</div>
+  <div class="chiprow">
+    <span class="chip">npm v0.4.0 · MIT</span>
+    <span class="chip ghost">759 tests</span>
+  </div>
+  <div class="window">
+    <img src="panelcrop3.png" alt="">
+  </div>
+</body>
+</html>
