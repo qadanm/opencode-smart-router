@@ -26,8 +26,15 @@ interface RouterStatus {
   approvedModels?: ReadonlyArray<unknown>
 }
 
+/**
+ * Tab id and panel id are both "router" on purpose.
+ *
+ * `ctx.layout.toggle()` keys on `${plugin}:${tab id}` and `Panel.list()` receives
+ * the stored *tab* ids, so a tab id that differs from the id used in the command
+ * opens the side region with no tab in it.
+ */
 const tab: PanelTab = {
-  id: "spike",
+  id: "router",
   get title() {
     return "Router"
   },
@@ -118,7 +125,7 @@ export default Plugin.define({
     ctx.add(Panel, {
       id: "router",
       region: "side",
-      list: (input: { open: ReadonlyArray<string> }) => (input.open.includes("spike") ? [tab] : []),
+      list: (input: { open: ReadonlyArray<string> }) => (input.open.includes("router") ? [tab] : []),
       render: () => <SpikePanel />,
     })
 
