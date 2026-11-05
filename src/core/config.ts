@@ -331,10 +331,16 @@ const validateProvider = (
         warnings.push(`${path}.baseline.at is in the future; ignoring the baseline`)
         return base.baseline
       }
+      const weeklyResetsAt = timeValue(value.baseline.weeklyResetsAt)
+      const monthlyResetsAt = timeValue(value.baseline.monthlyResetsAt)
+      const source = typeof value.baseline.source === "string" ? value.baseline.source.trim() : undefined
       return {
         at,
         ...(design !== undefined ? { designPlanUsedUsd: Math.max(0, design) } : {}),
         ...(planModels !== undefined ? { planModelsUsedUsd: Math.max(0, planModels) } : {}),
+        ...(weeklyResetsAt !== undefined ? { weeklyResetsAt } : {}),
+        ...(monthlyResetsAt !== undefined ? { monthlyResetsAt } : {}),
+        ...(source ? { source } : {}),
       }
     })(),
     subscriptionOnly:

@@ -284,7 +284,8 @@ router the number instead of letting it guess:
     "opendesign": {
       "baseline": {
         "at": "2026-11-04T12:00:00Z",
-        "designPlanUsedUsd": 37.8
+        "designPlanUsedUsd": 37.8,
+        "weeklyResetsAt": "2026-11-05T03:00:00Z"
       }
     }
   }
@@ -296,10 +297,13 @@ labels the result as starting from your reading rather than from zero.
 
 Two rules keep this honest:
 
-- **The baseline expires with its window.** A reading taken 10 days ago still
-  describes the month, but no longer describes the current seven-day window, so
-  it stops seeding that window. A stale reading inside a fresh window would
-  overstate usage as badly as omitting it understates it.
+- **The baseline expires when its window resets, not when it gets old.** These
+  are different. A seven-day window that resets in 23 hours means the reading
+  describes the window ending then; afterwards it describes a window that no
+  longer exists, and seeding it into the new one would attribute old usage to
+  fresh credit. Supply `weeklyResetsAt` (and `monthlyResetsAt`) from the account
+  page. Without them the router falls back to an age-based assumption and says
+  so in the panel.
 - **Read the percentage off the window it belongs to.** On Pro, the account page
   shows Design Plan credits as a share of the seven-day allowance ($90), not the
   monthly one ($360). 42% of the week is $37.80, which is 10.5% of the month.

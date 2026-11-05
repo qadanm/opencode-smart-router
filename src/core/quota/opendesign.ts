@@ -709,15 +709,28 @@ const applyBaseline = (
   totals: LocalWindowTotals,
   baseline: ProviderSettings["baseline"],
   now: number,
-): { totals: LocalWindowTotals; applied: boolean; windows: string[] } => {
+): { totals: LocalWindowTotals; applied: boolean; windows: string[]; usedFallbackReset?: boolean } => {
   if (!baseline) return { totals, applied: false, windows: [] }
   const designPlan = Math.max(0, baseline.designPlanUsedUsd ?? 0)
   const planModels = Math.max(0, baseline.planModelsUsedUsd ?? 0)
   if (designPlan === 0 && planModels === 0) return { totals, applied: false, windows: [] }
 
-  const withinRolling = baseline.at >= now - FIVE_HOURS_MS
-  const withinWeekly = baseline.at >= now - WEEK_MS
-  const withinMonthly = baseline.at >= now - MONTH_MS
+  /**
+   * A window accepts the reading until that window RESETS — not merely until the
+   * reading is older than the window's length.
+   *
+   * These differ, and the difference is not academic. A seven-day window that
+   * resets 23 hours from now (the account page shows this) means the reading
+   * describes the window ending in 23 hours. Seeding it into the window that
+   * begins afterwards would attribute a previous window's usage to a fresh one.
+   *
+   * When the account page gave a reset time, trust it. Otherwise fall back to
+   * age, and say that the fallback was used.
+   */
+  const resetPassed = (resetsAt: number | undefined) => resetsAt !== undefined && now >= resetsAt
+  const withinRolling = baseline.at >= now - FIVE_HOURS_MS && !resetPassed(baseline.weeklyResetsAt)
+  const withinWeekly = baseline.at >= now - WEEK_MS && !resetPassed(baseline.weeklyResetsAt)
+  const withinMonthly = baseline.at >= now - MONTH_MS && !resetPassed(baseline.monthlyResetsAt)
   if (!withinMonthly) return { totals, applied: false, windows: [] }
 
   const windows: string[] = []
@@ -751,6 +764,7 @@ const applyBaseline = (
   return {
     applied: true,
     windows,
+    usedFallbackReset: baseline.weeklyResetsAt === undefined,
     totals: {
       rollingUsd: totals.rollingUsd + designRolling + planRolling,
       weeklyUsd: totals.weeklyUsd + designWeekly + planWeekly,
@@ -803,7 +817,11 @@ const probeEstimated = (input: OpenDesignQuotaInput, now: number): OpenDesignQuo
     ...planNotes(caps),
   ]
   if (seeded.applied) {
-    notes.push(`The reported reading applies to: ${seeded.windows.join(", ")}. Windows older than the reading are not seeded.`)
+    notes.push(
+      seeded.usedFallbackReset
+        ? `The reported reading applies to: ${seeded.windows.join(", ")}. No reset time was supplied, so the router assumes the reading stays valid for its window length. Add baseline.weeklyResetsAt to be exact.`
+        : `The reported reading applies to: ${seeded.windows.join(", ")} until that window resets.`,
+    )
   }
   if (caps.unresolved) {
     notes.push(

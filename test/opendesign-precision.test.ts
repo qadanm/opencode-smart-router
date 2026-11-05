@@ -148,3 +148,49 @@ describe("a malformed baseline is refused rather than half-applied", () => {
     expect(loaded.settings.providers.opendesign?.baseline?.at).toBe(Date.parse("2026-11-04T10:00:00Z"))
   })
 })
+
+describe("a reading stops applying when its window resets", () => {
+  it("drops the weekly figure once the supplied reset time has passed, even if the reading is recent", async () => {
+    // Read two hours ago, but the week it describes resets in one hour. After
+    // that reset the reading belongs to a window that no longer exists.
+    const result = await probeOpenDesignQuota({
+      settings: settings({
+        baseline: {
+          at: NOW - 2 * HOUR,
+          designPlanUsedUsd: 37.8,
+          weeklyResetsAt: NOW + HOUR,
+        },
+      }),
+      apiKey: "test-key",
+      usage: [],
+      now: () => NOW + 2 * HOUR,
+    })
+    expect(result.snapshot.weekly.usedPct).toBe(0)
+  })
+
+  it("keeps the figure while the window it describes is still open", async () => {
+    const result = await probeOpenDesignQuota({
+      settings: settings({
+        baseline: {
+          at: NOW - 2 * HOUR,
+          designPlanUsedUsd: 37.8,
+          weeklyResetsAt: NOW + 5 * HOUR,
+        },
+      }),
+      apiKey: "test-key",
+      usage: [],
+      now: () => NOW,
+    })
+    expect(result.snapshot.weekly.usedPct).toBeCloseTo(42, 0)
+  })
+
+  it("says plainly when it had to fall back to an age-based guess", async () => {
+    const result = await probeOpenDesignQuota({
+      settings: settings({ baseline: { at: NOW - HOUR, designPlanUsedUsd: 37.8 } }),
+      apiKey: "test-key",
+      usage: [],
+      now: () => NOW,
+    })
+    expect(result.snapshot.notes.some((note) => note.includes("weeklyResetsAt"))).toBe(true)
+  })
+})

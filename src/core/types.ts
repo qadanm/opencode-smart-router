@@ -486,6 +486,20 @@ export interface ProviderSettings {
     readonly designPlanUsedUsd?: number
     /** Plan model credits used at that moment, in USD-equivalent. */
     readonly planModelsUsedUsd?: number
+    /**
+     * When the seven-day window resets, if the account page showed it.
+     *
+     * Without it the router has to guess, and the guess is wrong in a way that
+     * matters: "the reading is younger than seven days" is not the same as "the
+     * window has not reset". A weekly window can reset an hour after you read
+     * the page, after which your 42% describes a window that no longer exists
+     * and seeding it into the new one overstates usage.
+     */
+    readonly weeklyResetsAt?: number
+    /** When the monthly allowance resets, if the account page showed it. */
+    readonly monthlyResetsAt?: number
+    /** Where the reading came from, for display. Defaults to the account page. */
+    readonly source?: string
   }
   /**
    * Whether the router may read well-known credential files without being
