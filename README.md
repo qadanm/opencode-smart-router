@@ -23,6 +23,10 @@
 
 <br>
 
+<a href="assets/smart-router-demo.gif"><img alt="One session, 22 seconds: a prompt arrives, the router shows the decision card with its reasons and blocked candidates, the budget windows fill in, and a rejected turn moves itself to the next best model and continues" src="assets/smart-router-demo.gif" width="880"></a>
+
+<br>
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/architecture-dark.svg">
   <img alt="Your prompt goes to the smart router, which classifies and prices it against your real quota before OpenCode sends the step to one provider" src="assets/architecture-light.svg" width="880">
