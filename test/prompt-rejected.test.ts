@@ -47,4 +47,14 @@ describe("prompt_rejected failure class", () => {
     })
     expect(a.class).toBe("invalid_request")
   })
+
+  it("a 5xx invalid-request is an outage, not a deterministic rejection", () => {
+    const a = classifyFailure({
+      type: "provider.invalid-request",
+      message: "Invalid request failed upstream",
+      status: 503,
+    })
+    expect(a.class).toBe("provider_outage")
+    expect(a.retryable).toBe(true)
+  })
 })

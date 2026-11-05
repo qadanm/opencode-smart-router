@@ -9,7 +9,7 @@
 <p>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/OpenCode-2.x-000000.svg" alt="OpenCode 2.x">
-  <img src="https://img.shields.io/badge/tests-749%20passing-2ea44f.svg" alt="749 tests">
+  <img src="https://img.shields.io/badge/tests-759%20passing-2ea44f.svg" alt="759 tests">
   <img src="https://img.shields.io/badge/runtime-Node%2020.12%2B-339933.svg" alt="Node 20.12+">
 </p>
 
@@ -169,7 +169,9 @@ and every step is visible in the panel:
 3. **Fails over and continues.** With the rejecting model held back, the router
    re-routes the same task to the next best eligible choice, switches the
    session, and continues the turn with a single `[router]` notice. One
-   failover per prompt, never a loop. The panel's last decision shows what was
+   failover per prompt, never a loop. The hold is five minutes and sits on the
+   model for every session, because a gateway that rejects one rebuilt session
+   will reject others like it. The panel's last decision shows what was
    rejected and what took over.
 
 ## What it will not do
@@ -275,7 +277,7 @@ npm run verify    # clean room: empty HOME, fresh install, typecheck, tests, bui
 npm run mutate    # prove each safety test fails when its property breaks
 ```
 
-749 tests across 62 files cover classification, eligibility, quota parsing,
+759 tests across 63 files cover classification, eligibility, quota parsing,
 credential discovery and its security properties, ledger accounting, pool
 reconciliation, documented peak pricing, cache-aware routing, premium protection,
 purchased-credit blocking, manual overrides, failure classification, configuration

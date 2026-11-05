@@ -88,7 +88,40 @@ describe("failover for a prompt-rejected turn", () => {
     expect(fake.syntheticCalls).toHaveLength(syntheticCount)
   })
 
-  it("nots the rejection for the next prompt when no other model is eligible", async () => {
+  it("parks the failover while the failed turn is still running, then applies it when the turn ends", async () => {
+    const { decision, switchesBefore, syntheticBefore } = await routeAPrompt()
+    // The host marks the turn running before the retry hook fires.
+    await controller.handleEvent({ type: "session.execution.started", data: { sessionID: "ses_heal" } })
+    const event: any = rejectionEvent(decision.chosen)
+    await retryHook()(event)
+    expect(event.decision).toEqual({ retry: false })
+    // No switch while the step is still queued.
+    expect(fake.switched).toHaveLength(switchesBefore)
+    expect(fake.syntheticCalls).toHaveLength(syntheticBefore)
+
+    // The turn's terminal event is the safe moment to switch and continue.
+    await controller.handleEvent({ type: "session.execution.failed", data: { sessionID: "ses_heal" } })
+    expect(fake.switched).toHaveLength(switchesBefore + 1)
+    const moved = fake.switched[fake.switched.length - 1]!.model
+    expect(`${moved.providerID}/${moved.id}`).not.toBe(`${decision.chosen.providerID}/${decision.chosen.id}`)
+    expect(fake.syntheticCalls).toHaveLength(syntheticBefore + 1)
+    expect(fake.syntheticCalls[fake.syntheticCalls.length - 1]!.text).toContain("[router]")
+  })
+
+  it("does not apply the failover under dry run", async () => {
+    const { switchesBefore } = await routeAPrompt()
+    ;(controller as any).settingsBase.dryRun = true
+    const decision = (controller as any).ledger.lastDecision
+    const event: any = rejectionEvent(decision.chosen)
+    await retryHook()(event)
+    expect(event.decision).toEqual({ retry: false })
+    // The prompt's own switch still happened; the heal must add nothing.
+    expect(fake.switched).toHaveLength(switchesBefore)
+    const healed = (controller as any).ledger.lastDecision
+    expect(healed.selfheal.action).toBe("noted")
+  })
+
+  it("notes the rejection for the next prompt when no other model is eligible", async () => {
     const { decision, switchesBefore, syntheticBefore } = await routeAPrompt()
     // Make every other candidate ineligible: hold each one back the way the
     // failover's own hold path does.

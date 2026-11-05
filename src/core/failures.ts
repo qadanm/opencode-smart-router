@@ -181,19 +181,23 @@ export const classifyFailure = (input: FailureInput, session?: SessionState): Fa
   }
 
   // A deterministic request-shape rejection: the provider refused the prompt
-  // before generating anything (HTTP 400 carries no billing, rate or capacity
-  // meaning). Retry cannot change the outcome; the request itself is the
-  // problem, so the router repairs or fails over instead of retrying.
-  const promptRejected =
-    type.includes("invalid-request") ||
-    type.includes("invalid_request") ||
+  // before generating anything (an HTTP 400-class failure carries no billing,
+  // rate or capacity meaning). Retry cannot change the outcome; the request
+  // itself is the problem, so the router repairs or fails over instead of
+  // retrying. The type-based arm requires a sub-500 status (or none, for a
+  // locally built rejection): a gateway that fails the same type with a 5xx
+  // is an outage, and stays with the outage rules below.
+  const roleDiscriminationFailure =
     includes(message, [
       "invalid_request_error",
       "expected 'user' | 'assistant'",
       'expected "user" | "assistant"',
       "invalid discriminator value",
-    ]) ||
-    /messages\.\d+\.role/i.test(input.message)
+    ]) || /messages\.\d+\.role/i.test(input.message)
+  const promptRejected =
+    roleDiscriminationFailure ||
+    ((type.includes("invalid-request") || type.includes("invalid_request")) &&
+      (input.status === undefined || input.status < 500))
 
   if (promptRejected) {
     return {

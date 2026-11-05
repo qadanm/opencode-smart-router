@@ -53,10 +53,6 @@ describe("self-heal end to end", () => {
     const roles = contextEvent.messages.map((m: any) => m.role)
     expect(roles[0]).toBe("user")
     expect(roles.slice(1)).toEqual(["user", "assistant", "user", "user"])
-    // The retry hook never fired: write a probe by removing it and watching
-    // the registerHooks contract through the helper map is not possible after
-    // the fact, so assert instead that no failure was recorded.
-    expect(Object.keys((controller as any).ledger.data.metrics.failures).every((k) => true)).toBe(true)
   })
 
   it("flow A2: repair keeps utility requests untouched", async () => {
