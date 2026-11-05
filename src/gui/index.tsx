@@ -31,12 +31,29 @@ import {
  *      that matters, reads as deliberate; used everywhere it reads as decoration.
  */
 
+/**
+ * Type scale.
+ *
+ * Sized against published guidance rather than taste. Body text is 14px and
+ * secondary text 13px, which is the floor for comfortable reading on a desktop;
+ * the previous scale ran 9.5–13px and was a caption scale applied to prose. That
+ * is the single most common accessibility failure in dense interfaces, and it
+ * reads as miniature rather than compact.
+ *
+ * `label` exists for uppercase section headings only. Uppercase with letter
+ * spacing survives at 11px in a way lowercase prose does not, so it gets its own
+ * step instead of being borrowed for body copy.
+ *
+ * Inputs are 14px to match body: the iOS zoom-on-focus behaviour starts below
+ * 16px, and 16px looks oversized inside a side panel, so 14 is the compromise
+ * that stays readable without zoom.
+ */
 const type = {
-  micro: "9.5px",
-  caption: "10.5px",
-  body: "12px",
-  title: "13px",
-  display: "15px",
+  label: "11px",
+  caption: "13px",
+  body: "14px",
+  title: "16px",
+  display: "20px",
 } as const
 
 const space = { xxs: "2px", xs: "4px", sm: "6px", md: "8px", lg: "12px", xl: "16px" } as const
@@ -85,7 +102,7 @@ function Section(props: {
         <span
           style={{
             color: theme.faint,
-            "font-size": type.caption,
+            "font-size": type.label,
             "text-transform": "uppercase",
             "letter-spacing": "0.06em",
             "font-weight": 600,
@@ -131,7 +148,7 @@ function Stat(props: { label: string; value: unknown; tone?: "good" | "warn" | "
           : theme.muted
   return (
     <span style={{ display: "flex", "flex-direction": "column", gap: "1px", "min-width": 0 }}>
-      <span style={{ color: theme.faint, "font-size": type.micro }}>{props.label}</span>
+      <span style={{ color: theme.faint, "font-size": type.label }}>{props.label}</span>
       <span style={{ color: colour, "font-size": type.body, "font-variant-numeric": "tabular-nums" }}>
         {props.value as never}
       </span>
@@ -195,7 +212,7 @@ function Chip(props: { children: unknown; tone?: "good" | "warn" | "bad" | "neut
       style={{
         background: bg,
         color: fg,
-        "font-size": type.micro,
+        "font-size": type.label,
         "font-weight": 600,
         "text-transform": "uppercase",
         "letter-spacing": "0.05em",
@@ -286,7 +303,7 @@ function Disclosure(props: {
             section
               ? {
                   color: theme.faint,
-                  "font-size": type.caption,
+                  "font-size": type.label,
                   "text-transform": "uppercase",
                   "letter-spacing": "0.06em",
                   "font-weight": 600,
@@ -347,7 +364,7 @@ function BrandHeader(props: { runtime: string; mode: string }) {
           <span style={{ color: theme.text, "font-size": type.title, "font-weight": 650, "letter-spacing": "-0.2px" }}>
             Smart Router
           </span>
-          <span style={{ color: theme.faint, "font-size": type.micro, "letter-spacing": "0.09em", "font-weight": 600 }}>
+          <span style={{ color: theme.faint, "font-size": type.caption, "letter-spacing": "0.09em", "font-weight": 600 }}>
             FOR OPENCODE
           </span>
         </div>
@@ -426,7 +443,7 @@ function AutoSwitch(props: { sessionID: string | undefined; auto: boolean; onCha
     >
       <span style={{ display: "flex", "flex-direction": "column", gap: "1px" }}>
         <span style={{ "font-size": type.body, "font-weight": 600 }}>Automatic routing</span>
-        <span style={{ color: props.auto ? theme.brandTo : theme.faint, "font-size": type.micro }}>
+        <span style={{ color: props.auto ? theme.brandTo : theme.faint, "font-size": type.caption }}>
           {props.auto ? "The router picks the model for you" : "You keep your model; the router only observes"}
         </span>
       </span>
@@ -466,7 +483,7 @@ function DecisionInspector(props: { view: DecisionView | undefined; hovered: str
       label="Last decision"
       aside={
         <Show when={props.view}>
-          <span style={{ color: theme.faint, "font-size": type.micro }}>
+          <span style={{ color: theme.faint, "font-size": type.caption }}>
             {props.view!.eligibleCount} eligible · {props.view!.blockedCount} blocked
           </span>
         </Show>
@@ -507,13 +524,13 @@ function DecisionInspector(props: { view: DecisionView | undefined; hovered: str
 
           <Show when={props.view!.reasons.length > 0}>
             <div style={{ display: "flex", "flex-direction": "column", gap: "3px", "padding-top": space.xs }}>
-              <span style={{ color: theme.faint, "font-size": type.micro, "text-transform": "uppercase", "letter-spacing": "0.05em" }}>
+              <span style={{ color: theme.faint, "font-size": type.caption, "text-transform": "uppercase", "letter-spacing": "0.05em" }}>
                 Why
               </span>
               <For each={props.view!.reasons}>
                 {(reason) => (
                   <div style={{ display: "flex", gap: space.sm, "align-items": "baseline" }}>
-                    <span style={{ color: theme.brandTo, "font-size": type.micro, "line-height": "1.6" }}>›</span>
+                    <span style={{ color: theme.brandTo, "font-size": type.caption, "line-height": "1.6" }}>›</span>
                     <span style={{ color: theme.muted, "font-size": type.caption, "line-height": 1.5 }}>{reason}</span>
                   </div>
                 )}
@@ -531,7 +548,7 @@ function DecisionInspector(props: { view: DecisionView | undefined; hovered: str
             hovered={props.hovered === "candidates"}
             onHover={props.onHover}
             aside={
-              <span style={{ color: theme.faint, "font-size": type.micro }}>
+              <span style={{ color: theme.faint, "font-size": type.caption }}>
                 {props.view!.rows.length} considered
               </span>
             }
@@ -557,7 +574,7 @@ function DecisionInspector(props: { view: DecisionView | undefined; hovered: str
                       <span
                         style={{
                           "font-family": mono,
-                          "font-size": type.micro,
+                          "font-size": type.caption,
                           color: row.verdict === "blocked" ? theme.faint : theme.text,
                           overflow: "hidden",
                           "text-overflow": "ellipsis",
@@ -567,15 +584,15 @@ function DecisionInspector(props: { view: DecisionView | undefined; hovered: str
                         {row.key}
                       </span>
                       <span style={{ display: "flex", gap: space.md, "flex-shrink": 0 }}>
-                        <span style={{ color: theme.muted, "font-size": type.micro, "font-variant-numeric": "tabular-nums" }}>
+                        <span style={{ color: theme.muted, "font-size": type.caption, "font-variant-numeric": "tabular-nums" }}>
                           {formatUsd(row.effectiveCost)}
                         </span>
-                        <span style={{ color: theme.faint, "font-size": type.micro, "font-variant-numeric": "tabular-nums" }}>
+                        <span style={{ color: theme.faint, "font-size": type.caption, "font-variant-numeric": "tabular-nums" }}>
                           {formatPercent(row.successProbability * 100)}
                         </span>
                       </span>
                     </div>
-                    <span style={{ color: theme.faint, "font-size": type.micro, "line-height": 1.45 }}>
+                    <span style={{ color: theme.faint, "font-size": type.caption, "line-height": 1.45 }}>
                       {row.reason}
                       {row.adjustments.length > 0 ? ` · ${row.adjustments.join(" · ")}` : ""}
                     </span>
@@ -628,11 +645,11 @@ function ProviderList(props: { status: RouterStatus | undefined }) {
       <span style={{ display: "flex", "flex-direction": "column", gap: "2px", "min-width": 0 }}>
         <span style={{ "font-size": type.body, "font-weight": 550, color: theme.text }}>{rowProps.group.label}</span>
         <Show when={rowProps.group.note}>
-          <span style={{ color: theme.faint, "font-size": type.micro, "line-height": 1.4 }}>{rowProps.group.note}</span>
+          <span style={{ color: theme.faint, "font-size": type.caption, "line-height": 1.4 }}>{rowProps.group.note}</span>
         </Show>
       </span>
       <span style={{ display: "flex", gap: space.md, "align-items": "center", "flex-shrink": 0 }}>
-        <span style={{ color: theme.faint, "font-size": type.micro }}>
+        <span style={{ color: theme.faint, "font-size": type.caption }}>
           {rowProps.group.approvedCount}/{rowProps.group.totalCount}
         </span>
         <Chip tone={rowProps.group.state === "active" ? "brand" : "neutral"}>
@@ -646,7 +663,7 @@ function ProviderList(props: { status: RouterStatus | undefined }) {
     <Section
       label="Providers"
       aside={
-        <span style={{ color: theme.faint, "font-size": type.micro }}>
+        <span style={{ color: theme.faint, "font-size": type.caption }}>
           {activeGroups().length} active
           {inactiveGroups().length > 0 ? ` · ${inactiveGroups().length} off` : ""}
         </span>
@@ -659,7 +676,7 @@ function ProviderList(props: { status: RouterStatus | undefined }) {
         hovered={hovered() === "providers"}
         onHover={setHovered}
         aside={
-          <span style={{ color: theme.faint, "font-size": type.micro }}>
+          <span style={{ color: theme.faint, "font-size": type.caption }}>
             {open() ? "hide" : "show"}
           </span>
         }
@@ -679,7 +696,7 @@ function ProviderList(props: { status: RouterStatus | undefined }) {
             onToggle={() => setNotConfiguredOpen((value) => !value)}
             hovered={hovered() === "not-configured"}
             onHover={setHovered}
-            aside={<span style={{ color: theme.faint, "font-size": type.micro }}>{inactiveGroups().length}</span>}
+            aside={<span style={{ color: theme.faint, "font-size": type.caption }}>{inactiveGroups().length}</span>}
           >
             <span style={{ "font-size": type.caption, "font-weight": 500, color: theme.muted }}>Not configured</span>
           </Disclosure>
@@ -698,7 +715,7 @@ function Allowances(props: { providers: ReadonlyArray<ProviderRow> }) {
     <Section
       label="Allowances"
       aside={
-        <span style={{ color: theme.faint, "font-size": type.micro }}>
+        <span style={{ color: theme.faint, "font-size": type.caption }}>
           {props.providers.length} provider{props.providers.length === 1 ? "" : "s"}
         </span>
       }
@@ -736,7 +753,7 @@ function Allowances(props: { providers: ReadonlyArray<ProviderRow> }) {
                       <span
                         style={{
                           color: theme.faint,
-                          "font-size": type.micro,
+                          "font-size": type.caption,
                           "min-width": "42px",
                           "font-variant-numeric": "tabular-nums",
                         }}
@@ -749,7 +766,7 @@ function Allowances(props: { providers: ReadonlyArray<ProviderRow> }) {
                       <span
                         style={{
                           color: window.exceeded ? theme.bad : window.reported ? theme.muted : theme.faint,
-                          "font-size": type.micro,
+                          "font-size": type.caption,
                           "min-width": "82px",
                           "text-align": "right",
                           "font-variant-numeric": "tabular-nums",
@@ -769,8 +786,8 @@ function Allowances(props: { providers: ReadonlyArray<ProviderRow> }) {
                   <For each={provider.pools}>
                     {(pool) => (
                       <div style={{ display: "flex", "justify-content": "space-between", gap: space.md }}>
-                        <span style={{ color: theme.faint, "font-size": type.micro }}>{pool.label}</span>
-                        <span style={{ color: theme.muted, "font-size": type.micro, "font-variant-numeric": "tabular-nums" }}>
+                        <span style={{ color: theme.faint, "font-size": type.caption }}>{pool.label}</span>
+                        <span style={{ color: theme.muted, "font-size": type.caption, "font-variant-numeric": "tabular-nums" }}>
                           {formatUsd(pool.remainingUsd)} of {formatUsd(pool.monthlyUsd)}
                         </span>
                       </div>
@@ -780,10 +797,10 @@ function Allowances(props: { providers: ReadonlyArray<ProviderRow> }) {
               </Show>
 
               <Show when={provider.caveat}>
-                <span style={{ color: theme.warn, "font-size": type.micro, "line-height": 1.45 }}>{provider.caveat}</span>
+                <span style={{ color: theme.warn, "font-size": type.caption, "line-height": 1.45 }}>{provider.caveat}</span>
               </Show>
               <Show when={provider.error}>
-                <span style={{ color: theme.bad, "font-size": type.micro }}>{provider.error}</span>
+                <span style={{ color: theme.bad, "font-size": type.caption }}>{provider.error}</span>
               </Show>
             </Card>
           )}
@@ -855,7 +872,7 @@ function AccountPaste(props: { onChanged: () => void }) {
 
   return (
     <Section label="Account reading">
-      <span style={{ color: theme.faint, "font-size": type.micro, "line-height": 1.5 }}>
+      <span style={{ color: theme.faint, "font-size": type.caption, "line-height": 1.5 }}>
         OpenDesign exposes no usage API, so the router can only count what it routed itself. Paste your{" "}
         <strong style={{ color: theme.text }}>Plan &amp; balance</strong> page to replace the estimate with your
         real position — it carries the percentage, the window it belongs to, and when it resets.
@@ -893,7 +910,7 @@ function AccountPaste(props: { onChanged: () => void }) {
         <Card>
           <span style={{ color: theme.text, "font-size": type.caption, "line-height": 1.5 }}>{preview().summary}</span>
           <Show when={preview().missing?.length > 0}>
-            <span style={{ color: theme.warn, "font-size": type.micro }}>
+            <span style={{ color: theme.warn, "font-size": type.caption }}>
               Not on the page: {preview().missing.join(", ")}
             </span>
           </Show>
@@ -901,7 +918,7 @@ function AccountPaste(props: { onChanged: () => void }) {
             <span
               style={{
                 color: preview().reconciliation.differ > 0 ? theme.warn : theme.good,
-                "font-size": type.micro,
+                "font-size": type.caption,
                 "line-height": 1.45,
               }}
             >
@@ -909,7 +926,7 @@ function AccountPaste(props: { onChanged: () => void }) {
             </span>
             <For each={preview().reconciliation.rows.filter((row: any) => row.verdict === "differs")}>
               {(row: any) => (
-                <span style={{ color: theme.faint, "font-size": type.micro }}>
+                <span style={{ color: theme.faint, "font-size": type.caption }}>
                   {row.modelName}: charged {row.chargedUsd.toFixed(2)}, implied {row.impliedMultiplier?.toFixed(2)}× vs
                   catalog {row.catalogMultiplier?.toFixed(2)}×
                 </span>
@@ -939,7 +956,7 @@ function AccountPaste(props: { onChanged: () => void }) {
         <span
           style={{
             color: status()!.ok ? theme.good : theme.bad,
-            "font-size": type.micro,
+            "font-size": type.caption,
             "line-height": 1.45,
           }}
         >
@@ -1044,13 +1061,13 @@ function OpenConsoleButton() {
       </button>
 
       <Show when={state() === "opening"}>
-        <span style={{ color: theme.faint, "font-size": type.micro }}>
+        <span style={{ color: theme.faint, "font-size": type.caption }}>
           Handing off to your browser — the page opens in a new tab.
         </span>
       </Show>
 
       <Show when={state() === "failed"}>
-        <span style={{ color: theme.warn, "font-size": type.micro, "line-height": 1.45 }}>
+        <span style={{ color: theme.warn, "font-size": type.caption, "line-height": 1.45 }}>
           Could not open the browser automatically. Open this address yourself:{" "}
           <span style={{ "font-family": mono, color: theme.text }}>{url}</span>
         </span>
@@ -1142,7 +1159,7 @@ function Onboarding(props: { state: any; onDone: () => void }) {
         <BrandMark size={44} />
         <span
           style={{
-            "font-size": "19px",
+            "font-size": type.display,
             "font-weight": 700,
             "letter-spacing": "-0.4px",
             "line-height": 1.25,
@@ -1182,7 +1199,7 @@ function Onboarding(props: { state: any; onDone: () => void }) {
                 <span style={{ display: "flex", "flex-direction": "column", gap: "1px", "min-width": 0 }}>
                   <span style={{ "font-size": type.body, "font-weight": 550 }}>{provider.label}</span>
                   <Show when={provider.source}>
-                    <span style={{ color: theme.faint, "font-size": type.micro }}>{provider.source}</span>
+                    <span style={{ color: theme.faint, "font-size": type.caption }}>{provider.source}</span>
                   </Show>
                 </span>
                 <Chip tone={provider.enabled ? "good" : "neutral"}>
@@ -1199,7 +1216,7 @@ function Onboarding(props: { state: any; onDone: () => void }) {
       <Section
         label="Learned from your history"
         aside={
-          <span style={{ color: theme.faint, "font-size": type.micro }}>
+          <span style={{ color: theme.faint, "font-size": type.caption }}>
             {props.state?.hasHistory ? "imported" : "none yet"}
           </span>
         }
@@ -1220,7 +1237,7 @@ function Onboarding(props: { state: any; onDone: () => void }) {
                 request{props.state.historyImported === 1 ? "" : "s"} from OpenCode's own database
               </span>
             </span>
-            <span style={{ color: theme.faint, "font-size": type.micro, "line-height": 1.5 }}>
+            <span style={{ color: theme.faint, "font-size": type.caption, "line-height": 1.5 }}>
               Each one carries its own timestamp and the model that served it, so the seven-day window starts
               accurate instead of empty.
             </span>
@@ -1239,7 +1256,7 @@ function Onboarding(props: { state: any; onDone: () => void }) {
           >
             {(line) => (
               <div style={{ display: "flex", gap: space.sm, "align-items": "baseline" }}>
-                <span style={{ color: theme.brandTo, "font-size": type.micro }}>›</span>
+                <span style={{ color: theme.brandTo, "font-size": type.caption }}>›</span>
                 <span style={{ color: theme.muted, "font-size": type.caption, "line-height": 1.5 }}>{line}</span>
               </div>
             )}
@@ -1314,7 +1331,7 @@ function Onboarding(props: { state: any; onDone: () => void }) {
                 >
                   {readingBusy() ? "Reading…" : "Check it"}
                 </button>
-                <span style={{ color: theme.faint, "font-size": type.micro }}>
+                <span style={{ color: theme.faint, "font-size": type.caption }}>
                   Optional — you can skip and paste later.
                 </span>
               </div>
@@ -1323,7 +1340,7 @@ function Onboarding(props: { state: any; onDone: () => void }) {
                   <span
                     style={{
                       color: current().ok ? theme.good : theme.bad,
-                      "font-size": type.micro,
+                      "font-size": type.caption,
                       "line-height": 1.45,
                     }}
                   >
@@ -1344,7 +1361,7 @@ function Onboarding(props: { state: any; onDone: () => void }) {
 
       <Show when={missing().length > 0 && !hasOpenDesign()}>
         <Section label="Not needed yet">
-          <span style={{ color: theme.faint, "font-size": type.micro, "line-height": 1.5 }}>
+          <span style={{ color: theme.faint, "font-size": type.caption, "line-height": 1.5 }}>
             {missing().length} provider{missing().length === 1 ? "" : "s"} had no credential and stayed off.
             They are listed under Providers whenever you want them.
           </span>
@@ -1472,7 +1489,7 @@ function SmartRouterPanel(props: { sessionID: string | undefined }) {
           <span
             style={{
               "font-family": mono,
-              "font-size": type.micro,
+              "font-size": type.caption,
               color: status()?.current ? theme.muted : theme.faint,
               overflow: "hidden",
               "text-overflow": "ellipsis",
@@ -1481,7 +1498,7 @@ function SmartRouterPanel(props: { sessionID: string | undefined }) {
           >
             {status()?.current ? `${status()!.current!.providerID}/${status()!.current!.id}` : "no model yet"}
           </span>
-          <span style={{ color: theme.faint, "font-size": type.micro, "flex-shrink": 0 }}>
+          <span style={{ color: theme.faint, "font-size": type.caption, "flex-shrink": 0 }}>
             {at() ? relative(at()!) : "connecting…"}
           </span>
         </div>
@@ -1490,7 +1507,7 @@ function SmartRouterPanel(props: { sessionID: string | undefined }) {
       <Show when={error()}>
         <Card>
           <span style={{ color: theme.bad, "font-size": type.caption }}>Router unreachable: {error()}</span>
-          <span style={{ color: theme.faint, "font-size": type.micro }}>
+          <span style={{ color: theme.faint, "font-size": type.caption }}>
             The plugin may have failed to load. Check Settings → Extensions → Plugins.
           </span>
         </Card>
@@ -1571,7 +1588,7 @@ export default Plugin.define({
       render: () => (
         <span style={{ display: "inline-flex", "align-items": "center", gap: "5px" }}>
           <BrandMark size={12} />
-          <span style={{ "font-size": type.micro, color: theme.faint }}>Smart Router</span>
+          <span style={{ "font-size": type.caption, color: theme.faint }}>Smart Router</span>
         </span>
       ),
     })
