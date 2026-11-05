@@ -140,3 +140,29 @@ describe("first run, as a new user experiences it", () => {
     await controller.dispose()
   })
 })
+
+describe("plugin ids must not nest", () => {
+  /**
+   * The GUI docs state that a plugin whose id "has one nested under it" or "nests
+   * under one" does not load its GUI. The TUI used `opencode-smart-router.tui`,
+   * nested under the server part's `opencode-smart-router`, which silently
+   * disabled the desktop panel — the only symptom was a generic request failure
+   * in the app.
+   *
+   * These are cheap string assertions that guard an expensive, silent failure.
+   */
+  const IDS = ["opencode-smart-router", "opencode-smart-router-tui"]
+
+  it.each(IDS)("%s is not inside the opencode namespace", (id) => {
+    expect(id === "opencode" || id.startsWith("opencode.")).toBe(false)
+  })
+
+  it("no id nests under another", () => {
+    for (const outer of IDS) {
+      for (const inner of IDS) {
+        if (outer === inner) continue
+        expect(inner.startsWith(`${outer}.`)).toBe(false)
+      }
+    }
+  })
+})

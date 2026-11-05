@@ -70,7 +70,18 @@ export const formatProviders = (providers: ReadonlyArray<ProviderRow>): string =
 }
 
 export default Plugin.define({
-  id: "opencode-smart-router.tui",
+  /**
+   * Deliberately NOT nested under the server part's id.
+   *
+   * The GUI docs are explicit: if a plugin's id has another id nested under it,
+   * or nests under one, its GUI does not load. The TUI previously used
+   * "opencode-smart-router.tui", which nests under the server part's
+   * "opencode-smart-router" — so adding a TUI silently disabled the desktop
+   * panel, with no error beyond a generic request failure.
+   *
+   * A sibling id avoids the namespace collision entirely.
+   */
+  id: "opencode-smart-router-tui",
   setup(context) {
     // Footer: the state a user wants without opening anything.
     const stop = context.data.on("session.execution.succeeded", () => {
