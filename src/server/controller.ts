@@ -259,6 +259,10 @@ export class RouterController {
   private readonly stepStarted = new Map<string, number>()
   private readonly contextLoaded = new Set<string>()
   private readonly contextInflight = new Map<string, Promise<void>>()
+  /** What credential detection found on this machine, for the first-run screen. */
+  private detectedProviders: ReadonlyArray<{ providerID: string; hasCredential: boolean; source?: string }> = []
+  /** Set once the user has seen the first-run screen. */
+  private onboardingComplete = false
   private readonly explicitProviderEnable: ReadonlySet<string>
   private readonly titleQueue = new Map<string, Promise<void>>()
   private readonly notifier = new ChangeNotifier()
@@ -466,7 +470,9 @@ export class RouterController {
             : {}),
       })
 
-      const result = applyCredentialDefaults(this.settingsBase, this.explicitProviderEnable, evidence)
+      // Keep the evidence: onboarding shows what was found, not a form.
+    this.detectedProviders = evidence
+    const result = applyCredentialDefaults(this.settingsBase, this.explicitProviderEnable, evidence)
       if (result.settings !== this.settingsBase) {
         this.settingsBase = result.settings
         this.rebuildRegistry()
@@ -485,6 +491,48 @@ export class RouterController {
     } catch (error) {
       // Detection is a convenience. A failure must never stop routing.
       this.settingsWarnings.push(`Provider detection skipped: ${safeError(error)}`)
+    }
+  }
+
+  /**
+   * Everything a first-run screen needs, in one call.
+   *
+   * The shape is deliberate: evidence first, then a single action. A new user
+   * should be able to read this and know three things without clicking — what
+   * the router found on their machine, what it will do with it, and whether it
+   * needs anything from them (it usually does not).
+   */
+  private onboardingState(): {
+    firstRun: boolean
+    providers: ReadonlyArray<{ providerID: string; label: string; found: boolean; source?: string; enabled: boolean }>
+    historyImported: number
+    hasHistory: boolean
+    needsReading: boolean
+    mode: string
+    version: string
+  } {
+    const enabled = this.settings.providers
+    const providers = this.detectedProviders.map((entry) => ({
+      providerID: entry.providerID,
+      label: entry.providerID === "opencode-go" ? "OpenCode Go" : entry.providerID === "commandcode" ? "Command Code GOAT" : entry.providerID === "opendesign" ? "OpenDesign" : entry.providerID,
+      found: entry.hasCredential,
+      ...(entry.source ? { source: entry.source } : {}),
+      enabled: enabled[entry.providerID]?.enabled ?? false,
+    }))
+
+    const imported = this.ledger
+      .usageEvents()
+      .filter((event) => String(event.id).startsWith("hist:"))
+    return {
+      // First run is "nothing has been chosen yet": no baseline, no explicit
+      // provider flags. Reading a file nobody wrote is not a first run.
+      firstRun: !this.onboardingComplete && this.explicitProviderEnable.size === 0,
+      providers,
+      historyImported: imported.length,
+      hasHistory: imported.length > 0,
+      needsReading: this.quotaSnapshots().some((snapshot) => snapshot.source === "estimate"),
+      mode: this.settings.mode,
+      version: "0.2.0",
     }
   }
 
@@ -2176,6 +2224,11 @@ export class RouterController {
   private async registerRpc() {
     const implementation: any = {
       status: async (input: any) => this.statusFor(input?.sessionID),
+      onboarding: async () => this.onboardingState(),
+      completeOnboarding: async () => {
+        this.onboardingComplete = true
+        return { ok: true }
+      },
       recordPlanPage: async (input: any) => this.recordPlanPage(input),
       preview: async (input: any) => {
         const sessionID = input?.sessionID ?? "preview"

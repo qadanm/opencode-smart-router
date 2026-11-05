@@ -117,6 +117,17 @@ export const SmartRouterRpc = Rpc.define({
     }),
     refreshQuota: method(emptyInput),
     /**
+     * What this machine has, for the first-run screen.
+     *
+     * Onboarding must show evidence, not a questionnaire. The router already
+     * detects credentials and imports history at startup; this reports what it
+     * found so the first thing a new user sees is the truth about their own
+     * machine rather than a form asking them to type it in.
+     */
+    onboarding: method(emptyInput),
+    /** Mark the first run as seen, so it does not reappear. */
+    completeOnboarding: method(emptyInput),
+    /**
      * Record what the user's account page showed, so the estimate reflects the
      * whole account rather than only the traffic this router routed.
      *

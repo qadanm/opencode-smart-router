@@ -856,9 +856,9 @@ function AccountPaste(props: { onChanged: () => void }) {
   return (
     <Section label="Account reading">
       <span style={{ color: theme.faint, "font-size": type.micro, "line-height": 1.5 }}>
-        OpenDesign exposes no usage API, so the router sees only what it routed itself. Paste{" "}
-        <strong style={{ color: theme.muted }}>Plan &amp; balance</strong> to seed real usage, or{" "}
-        <strong style={{ color: theme.muted }}>Usage</strong> to check the cost model against what you were charged.
+        OpenDesign exposes no usage API, so the router can only count what it routed itself. Paste your{" "}
+        <strong style={{ color: theme.text }}>Plan &amp; balance</strong> page to replace the estimate with your
+        real position — it carries the percentage, the window it belongs to, and when it resets.
       </span>
 
       <textarea
@@ -869,8 +869,8 @@ function AccountPaste(props: { onChanged: () => void }) {
         }}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
-        placeholder="Paste the page here — navigation and all is fine."
-        aria-label="Paste an OpenDesign console page"
+        placeholder="Paste your Plan & balance page — navigation and all is fine."
+        aria-label="Paste your OpenDesign Plan and balance page"
         rows={3}
         style={{
           width: "100%",
@@ -954,6 +954,349 @@ function AccountPaste(props: { onChanged: () => void }) {
 // The panel
 // ---------------------------------------------------------------------------
 
+
+/**
+ * First run.
+ *
+ * The rule: show evidence, ask for nothing, offer one way forward.
+ *
+ * A new user has just installed a router they do not yet trust. A questionnaire
+ * asks them to do the work of finding out what is on the machine; this does that
+ * and reports back. Most of the time they will read it and press one button,
+ * because detection already did the thinking.
+ *
+ * The screen is a sequence of facts about *their* machine — what was found, what
+ * was imported, what it will cost them — and only then a single action. That
+ * ordering is the whole design: trust is built by being right about small things
+ * before asking for a decision.
+ */
+function Onboarding(props: { state: any; onDone: () => void }) {
+  const ctx = usePlugin<typeof definition>()
+  const [busy, setBusy] = createSignal(false)
+  const [hovered, setHovered] = createSignal<string | undefined>(undefined)
+  const [reading, setReading] = createSignal("")
+  const [readingDone, setReadingDone] = createSignal(false)
+  const [readingBusy, setReadingBusy] = createSignal(false)
+  const [readingFocused, setReadingFocused] = createSignal(false)
+  const [readingStatus, setReadingStatus] = createSignal<{ ok: boolean; text: string } | undefined>(undefined)
+
+  /** Is OpenDesign actually configured on this machine? */
+  const hasOpenDesign = () =>
+    (props.state?.providers ?? []).some((provider: any) => provider.providerID === "opendesign" && provider.found)
+
+  /**
+   * Record the pasted page, in place.
+   *
+   * Deliberately not a separate screen: the user is told *why* this matters and
+   * asked for it in the same breath. Moving them somewhere else to do it breaks
+   * the explanation away from the action.
+   */
+  const recordReading = async (confirm: boolean) => {
+    if (!reading().trim() || readingBusy()) return
+    setReadingBusy(true)
+    try {
+      const result: any = await ctx.client.rpc(SmartRouterRpc).recordPlanPage({
+        page: reading(),
+        confirm: true,
+      })
+      setReadingStatus({ ok: result?.ok !== false, text: result?.message ?? "" })
+      if (result?.ok !== false) setReadingDone(true)
+    } catch (cause) {
+      setReadingStatus({ ok: false, text: cause instanceof Error ? cause.message : String(cause) })
+    } finally {
+      setReadingBusy(false)
+    }
+  }
+
+  const finish = async () => {
+    if (busy()) return
+    setBusy(true)
+    try {
+      await ctx.client.rpc(SmartRouterRpc).completeOnboarding({})
+      props.onDone()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const found = () => (props.state?.providers ?? []).filter((provider: any) => provider.found)
+  const missing = () => (props.state?.providers ?? []).filter((provider: any) => !provider.found)
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        "flex-direction": "column",
+        gap: space.lg,
+        padding: "18px 16px",
+        color: theme.text,
+        "font-size": type.body,
+        height: "100%",
+        "overflow-y": "auto",
+        "box-sizing": "border-box",
+        "font-family": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
+        "-webkit-font-smoothing": "antialiased",
+      }}
+    >
+      {/* Hero. The first screen sets the register: this is a product with a
+          point of view, not a preferences dialog. */}
+      <div
+        style={{
+          display: "flex",
+          "flex-direction": "column",
+          gap: space.sm,
+          "align-items": "center",
+          "text-align": "center",
+          padding: "10px 0 4px",
+        }}
+      >
+        <BrandMark size={44} />
+        <span
+          style={{
+            "font-size": "19px",
+            "font-weight": 700,
+            "letter-spacing": "-0.4px",
+            "line-height": 1.25,
+          }}
+        >
+          Your router is ready
+        </span>
+        <span style={{ color: theme.muted, "font-size": type.caption, "line-height": 1.5, "max-width": "260px" }}>
+          It found what is already on this machine and configured itself. Here is exactly what it did.
+        </span>
+      </div>
+
+      <Section label="Found on this machine" first>
+        <Show
+          when={found().length > 0}
+          fallback={
+            <Empty
+              title="No provider credentials found"
+              body="Add a key for OpenCode Go, Command Code or OpenDesign in OpenCode, then reopen this panel."
+            />
+          }
+        >
+          <For each={found()}>
+            {(provider: any) => (
+              <div
+                style={{
+                  display: "flex",
+                  "justify-content": "space-between",
+                  gap: space.md,
+                  "align-items": "center",
+                  padding: "8px 9px",
+                  "border-radius": radius.sm,
+                  border: `1px solid ${theme.border}`,
+                  background: theme.surface,
+                }}
+              >
+                <span style={{ display: "flex", "flex-direction": "column", gap: "1px", "min-width": 0 }}>
+                  <span style={{ "font-size": type.body, "font-weight": 550 }}>{provider.label}</span>
+                  <Show when={provider.source}>
+                    <span style={{ color: theme.faint, "font-size": type.micro }}>{provider.source}</span>
+                  </Show>
+                </span>
+                <Chip tone={provider.enabled ? "good" : "neutral"}>
+                  {provider.enabled ? "enabled" : "off"}
+                </Chip>
+              </div>
+            )}
+          </For>
+        </Show>
+      </Section>
+
+      {/* What it learned. This is the part that makes the product feel like it
+          did work on the user's behalf rather than asking them to do it. */}
+      <Section
+        label="Learned from your history"
+        aside={
+          <span style={{ color: theme.faint, "font-size": type.micro }}>
+            {props.state?.hasHistory ? "imported" : "none yet"}
+          </span>
+        }
+      >
+        <Show
+          when={props.state?.hasHistory}
+          fallback={
+            <Empty
+              title="Nothing to import yet"
+              body="Once you have used OpenCode, the router reads that history so day one is not a guess."
+            />
+          }
+        >
+          <Card accent>
+            <span style={{ "font-size": type.body }}>
+              <strong style={{ "font-weight": 650 }}>{props.state.historyImported}</strong>{" "}
+              <span style={{ color: theme.muted }}>
+                request{props.state.historyImported === 1 ? "" : "s"} from OpenCode's own database
+              </span>
+            </span>
+            <span style={{ color: theme.faint, "font-size": type.micro, "line-height": 1.5 }}>
+              Each one carries its own timestamp and the model that served it, so the seven-day window starts
+              accurate instead of empty.
+            </span>
+          </Card>
+        </Show>
+      </Section>
+
+      <Section label="What it will do">
+        <div style={{ display: "flex", "flex-direction": "column", gap: "5px" }}>
+          <For
+            each={[
+              "Pick the cheapest model that can actually do the job, and say why.",
+              "Stop before an allowance runs out, not after a request fails.",
+              "Count what you spend here, and never guess silently.",
+            ]}
+          >
+            {(line) => (
+              <div style={{ display: "flex", gap: space.sm, "align-items": "baseline" }}>
+                <span style={{ color: theme.brandTo, "font-size": type.micro }}>›</span>
+                <span style={{ color: theme.muted, "font-size": type.caption, "line-height": 1.5 }}>{line}</span>
+              </div>
+            )}
+          </For>
+        </div>
+      </Section>
+
+      {/* The one thing detection cannot know.
+          OpenDesign publishes no usage API, so the router cannot see the account
+          — only its own traffic. Rather than leave that as a footnote, the step
+          is asked for here, once, with the reason stated plainly. Getting this
+          wrong is what made a 42%-used account look 5% used. */}
+      <Show when={hasOpenDesign()}>
+        <Section
+          label="One thing it cannot see"
+          aside={<Chip tone="warn">needed for accuracy</Chip>}
+        >
+          <Card>
+            <span style={{ "font-size": type.body, "font-weight": 550 }}>
+              OpenDesign does not expose usage to an API key
+            </span>
+            <span style={{ color: theme.muted, "font-size": type.caption, "line-height": 1.55 }}>
+              So the router can only count what <em>it</em> has routed. Anything you spent before installing
+              it — in the desktop app, or with another tool — is invisible, which makes its estimate far too
+              optimistic.
+            </span>
+            <span style={{ color: theme.muted, "font-size": type.caption, "line-height": 1.55 }}>
+              Paste your <strong style={{ color: theme.text }}>Plan &amp; balance</strong> page once and it
+              knows your real position. This is the only page worth pasting: it carries the percentage, which
+              window it belongs to, and when it resets.
+            </span>
+
+            <Show when={!readingDone()}>
+              <a
+                href="https://open-design.ai/cloud/dashboard"
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: theme.brandTo, "font-size": type.micro, "text-decoration": "none" }}
+              >
+                Open Plan &amp; balance ↗
+              </a>
+              <textarea
+                value={reading()}
+                onInput={(event) => setReading((event.currentTarget as HTMLTextAreaElement).value)}
+                placeholder="Paste the whole page here — the navigation and all is fine."
+                aria-label="Paste your OpenDesign Plan and balance page"
+                rows={3}
+                style={{
+                  width: "100%",
+                  resize: "vertical",
+                  padding: "8px 9px",
+                  "border-radius": radius.sm,
+                  border: `1px solid ${readingFocused() ? theme.brandTo : theme.border}`,
+                  background: "transparent",
+                  color: theme.text,
+                  "font-size": type.caption,
+                  "font-family": "inherit",
+                  "line-height": 1.5,
+                  "box-sizing": "border-box",
+                  outline: "none",
+                }}
+              />
+              <div style={{ display: "flex", gap: space.sm, "align-items": "center" }}>
+                <button
+                  type="button"
+                  onClick={() => void recordReading(false)}
+                  disabled={!reading().trim() || readingBusy()}
+                  style={{
+                    padding: "5px 11px",
+                    "border-radius": radius.sm,
+                    border: `1px solid ${theme.borderStrong}`,
+                    background: reading().trim() ? theme.raised : "transparent",
+                    color: reading().trim() ? theme.text : theme.faint,
+                    "font-size": type.caption,
+                    "font-family": "inherit",
+                    cursor: reading().trim() ? "pointer" : "default",
+                  }}
+                >
+                  {readingBusy() ? "Reading…" : "Check it"}
+                </button>
+                <span style={{ color: theme.faint, "font-size": type.micro }}>
+                  Optional — you can skip and paste later.
+                </span>
+              </div>
+              <Show when={readingStatus()}>
+                {(current) => (
+                  <span
+                    style={{
+                      color: current().ok ? theme.good : theme.bad,
+                      "font-size": type.micro,
+                      "line-height": 1.45,
+                    }}
+                  >
+                    {current().text}
+                  </span>
+                )}
+              </Show>
+            </Show>
+
+            <Show when={readingDone()}>
+              <span style={{ color: theme.good, "font-size": type.caption }}>
+                Recorded. Your allowance now starts from what the account actually shows.
+              </span>
+            </Show>
+          </Card>
+        </Section>
+      </Show>
+
+      <Show when={missing().length > 0 && !hasOpenDesign()}>
+        <Section label="Not needed yet">
+          <span style={{ color: theme.faint, "font-size": type.micro, "line-height": 1.5 }}>
+            {missing().length} provider{missing().length === 1 ? "" : "s"} had no credential and stayed off.
+            They are listed under Providers whenever you want them.
+          </span>
+        </Section>
+      </Show>
+
+      {/* One action. A first-run screen with a maze of choices is a settings
+          page pretending to be a welcome. */}
+      <button
+        type="button"
+        onClick={() => void finish()}
+        onMouseEnter={() => setHovered("done")}
+        onMouseLeave={() => setHovered(undefined)}
+        disabled={busy()}
+        style={{
+          "margin-top": "auto",
+          padding: "10px 12px",
+          "border-radius": radius.md,
+          border: "none",
+          background: brandGradient,
+          color: "#fff",
+          "font-size": type.body,
+          "font-weight": 600,
+          font: "inherit",
+          cursor: busy() ? "default" : "pointer",
+          opacity: busy() ? 0.7 : hovered() === "done" ? 0.92 : 1,
+          transition: "opacity 120ms ease",
+        }}
+      >
+        {busy() ? "Starting…" : "Start routing"}
+      </button>
+    </div>
+  )
+}
+
 function SmartRouterPanel(props: { sessionID: string | undefined }) {
   const ctx = usePlugin<typeof definition>()
   const [status, setStatus] = createSignal<RouterStatus | undefined>(undefined)
@@ -961,6 +1304,8 @@ function SmartRouterPanel(props: { sessionID: string | undefined }) {
   const [at, setAt] = createSignal<number | undefined>(undefined)
   const [expandedCandidates, setExpandedCandidates] = createSignal(false)
   const [hovered, setHovered] = createSignal<string | undefined>(undefined)
+  const [onboarding, setOnboarding] = createSignal<any | undefined>(undefined)
+  const [checkedFirstRun, setCheckedFirstRun] = createSignal(false)
 
   const load = async () => {
     const sessionID = props.sessionID
@@ -977,6 +1322,18 @@ function SmartRouterPanel(props: { sessionID: string | undefined }) {
 
   onMount(() => {
     void load()
+    // First run is decided once, at mount. Re-checking on every poll would let a
+    // half-finished onboarding flicker back to the dashboard and then return.
+    void (async () => {
+      try {
+        const state: any = await ctx.client.rpc(SmartRouterRpc).onboarding({})
+        if (state?.firstRun) setOnboarding(state)
+      } catch {
+        // A router that cannot describe itself should still show the panel.
+      } finally {
+        setCheckedFirstRun(true)
+      }
+    })()
     const timer = setInterval(() => void load(), 3_000)
     onCleanup(() => clearInterval(timer))
   })
@@ -986,7 +1343,26 @@ function SmartRouterPanel(props: { sessionID: string | undefined }) {
     ((status()?.quota ?? []) as never[]).map((snapshot) => toProviderRow(snapshot))
   const needsReading = () => providers().some((provider) => provider.source === "estimate")
 
+  // Nothing is drawn until the first-run check has answered. Otherwise the
+  // dashboard would paint for a frame and then be replaced by onboarding, which
+  // reads as a glitch on the one screen where the product is being judged.
+  if (!checkedFirstRun()) {
+    return <div style={{ height: "100%" }} aria-busy="true" />
+  }
+
   return (
+    <Show
+      when={!onboarding()}
+      fallback={
+        <Onboarding
+          state={onboarding()}
+          onDone={() => {
+            setOnboarding(undefined)
+            void load()
+          }}
+        />
+      }
+    >
     <div
       style={{
         display: "flex",
@@ -1054,6 +1430,7 @@ function SmartRouterPanel(props: { sessionID: string | undefined }) {
 
       <ProviderList status={status()} />
     </div>
+    </Show>
   )
 }
 
