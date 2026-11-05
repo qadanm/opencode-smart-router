@@ -10,42 +10,358 @@ import {
   summariseDecision,
   toProviderRow,
   type DecisionView,
+  type ProviderGroupView,
   type ProviderRow,
 } from "./viewmodel.js"
 
 /**
- * P2 — the Decision Inspector.
+ * The Smart Router panel.
  *
- * Everything shown here comes from the routing engine. The panel formats and
- * orders; it never invents a reason. A candidate the engine rejected keeps the
- * engine's sentence, because "why can't I use this model" is the question a user
- * asks most often and the one a prettier UI is most likely to fudge.
+ * Design intent: this should read as one product, not a debug dump with a title.
+ * Three rules hold it together.
  *
- * Styling is deliberately local for now. P7 introduces the token set; keeping
- * one small object here makes that a mechanical swap rather than a rewrite.
+ *   1. **One scale.** Every size comes from `type`, every gap from `space`. The
+ *      previous version used seven font sizes chosen ad hoc, which is what makes
+ *      an interface look assembled rather than designed.
+ *   2. **Hierarchy by weight and space, not by lines.** Four full-width dividers
+ *      with equal weight said "here are five unrelated things". Sections now
+ *      carry their own label and use whitespace to separate.
+ *   3. **The brand earns its place.** The mark and its teal-to-cyan gradient are
+ *      the same assets shipped in `assets/`. An accent used once, on the thing
+ *      that matters, reads as deliberate; used everywhere it reads as decoration.
  */
 
+const type = {
+  micro: "9.5px",
+  caption: "10.5px",
+  body: "12px",
+  title: "13px",
+  display: "15px",
+} as const
+
+const space = { xxs: "2px", xs: "4px", sm: "6px", md: "8px", lg: "12px", xl: "16px" } as const
+const radius = { sm: "6px", md: "8px", lg: "10px" } as const
+
 const theme = {
-  bg: "transparent",
-  text: "var(--text-primary, #e6e6eb)",
+  text: "var(--text-primary, #e8e8ec)",
   muted: "var(--text-secondary, #9a9aa6)",
   faint: "var(--text-tertiary, #6f6f7c)",
-  border: "var(--border-subtle, rgba(255,255,255,0.10))",
+  border: "var(--border-subtle, rgba(255,255,255,0.09))",
+  borderStrong: "var(--border-default, rgba(255,255,255,0.16))",
   surface: "var(--surface-raised, rgba(255,255,255,0.04))",
+  raised: "var(--surface-overlay, rgba(255,255,255,0.07))",
   good: "var(--text-success, #7ad19a)",
   warn: "var(--text-warning, #e0b463)",
   bad: "var(--text-danger, #e08a8a)",
-}
+  /** Brand accents, taken from assets/logo.svg. */
+  brand: "#0f766e",
+  brandTo: "#0891b2",
+} as const
 
 const mono = "ui-monospace, SFMono-Regular, Menlo, monospace"
+const brandGradient = `linear-gradient(135deg, ${theme.brand} 0%, ${theme.brandTo} 100%)`
 
-const tab: PanelTab = {
-  id: "router",
-  get title() {
-    return "Router"
-  },
-  closable: "hover",
+// ---------------------------------------------------------------------------
+// Primitives
+// ---------------------------------------------------------------------------
+
+/** A labelled region. The label is the hierarchy; no rule line needed. */
+function Section(props: {
+  label: string
+  aside?: unknown
+  children: unknown
+  first?: boolean
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        "flex-direction": "column",
+        gap: space.sm,
+        ...(props.first ? {} : { "padding-top": space.lg, "border-top": `1px solid ${theme.border}` }),
+      }}
+    >
+      <div style={{ display: "flex", "justify-content": "space-between", "align-items": "baseline", gap: space.md }}>
+        <span
+          style={{
+            color: theme.faint,
+            "font-size": type.caption,
+            "text-transform": "uppercase",
+            "letter-spacing": "0.06em",
+            "font-weight": 600,
+          }}
+        >
+          {props.label}
+        </span>
+        {props.aside as never}
+      </div>
+      {props.children as never}
+    </div>
+  )
 }
+
+/** A surface that groups related values. Used sparingly: too many cards is noise. */
+function Card(props: { children: unknown; accent?: boolean }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        "flex-direction": "column",
+        gap: space.sm,
+        padding: "10px 11px",
+        "border-radius": radius.md,
+        border: `1px solid ${props.accent ? theme.borderStrong : theme.border}`,
+        background: theme.surface,
+      }}
+    >
+      {props.children as never}
+    </div>
+  )
+}
+
+/** A label above a value. Numbers are tabular so columns line up. */
+function Stat(props: { label: string; value: unknown; tone?: "good" | "warn" | "bad" | "muted" }) {
+  const colour =
+    props.tone === "good"
+      ? theme.good
+      : props.tone === "warn"
+        ? theme.warn
+        : props.tone === "bad"
+          ? theme.bad
+          : theme.muted
+  return (
+    <span style={{ display: "flex", "flex-direction": "column", gap: "1px", "min-width": 0 }}>
+      <span style={{ color: theme.faint, "font-size": type.micro }}>{props.label}</span>
+      <span style={{ color: colour, "font-size": type.body, "font-variant-numeric": "tabular-nums" }}>
+        {props.value as never}
+      </span>
+    </span>
+  )
+}
+
+/** A usage meter. Width is the value; colour is the urgency. */
+function Meter(props: { usedPct: number; exhausted?: boolean }) {
+  const width = Math.min(100, Math.max(0, props.usedPct))
+  const colour = props.exhausted
+    ? theme.bad
+    : width >= 80
+      ? theme.warn
+      : width >= 50
+        ? theme.brandTo
+        : theme.good
+  return (
+    <div
+      role="meter"
+      aria-valuenow={Math.round(width)}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      style={{
+        flex: 1,
+        height: "3px",
+        "border-radius": "2px",
+        background: "rgba(255,255,255,0.09)",
+        overflow: "hidden",
+        "min-width": "36px",
+      }}
+    >
+      <div style={{ width: `${width}%`, height: "100%", background: colour, "border-radius": "2px" }} />
+    </div>
+  )
+}
+
+function Chip(props: { children: unknown; tone?: "good" | "warn" | "bad" | "neutral" | "brand" }) {
+  const bg =
+    props.tone === "good"
+      ? "rgba(122,209,154,0.12)"
+      : props.tone === "warn"
+        ? "rgba(224,180,99,0.12)"
+        : props.tone === "bad"
+          ? "rgba(224,138,138,0.12)"
+          : props.tone === "brand"
+            ? "rgba(8,145,178,0.16)"
+            : "rgba(255,255,255,0.06)"
+  const fg =
+    props.tone === "good"
+      ? theme.good
+      : props.tone === "warn"
+        ? theme.warn
+        : props.tone === "bad"
+          ? theme.bad
+          : props.tone === "brand"
+            ? theme.brandTo
+            : theme.muted
+  return (
+    <span
+      style={{
+        background: bg,
+        color: fg,
+        "font-size": type.micro,
+        "font-weight": 600,
+        "text-transform": "uppercase",
+        "letter-spacing": "0.05em",
+        padding: "2px 6px",
+        "border-radius": "4px",
+        "white-space": "nowrap",
+      }}
+    >
+      {props.children as never}
+    </span>
+  )
+}
+
+/** Teaching empty state. Never a blank box: say what would fill it. */
+function Empty(props: { title: string; body: string }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        "flex-direction": "column",
+        gap: "3px",
+        padding: "12px 11px",
+        "border-radius": radius.md,
+        border: `1px dashed ${theme.border}`,
+      }}
+    >
+      <span style={{ color: theme.muted, "font-size": type.body, "font-weight": 550 }}>{props.title}</span>
+      <span style={{ color: theme.faint, "font-size": type.caption, "line-height": 1.5 }}>{props.body}</span>
+    </div>
+  )
+}
+
+/** A row that opens. Caret, hover, cursor and aria together — one alone is invisible. */
+function Disclosure(props: {
+  id: string
+  open: boolean
+  onToggle: () => void
+  hovered: boolean
+  onHover: (id: string | undefined) => void
+  children: unknown
+  aside?: unknown
+  size?: "section" | "row"
+}) {
+  const section = props.size !== "row"
+  return (
+    <button
+      type="button"
+      onClick={props.onToggle}
+      onMouseEnter={() => props.onHover(props.id)}
+      onMouseLeave={() => props.onHover(undefined)}
+      aria-expanded={props.open}
+      title={props.open ? "Collapse" : "Expand"}
+      style={{
+        display: "flex",
+        "justify-content": "space-between",
+        "align-items": "center",
+        gap: space.md,
+        width: "100%",
+        background: props.hovered ? theme.surface : "transparent",
+        border: "none",
+        "border-radius": radius.sm,
+        padding: "5px 7px",
+        margin: "-5px -7px",
+        color: "inherit",
+        font: "inherit",
+        cursor: "pointer",
+        "text-align": "left",
+        transition: "background 100ms ease",
+      }}
+    >
+      <span style={{ display: "flex", gap: "7px", "align-items": "center", "min-width": 0 }}>
+        <span
+          aria-hidden="true"
+          style={{
+            display: "inline-block",
+            width: "9px",
+            color: props.hovered ? theme.text : theme.faint,
+            "font-size": "9px",
+            "flex-shrink": 0,
+            transform: props.open ? "rotate(90deg)" : "none",
+            transition: "transform 120ms ease",
+          }}
+        >
+          ▸
+        </span>
+        <span
+          style={
+            section
+              ? {
+                  color: theme.faint,
+                  "font-size": type.caption,
+                  "text-transform": "uppercase",
+                  "letter-spacing": "0.06em",
+                  "font-weight": 600,
+                }
+              : { color: theme.text, "font-size": type.title, "font-weight": 550 }
+          }
+        >
+          {props.children as never}
+        </span>
+      </span>
+      <span style={{ display: "flex", gap: space.md, "align-items": "baseline", "flex-shrink": 0 }}>
+        {props.aside as never}
+      </span>
+    </button>
+  )
+}
+
+/** The brand mark, from assets/logo.svg: one input forking into three routes. */
+function BrandMark(props: { size?: number }) {
+  const size = props.size ?? 22
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 60 60"
+      aria-hidden="true"
+      style={{ "flex-shrink": 0, display: "block" }}
+    >
+      <defs>
+        <linearGradient id="sr-brand" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color={theme.brand} />
+          <stop offset="100%" stop-color={theme.brandTo} />
+        </linearGradient>
+      </defs>
+      <g fill="none" stroke="url(#sr-brand)" stroke-width="4" stroke-linecap="round">
+        <path d="M8 30h12" />
+        <path d="M20 30c7 0 8-14 15-14h8" />
+        <path d="M20 30c7 0 8 14 15 14h8" />
+        <path d="M20 30h23" />
+      </g>
+      <circle cx="5" cy="30" r="4.5" fill="url(#sr-brand)" />
+      <g fill="url(#sr-brand)">
+        <rect x="45" y="10" width="9" height="9" rx="2.5" />
+        <rect x="45" y="25.5" width="9" height="9" rx="2.5" />
+        <rect x="45" y="41" width="9" height="9" rx="2.5" />
+      </g>
+    </svg>
+  )
+}
+
+function BrandHeader(props: { runtime: string; mode: string }) {
+  const tone = props.runtime === "paused" ? "warn" : props.runtime === "manual" ? "neutral" : "brand"
+  return (
+    <div style={{ display: "flex", "justify-content": "space-between", "align-items": "center", gap: space.md }}>
+      <div style={{ display: "flex", gap: space.sm, "align-items": "center", "min-width": 0 }}>
+        <BrandMark />
+        <div style={{ display: "flex", "flex-direction": "column", gap: "0" }}>
+          <span style={{ color: theme.text, "font-size": type.title, "font-weight": 650, "letter-spacing": "-0.2px" }}>
+            Smart Router
+          </span>
+          <span style={{ color: theme.faint, "font-size": type.micro, "letter-spacing": "0.09em", "font-weight": 600 }}>
+            FOR OPENCODE
+          </span>
+        </div>
+      </div>
+      <div style={{ display: "flex", gap: space.xs, "align-items": "center" }}>
+        <Chip tone={tone}>{props.mode}</Chip>
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Feature components
+// ---------------------------------------------------------------------------
 
 interface RouterStatus {
   mode?: string
@@ -65,23 +381,586 @@ const relative = (at: number): string => {
   return `${Math.round(delta / 3_600_000)}h ago`
 }
 
-const Row = (props: { label: string; children: unknown }) => (
-  <div style={{ display: "flex", gap: "8px", "align-items": "baseline" }}>
-    <span style={{ color: theme.faint, "min-width": "92px", "font-size": "11px" }}>{props.label}</span>
-    <span style={{ color: theme.text, "font-size": "12px" }}>{props.children as never}</span>
-  </div>
-)
+/** Is the router choosing the model, or is the user? */
+function AutoSwitch(props: { sessionID: string | undefined; auto: boolean; onChanged: () => void }) {
+  const ctx = usePlugin<typeof definition>()
+  const [busy, setBusy] = createSignal(false)
+  const [hovered, setHovered] = createSignal(false)
 
-const Verdict = (props: { verdict: string }) => {
-  const colour = props.verdict === "chosen" ? theme.good : props.verdict === "eligible" ? theme.muted : theme.bad
-  return <span style={{ color: colour, "font-size": "11px", "font-weight": 500 }}>{props.verdict}</span>
+  const toggle = async () => {
+    if (!props.sessionID || busy()) return
+    setBusy(true)
+    try {
+      await ctx.client.rpc(SmartRouterRpc).setSessionAuto({ sessionID: props.sessionID, auto: !props.auto })
+      props.onChanged()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => void toggle()}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      disabled={busy() || !props.sessionID}
+      aria-pressed={props.auto}
+      title={props.auto ? "Click to keep your current model" : "Click to let the router choose"}
+      style={{
+        display: "flex",
+        "align-items": "center",
+        "justify-content": "space-between",
+        gap: space.md,
+        width: "100%",
+        padding: "9px 11px",
+        "border-radius": radius.md,
+        border: `1px solid ${props.auto ? "transparent" : theme.border}`,
+        background: props.auto ? "rgba(8,145,178,0.10)" : hovered() ? theme.surface : "transparent",
+        color: theme.text,
+        cursor: busy() || !props.sessionID ? "default" : "pointer",
+        font: "inherit",
+        "text-align": "left",
+        transition: "background 120ms ease",
+      }}
+    >
+      <span style={{ display: "flex", "flex-direction": "column", gap: "1px" }}>
+        <span style={{ "font-size": type.body, "font-weight": 600 }}>Automatic routing</span>
+        <span style={{ color: props.auto ? theme.brandTo : theme.faint, "font-size": type.micro }}>
+          {props.auto ? "The router picks the model for you" : "You keep your model; the router only observes"}
+        </span>
+      </span>
+      <span
+        aria-hidden="true"
+        style={{
+          width: "30px",
+          height: "16px",
+          "border-radius": "8px",
+          background: props.auto ? brandGradient : "rgba(255,255,255,0.14)",
+          position: "relative",
+          "flex-shrink": 0,
+          transition: "background 140ms ease",
+        }}
+      >
+        <span
+          style={{
+            position: "absolute",
+            top: "2px",
+            left: props.auto ? "16px" : "2px",
+            width: "12px",
+            height: "12px",
+            "border-radius": "50%",
+            background: "#fff",
+            transition: "left 140ms ease",
+          }}
+        />
+      </span>
+    </button>
+  )
 }
 
-function DecisionInspector(props: { sessionID: string | undefined }) {
+
+function DecisionInspector(props: { view: DecisionView | undefined; hovered: string | undefined; onHover: (id: string | undefined) => void; expanded: boolean; onToggle: () => void }) {
+  return (
+    <Section
+      label="Last decision"
+      aside={
+        <Show when={props.view}>
+          <span style={{ color: theme.faint, "font-size": type.micro }}>
+            {props.view!.eligibleCount} eligible · {props.view!.blockedCount} blocked
+          </span>
+        </Show>
+      }
+    >
+      <Show
+        when={props.view}
+        fallback={
+          <Empty
+            title="No decision yet"
+            body="Send a prompt and the router will explain which model it chose, and why it beat the others."
+          />
+        }
+      >
+        <Card accent>
+          <div style={{ display: "flex", "justify-content": "space-between", gap: space.md, "align-items": "baseline" }}>
+            <span
+              style={{
+                "font-family": mono,
+                "font-size": type.body,
+                color: theme.text,
+                "font-weight": 600,
+                overflow: "hidden",
+                "text-overflow": "ellipsis",
+                "white-space": "nowrap",
+              }}
+            >
+              {props.view!.chosen ?? "nothing eligible"}
+            </span>
+            <Chip tone={props.view!.chosen ? "good" : "bad"}>{props.view!.chosen ? "chosen" : "blocked"}</Chip>
+          </div>
+
+          <div style={{ display: "flex", gap: space.xl, "flex-wrap": "wrap" }}>
+            <Stat label="est. cost" value={formatUsd(props.view!.estimatedUsd)} />
+            <Stat label="task" value={`${props.view!.taskKind} · T${props.view!.taskTier}`} />
+            <Stat label="context" value={`${Math.round(props.view!.contextTokens / 1000)}k`} />
+          </div>
+
+          <Show when={props.view!.reasons.length > 0}>
+            <div style={{ display: "flex", "flex-direction": "column", gap: "3px", "padding-top": space.xs }}>
+              <span style={{ color: theme.faint, "font-size": type.micro, "text-transform": "uppercase", "letter-spacing": "0.05em" }}>
+                Why
+              </span>
+              <For each={props.view!.reasons}>
+                {(reason) => (
+                  <div style={{ display: "flex", gap: space.sm, "align-items": "baseline" }}>
+                    <span style={{ color: theme.brandTo, "font-size": type.micro, "line-height": "1.6" }}>›</span>
+                    <span style={{ color: theme.muted, "font-size": type.caption, "line-height": 1.5 }}>{reason}</span>
+                  </div>
+                )}
+              </For>
+            </div>
+          </Show>
+        </Card>
+
+        <Show when={props.view!.rows.length > 0}>
+          <Disclosure
+            id="candidates"
+            size="row"
+            open={props.expanded}
+            onToggle={props.onToggle}
+            hovered={props.hovered === "candidates"}
+            onHover={props.onHover}
+            aside={
+              <span style={{ color: theme.faint, "font-size": type.micro }}>
+                {props.view!.rows.length} considered
+              </span>
+            }
+          >
+            <span style={{ "font-size": type.caption, "font-weight": 500, color: theme.muted }}>Candidates</span>
+          </Disclosure>
+
+          <Show when={props.expanded}>
+            <div style={{ display: "flex", "flex-direction": "column", gap: "1px" }}>
+              <For each={props.view!.rows}>
+                {(row) => (
+                  <div
+                    style={{
+                      display: "flex",
+                      "flex-direction": "column",
+                      gap: "2px",
+                      padding: "6px 8px",
+                      "border-radius": radius.sm,
+                      background: row.verdict === "chosen" ? "rgba(8,145,178,0.08)" : "transparent",
+                    }}
+                  >
+                    <div style={{ display: "flex", "justify-content": "space-between", gap: space.md, "align-items": "baseline" }}>
+                      <span
+                        style={{
+                          "font-family": mono,
+                          "font-size": type.micro,
+                          color: row.verdict === "blocked" ? theme.faint : theme.text,
+                          overflow: "hidden",
+                          "text-overflow": "ellipsis",
+                          "white-space": "nowrap",
+                        }}
+                      >
+                        {row.key}
+                      </span>
+                      <span style={{ display: "flex", gap: space.md, "flex-shrink": 0 }}>
+                        <span style={{ color: theme.muted, "font-size": type.micro, "font-variant-numeric": "tabular-nums" }}>
+                          {formatUsd(row.effectiveCost)}
+                        </span>
+                        <span style={{ color: theme.faint, "font-size": type.micro, "font-variant-numeric": "tabular-nums" }}>
+                          {formatPercent(row.successProbability * 100)}
+                        </span>
+                      </span>
+                    </div>
+                    <span style={{ color: theme.faint, "font-size": type.micro, "line-height": 1.45 }}>
+                      {row.reason}
+                      {row.adjustments.length > 0 ? ` · ${row.adjustments.join(" · ")}` : ""}
+                    </span>
+                  </div>
+                )}
+              </For>
+            </div>
+          </Show>
+        </Show>
+      </Show>
+    </Section>
+  )
+}
+
+/** Providers, not their catalogs. See the note in providerGroups(). */
+function ProviderList(props: { status: RouterStatus | undefined }) {
+  const [open, setOpen] = createSignal(true)
+  const [notConfiguredOpen, setNotConfiguredOpen] = createSignal(false)
+  const [hovered, setHovered] = createSignal<string | undefined>(undefined)
+
+  const groups = () => {
+    const status = props.status
+    if (!status?.models) return []
+    const active = ((status.quota ?? []) as Array<{ providerID?: string; error?: string }>)
+      .filter((snapshot) => !snapshot.error)
+      .map((snapshot) => snapshot.providerID ?? "")
+    return providerGroups({
+      models: status.models,
+      quota: (status.quota ?? []) as Array<{ providerID: string; label?: string }>,
+      activeProviders: active,
+    })
+  }
+
+  const activeGroups = () => groups().filter((group) => group.state === "active")
+  const inactiveGroups = () => groups().filter((group) => group.state !== "active")
+
+  const Row = (rowProps: { group: ProviderGroupView }) => (
+    <div
+      style={{
+        display: "flex",
+        "justify-content": "space-between",
+        gap: space.md,
+        "align-items": "center",
+        padding: "7px 9px",
+        "border-radius": radius.sm,
+        border: `1px solid ${theme.border}`,
+        background: rowProps.group.state === "active" ? theme.surface : "transparent",
+      }}
+    >
+      <span style={{ display: "flex", "flex-direction": "column", gap: "2px", "min-width": 0 }}>
+        <span style={{ "font-size": type.body, "font-weight": 550, color: theme.text }}>{rowProps.group.label}</span>
+        <Show when={rowProps.group.note}>
+          <span style={{ color: theme.faint, "font-size": type.micro, "line-height": 1.4 }}>{rowProps.group.note}</span>
+        </Show>
+      </span>
+      <span style={{ display: "flex", gap: space.md, "align-items": "center", "flex-shrink": 0 }}>
+        <span style={{ color: theme.faint, "font-size": type.micro }}>
+          {rowProps.group.approvedCount}/{rowProps.group.totalCount}
+        </span>
+        <Chip tone={rowProps.group.state === "active" ? "brand" : "neutral"}>
+          {rowProps.group.state === "active" ? "active" : "off"}
+        </Chip>
+      </span>
+    </div>
+  )
+
+  return (
+    <Section
+      label="Providers"
+      aside={
+        <span style={{ color: theme.faint, "font-size": type.micro }}>
+          {activeGroups().length} active
+          {inactiveGroups().length > 0 ? ` · ${inactiveGroups().length} off` : ""}
+        </span>
+      }
+    >
+      <Disclosure
+        id="providers"
+        open={open()}
+        onToggle={() => setOpen((value) => !value)}
+        hovered={hovered() === "providers"}
+        onHover={setHovered}
+        aside={
+          <span style={{ color: theme.faint, "font-size": type.micro }}>
+            {open() ? "hide" : "show"}
+          </span>
+        }
+      >
+        <span style={{ "font-size": type.caption, "font-weight": 500, color: theme.muted }}>
+          {open() ? "Configured" : "Show configured"}
+        </span>
+      </Disclosure>
+
+      <Show when={open()}>
+        <For each={activeGroups()}>{(group) => <Row group={group} />}</For>
+
+        <Show when={inactiveGroups().length > 0}>
+          <Disclosure
+            id="not-configured"
+            open={notConfiguredOpen()}
+            onToggle={() => setNotConfiguredOpen((value) => !value)}
+            hovered={hovered() === "not-configured"}
+            onHover={setHovered}
+            aside={<span style={{ color: theme.faint, "font-size": type.micro }}>{inactiveGroups().length}</span>}
+          >
+            <span style={{ "font-size": type.caption, "font-weight": 500, color: theme.muted }}>Not configured</span>
+          </Disclosure>
+          <Show when={notConfiguredOpen()}>
+            <For each={inactiveGroups()}>{(group) => <Row group={group} />}</For>
+          </Show>
+        </Show>
+      </Show>
+    </Section>
+  )
+}
+
+/** Allowances, one card per provider, with every window it reports. */
+function Allowances(props: { providers: ReadonlyArray<ProviderRow> }) {
+  return (
+    <Section
+      label="Allowances"
+      aside={
+        <span style={{ color: theme.faint, "font-size": type.micro }}>
+          {props.providers.length} provider{props.providers.length === 1 ? "" : "s"}
+        </span>
+      }
+    >
+      <Show
+        when={props.providers.length > 0}
+        fallback={<Empty title="No quota data" body="No provider has reported an allowance yet." />}
+      >
+        <For each={props.providers}>
+          {(provider) => (
+            <Card>
+              <div style={{ display: "flex", "justify-content": "space-between", gap: space.md, "align-items": "center" }}>
+                <span style={{ "font-size": type.body, "font-weight": 550, color: provider.error ? theme.bad : theme.text }}>
+                  {provider.label}
+                </span>
+                <span style={{ display: "flex", gap: space.xs, "align-items": "center" }}>
+                  <Show when={provider.stale}>
+                    <Chip tone="warn">stale</Chip>
+                  </Show>
+                  <Show when={provider.exhausted}>
+                    <Chip tone="bad">{provider.exhaustedWindow} spent</Chip>
+                  </Show>
+                  <Show when={!provider.exhausted && !provider.stale}>
+                    <Chip tone={provider.source === "provider" ? "good" : "neutral"}>
+                      {provider.source === "provider" ? "verified" : "estimated"}
+                    </Chip>
+                  </Show>
+                </span>
+              </div>
+
+              <div style={{ display: "flex", "flex-direction": "column", gap: "4px" }}>
+                <For each={provider.windows}>
+                  {(window) => (
+                    <div style={{ display: "flex", "align-items": "center", gap: space.md }}>
+                      <span
+                        style={{
+                          color: theme.faint,
+                          "font-size": type.micro,
+                          "min-width": "42px",
+                          "font-variant-numeric": "tabular-nums",
+                        }}
+                      >
+                        {window.label}
+                      </span>
+                      <Show when={window.reported} fallback={<span style={{ flex: 1 }} />}>
+                        <Meter usedPct={window.usedPct} exhausted={window.exceeded} />
+                      </Show>
+                      <span
+                        style={{
+                          color: window.exceeded ? theme.bad : window.reported ? theme.muted : theme.faint,
+                          "font-size": type.micro,
+                          "min-width": "82px",
+                          "text-align": "right",
+                          "font-variant-numeric": "tabular-nums",
+                          "flex-shrink": 0,
+                        }}
+                      >
+                        {window.reported ? formatWindowUsed(window) : "—"}
+                        {window.resetLabel ? ` · ${window.resetLabel}` : ""}
+                      </span>
+                    </div>
+                  )}
+                </For>
+              </div>
+
+              <Show when={provider.pools.length > 0}>
+                <div style={{ display: "flex", "flex-direction": "column", gap: "2px", "padding-top": space.xs }}>
+                  <For each={provider.pools}>
+                    {(pool) => (
+                      <div style={{ display: "flex", "justify-content": "space-between", gap: space.md }}>
+                        <span style={{ color: theme.faint, "font-size": type.micro }}>{pool.label}</span>
+                        <span style={{ color: theme.muted, "font-size": type.micro, "font-variant-numeric": "tabular-nums" }}>
+                          {formatUsd(pool.remainingUsd)} of {formatUsd(pool.monthlyUsd)}
+                        </span>
+                      </div>
+                    )}
+                  </For>
+                </div>
+              </Show>
+
+              <Show when={provider.caveat}>
+                <span style={{ color: theme.warn, "font-size": type.micro, "line-height": 1.45 }}>{provider.caveat}</span>
+              </Show>
+              <Show when={provider.error}>
+                <span style={{ color: theme.bad, "font-size": type.micro }}>{provider.error}</span>
+              </Show>
+            </Card>
+          )}
+        </For>
+      </Show>
+    </Section>
+  )
+}
+
+/**
+ * Paste any console page, once.
+ *
+ * Every console page is accepted and the type is detected, because making the
+ * user choose the right page first is a step that exists only because the
+ * software was not paying attention.
+ */
+function AccountPaste(props: { onChanged: () => void }) {
+  const ctx = usePlugin<typeof definition>()
+  const [page, setPage] = createSignal("")
+  const [preview, setPreview] = createSignal<any | undefined>(undefined)
+  const [status, setStatus] = createSignal<{ ok: boolean; text: string } | undefined>(undefined)
+  const [busy, setBusy] = createSignal(false)
+  const [focused, setFocused] = createSignal(false)
+  const [hovered, setHovered] = createSignal(false)
+
+  const reset = () => {
+    setPage("")
+    setPreview(undefined)
+  }
+
+  const read = async (confirm: boolean) => {
+    if (!page().trim() || busy()) return
+    setBusy(true)
+    try {
+      const result: any = await ctx.client.rpc(SmartRouterRpc).recordPlanPage({ page: page(), confirm })
+      setStatus({ ok: result?.ok !== false, text: result?.message ?? "" })
+      if (result?.ok && !confirm) setPreview(result.preview)
+      else if (result?.ok && confirm) {
+        reset()
+        props.onChanged()
+      }
+    } catch (cause) {
+      setStatus({ ok: false, text: cause instanceof Error ? cause.message : String(cause) })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const button = (label: string, enabled: boolean, onClick: () => void) => (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={!enabled}
+      style={{
+        padding: "5px 11px",
+        "border-radius": radius.sm,
+        border: `1px solid ${enabled ? theme.borderStrong : theme.border}`,
+        background: enabled ? theme.raised : "transparent",
+        color: enabled ? theme.text : theme.faint,
+        "font-size": type.caption,
+        font: enabled ? "inherit" : `${type.caption} inherit`,
+        "font-weight": 500,
+        cursor: enabled ? "pointer" : "default",
+      }}
+    >
+      {label}
+    </button>
+  )
+
+  return (
+    <Section label="Account reading">
+      <span style={{ color: theme.faint, "font-size": type.micro, "line-height": 1.5 }}>
+        OpenDesign exposes no usage API, so the router sees only what it routed itself. Paste{" "}
+        <strong style={{ color: theme.muted }}>Plan &amp; balance</strong> to seed real usage, or{" "}
+        <strong style={{ color: theme.muted }}>Usage</strong> to check the cost model against what you were charged.
+      </span>
+
+      <textarea
+        value={page()}
+        onInput={(event) => {
+          setPage((event.currentTarget as HTMLTextAreaElement).value)
+          setPreview(undefined)
+        }}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        placeholder="Paste the page here — navigation and all is fine."
+        aria-label="Paste an OpenDesign console page"
+        rows={3}
+        style={{
+          width: "100%",
+          resize: "vertical",
+          padding: "8px 9px",
+          "border-radius": radius.sm,
+          border: `1px solid ${focused() ? theme.brandTo : theme.border}`,
+          background: "transparent",
+          color: theme.text,
+          "font-size": type.caption,
+          "font-family": "inherit",
+          "line-height": 1.5,
+          "box-sizing": "border-box",
+          outline: "none",
+          transition: "border-color 120ms ease",
+        }}
+      />
+
+      <Show when={preview()}>
+        <Card>
+          <span style={{ color: theme.text, "font-size": type.caption, "line-height": 1.5 }}>{preview().summary}</span>
+          <Show when={preview().missing?.length > 0}>
+            <span style={{ color: theme.warn, "font-size": type.micro }}>
+              Not on the page: {preview().missing.join(", ")}
+            </span>
+          </Show>
+          <Show when={preview().reconciliation}>
+            <span
+              style={{
+                color: preview().reconciliation.differ > 0 ? theme.warn : theme.good,
+                "font-size": type.micro,
+                "line-height": 1.45,
+              }}
+            >
+              {preview().reconciliation.summary}
+            </span>
+            <For each={preview().reconciliation.rows.filter((row: any) => row.verdict === "differs")}>
+              {(row: any) => (
+                <span style={{ color: theme.faint, "font-size": type.micro }}>
+                  {row.modelName}: charged {row.chargedUsd.toFixed(2)}, implied {row.impliedMultiplier?.toFixed(2)}× vs
+                  catalog {row.catalogMultiplier?.toFixed(2)}×
+                </span>
+              )}
+            </For>
+          </Show>
+        </Card>
+      </Show>
+
+      <div
+        style={{ display: "flex", gap: space.sm }}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+      >
+        <Show
+          when={preview()}
+          fallback={button(busy() ? "Reading…" : "Read page", Boolean(page().trim()) && !busy(), () => void read(false))}
+        >
+          <Show when={preview().kind === "allowance"}>
+            {button(busy() ? "Saving…" : "Use this", !busy(), () => void read(true))}
+          </Show>
+          {button(preview().kind === "usage" ? "Done" : "Cancel", !busy(), reset)}
+        </Show>
+      </div>
+
+      <Show when={status()}>
+        <span
+          style={{
+            color: status()!.ok ? theme.good : theme.bad,
+            "font-size": type.micro,
+            "line-height": 1.45,
+          }}
+        >
+          {status()!.text}
+        </span>
+      </Show>
+    </Section>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// The panel
+// ---------------------------------------------------------------------------
+
+function SmartRouterPanel(props: { sessionID: string | undefined }) {
   const ctx = usePlugin<typeof definition>()
   const [status, setStatus] = createSignal<RouterStatus | undefined>(undefined)
   const [error, setError] = createSignal<string | undefined>(undefined)
   const [at, setAt] = createSignal<number | undefined>(undefined)
+  const [expandedCandidates, setExpandedCandidates] = createSignal(false)
+  const [hovered, setHovered] = createSignal<string | undefined>(undefined)
 
   const load = async () => {
     const sessionID = props.sessionID
@@ -105,32 +984,52 @@ function DecisionInspector(props: { sessionID: string | undefined }) {
   const view = (): DecisionView | undefined => summariseDecision(status()?.lastDecision as never)
   const providers = (): ProviderRow[] =>
     ((status()?.quota ?? []) as never[]).map((snapshot) => toProviderRow(snapshot))
+  const needsReading = () => providers().some((provider) => provider.source === "estimate")
 
   return (
     <div
       style={{
         display: "flex",
         "flex-direction": "column",
-        gap: "14px",
-        padding: "14px",
+        gap: space.lg,
+        padding: "14px 14px 18px",
         color: theme.text,
-        "font-size": "12px",
+        "font-size": type.body,
         height: "100%",
         "overflow-y": "auto",
-        background: theme.bg,
+        "box-sizing": "border-box",
+        "font-family": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
+        "-webkit-font-smoothing": "antialiased",
       }}
     >
-      <div style={{ display: "flex", "justify-content": "space-between", "align-items": "baseline" }}>
-        <span style={{ "font-weight": 600, "font-size": "13px" }}>Smart Router</span>
-        <span style={{ color: theme.faint, "font-size": "11px" }}>
-          {at() ? relative(at()!) : "connecting…"}
-        </span>
+      <div style={{ display: "flex", "flex-direction": "column", gap: "3px" }}>
+        <BrandHeader runtime={status()?.runtime ?? "connecting"} mode={status()?.mode ?? "—"} />
+        <div style={{ display: "flex", "justify-content": "space-between", gap: space.md, "align-items": "baseline" }}>
+          <span
+            style={{
+              "font-family": mono,
+              "font-size": type.micro,
+              color: status()?.current ? theme.muted : theme.faint,
+              overflow: "hidden",
+              "text-overflow": "ellipsis",
+              "white-space": "nowrap",
+            }}
+          >
+            {status()?.current ? `${status()!.current!.providerID}/${status()!.current!.id}` : "no model yet"}
+          </span>
+          <span style={{ color: theme.faint, "font-size": type.micro, "flex-shrink": 0 }}>
+            {at() ? relative(at()!) : "connecting…"}
+          </span>
+        </div>
       </div>
 
-      <Row label="state">{statusLine(status() ?? {})}</Row>
-
       <Show when={error()}>
-        <div style={{ color: theme.bad, "font-size": "11px" }}>RPC unavailable: {error()}</div>
+        <Card>
+          <span style={{ color: theme.bad, "font-size": type.caption }}>Router unreachable: {error()}</span>
+          <span style={{ color: theme.faint, "font-size": type.micro }}>
+            The plugin may have failed to load. Check Settings → Extensions → Plugins.
+          </span>
+        </Card>
       </Show>
 
       <AutoSwitch
@@ -139,743 +1038,37 @@ function DecisionInspector(props: { sessionID: string | undefined }) {
         onChanged={() => void load()}
       />
 
-      <div style={{ height: "1px", background: theme.border }} />
-
-      <Show
-        when={view()}
-        fallback={
-          <div style={{ color: theme.muted, "font-size": "12px", "line-height": 1.5 }}>
-            No decision yet in this session. Send a prompt and the router will explain what it chose and
-            why.
-          </div>
-        }
-      >
-        {(decision) => (
-          <div style={{ display: "flex", "flex-direction": "column", gap: "12px" }}>
-            <div style={{ display: "flex", "flex-direction": "column", gap: "6px" }}>
-              <span style={{ color: theme.faint, "font-size": "11px", "text-transform": "uppercase" }}>
-                Chosen
-              </span>
-              <span style={{ "font-family": mono, "font-size": "12px", color: theme.good }}>
-                {decision().chosen ?? "nothing eligible"}
-              </span>
-              <div style={{ display: "flex", gap: "12px", "flex-wrap": "wrap" }}>
-                <span style={{ color: theme.muted }}>
-                  {formatUsd(decision().estimatedUsd)} estimated
-                </span>
-                <span style={{ color: theme.muted }}>
-                  task {decision().taskKind} · tier {decision().taskTier}
-                </span>
-                <span style={{ color: theme.muted }}>
-                  {Math.round(decision().contextTokens / 1000)}k context
-                </span>
-              </div>
-            </div>
-
-            <Show when={decision().reasons.length > 0}>
-              <div style={{ display: "flex", "flex-direction": "column", gap: "4px" }}>
-                <span style={{ color: theme.faint, "font-size": "11px", "text-transform": "uppercase" }}>
-                  Why
-                </span>
-                <For each={decision().reasons}>
-                  {(reason) => (
-                    <div style={{ display: "flex", gap: "6px", color: theme.text, "line-height": 1.45 }}>
-                      <span style={{ color: theme.faint }}>•</span>
-                      <span>{reason}</span>
-                    </div>
-                  )}
-                </For>
-              </div>
-            </Show>
-
-            <div style={{ display: "flex", "flex-direction": "column", gap: "6px" }}>
-              <div style={{ display: "flex", "justify-content": "space-between" }}>
-                <span style={{ color: theme.faint, "font-size": "11px", "text-transform": "uppercase" }}>
-                  Candidates
-                </span>
-                <span style={{ color: theme.faint, "font-size": "11px" }}>
-                  {decision().eligibleCount} eligible · {decision().blockedCount} blocked
-                </span>
-              </div>
-
-              <div style={{ display: "flex", "flex-direction": "column" }}>
-                <For each={decision().rows}>
-                  {(row) => (
-                    <div
-                      style={{
-                        display: "flex",
-                        "flex-direction": "column",
-                        gap: "2px",
-                        padding: "7px 8px",
-                        "border-bottom": `1px solid ${theme.border}`,
-                        background: row.verdict === "chosen" ? theme.surface : "transparent",
-                      }}
-                    >
-                      <div style={{ display: "flex", "justify-content": "space-between", gap: "8px" }}>
-                        <span
-                          style={{
-                            "font-family": mono,
-                            "font-size": "11px",
-                            color: row.verdict === "blocked" ? theme.muted : theme.text,
-                            overflow: "hidden",
-                            "text-overflow": "ellipsis",
-                            "white-space": "nowrap",
-                          }}
-                        >
-                          {row.key}
-                        </span>
-                        <span style={{ display: "flex", gap: "10px", "flex-shrink": 0 }}>
-                          <span style={{ color: theme.muted, "font-size": "11px" }}>
-                            {formatUsd(row.effectiveCost)}
-                          </span>
-                          <span style={{ color: theme.muted, "font-size": "11px" }}>
-                            {formatPercent(row.successProbability * 100)}
-                          </span>
-                          <Verdict verdict={row.verdict} />
-                        </span>
-                      </div>
-                      <span style={{ color: theme.faint, "font-size": "11px", "line-height": 1.4 }}>
-                        {row.reason}
-                        {row.adjustments.length > 0 ? ` · ${row.adjustments.join(" · ")}` : ""}
-                      </span>
-                    </div>
-                  )}
-                </For>
-              </div>
-            </div>
-          </div>
-        )}
-      </Show>
-
-      <div style={{ height: "1px", background: theme.border }} />
-
-      <ProviderModels status={status()} />
-
-      <div style={{ height: "1px", background: theme.border }} />
-
-      <Show when={providers().some((provider) => provider.source === "estimate")}>
-        <PlanPagePaste onChanged={() => void load()} />
-      </Show>
-
-      <div style={{ height: "1px", background: theme.border }} />
-
-      <div style={{ display: "flex", "flex-direction": "column", gap: "10px" }}>
-        <span style={{ color: theme.faint, "font-size": "11px", "text-transform": "uppercase", "letter-spacing": "0.04em" }}>
-          Providers
-        </span>
-        <For each={providers()}>
-          {(provider) => (
-            <div
-              style={{
-                display: "flex",
-                "flex-direction": "column",
-                gap: "7px",
-                padding: "10px",
-                "border-radius": "8px",
-                background: theme.surface,
-                border: `1px solid ${theme.border}`,
-              }}
-            >
-              <div style={{ display: "flex", "justify-content": "space-between", gap: "8px", "align-items": "baseline" }}>
-                <span style={{ color: provider.error ? theme.bad : theme.text, "font-weight": 550, "font-size": "12.5px" }}>
-                  {provider.label}
-                </span>
-                <span
-                  style={{
-                    color: provider.exhausted ? theme.bad : provider.stale ? theme.warn : theme.faint,
-                    "font-size": "10.5px",
-                    "text-transform": "uppercase",
-                    "letter-spacing": "0.03em",
-                  }}
-                >
-                  {provider.exhausted ? `${provider.exhaustedWindow} exhausted` : provider.stale ? "stale" : provider.quotaState ?? provider.source}
-                </span>
-              </div>
-
-              <For each={provider.windows}>
-                {(window) => (
-                  <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
-                    <span
-                      style={{
-                        color: theme.faint,
-                        "font-size": "10.5px",
-                        "min-width": "52px",
-                        "font-variant-numeric": "tabular-nums",
-                      }}
-                    >
-                      {window.label}
-                    </span>
-                    <div
-                      style={{
-                        flex: 1,
-                        height: "4px",
-                        "border-radius": "2px",
-                        background: window.reported ? "rgba(255,255,255,0.10)" : "transparent",
-                        overflow: "hidden",
-                        position: "relative",
-                      }}
-                    >
-                      <Show when={window.reported}>
-                        <div
-                          style={{
-                            width: `${Math.min(100, Math.max(0, window.usedPct))}%`,
-                            height: "100%",
-                            background: window.exceeded
-                              ? theme.bad
-                              : window.usedPct >= 80
-                                ? theme.warn
-                                : theme.good,
-                          }}
-                        />
-                      </Show>
-                    </div>
-                    <span
-                      style={{
-                        color: window.reported ? (window.exceeded ? theme.bad : theme.muted) : theme.faint,
-                        "font-size": "10.5px",
-                        "min-width": "74px",
-                        "text-align": "right",
-                        "font-variant-numeric": "tabular-nums",
-                      }}
-                    >
-                      {formatWindowUsed(window)}
-                      {window.resetLabel ? ` · ${window.resetLabel}` : ""}
-                    </span>
-                  </div>
-                )}
-              </For>
-
-              <Show when={provider.pools.length > 0}>
-                <div style={{ display: "flex", "flex-direction": "column", gap: "3px", "padding-top": "3px", "border-top": `1px solid ${theme.border}` }}>
-                  <For each={provider.pools}>
-                    {(pool) => (
-                      <div style={{ display: "flex", "justify-content": "space-between", gap: "8px" }}>
-                        <span style={{ color: theme.muted, "font-size": "10.5px" }}>{pool.label}</span>
-                        <span style={{ color: theme.faint, "font-size": "10.5px", "font-variant-numeric": "tabular-nums" }}>
-                          {formatUsd(pool.remainingUsd)} of {formatUsd(pool.monthlyUsd)}
-                        </span>
-                      </div>
-                    )}
-                  </For>
-                </div>
-              </Show>
-
-              <Show when={provider.caveat && provider.caveat.length > 0}>
-                <span style={{ color: theme.warn, "font-size": "10.5px", "line-height": 1.45 }}>
-                  {provider.caveat}
-                </span>
-              </Show>
-
-              <div style={{ display: "flex", "justify-content": "space-between", gap: "8px" }}>
-                <span style={{ color: theme.faint, "font-size": "10.5px" }}>{provider.sourceLabel}</span>
-                <Show when={provider.extraCreditsUsd !== undefined && provider.extraCreditsUsd! > 0}>
-                  <span style={{ color: theme.faint, "font-size": "10.5px" }}>
-                    wallet {formatUsd(provider.extraCreditsUsd!)} · never auto-spent
-                  </span>
-                </Show>
-              </div>
-
-              <Show when={provider.error}>
-                <span style={{ color: theme.bad, "font-size": "10.5px" }}>{provider.error}</span>
-              </Show>
-            </div>
-          )}
-        </For>
-      </div>
-    </div>
-  )
-}
-
-
-/**
- * The switch a user actually wants: is the router choosing the model, or am I?
- *
- * Deliberately a switch, not a "stop the router" button. Turning this off keeps
- * the panel, the quota readings and the decision history working — it stops the
- * model from being changed underneath you, which is the only thing most people
- * mean by "turn it off".
- */
-function AutoSwitch(props: { sessionID: string | undefined; auto: boolean; onChanged: () => void }) {
-  const ctx = usePlugin<typeof definition>()
-  const [busy, setBusy] = createSignal(false)
-
-  const toggle = async () => {
-    if (!props.sessionID || busy()) return
-    setBusy(true)
-    try {
-      await ctx.client.rpc(SmartRouterRpc).setSessionAuto({
-        sessionID: props.sessionID,
-        auto: !props.auto,
-      })
-      props.onChanged()
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={() => void toggle()}
-      disabled={busy() || !props.sessionID}
-      aria-pressed={props.auto}
-      title={
-        props.auto
-          ? "The router is choosing the model. Click to keep your current model."
-          : "Your model is kept. Click to let the router choose again."
-      }
-      style={{
-        display: "flex",
-        "align-items": "center",
-        "justify-content": "space-between",
-        gap: "10px",
-        width: "100%",
-        padding: "9px 10px",
-        "border-radius": "8px",
-        border: `1px solid ${theme.border}`,
-        background: props.auto ? theme.surface : "transparent",
-        color: theme.text,
-        cursor: busy() ? "default" : "pointer",
-        "font-size": "12px",
-        "font-family": "inherit",
-        "text-align": "left",
-      }}
-    >
-      <span style={{ display: "flex", "flex-direction": "column", gap: "2px" }}>
-        <span style={{ "font-weight": 550 }}>Automatic routing</span>
-        <span style={{ color: theme.faint, "font-size": "10.5px" }}>
-          {props.auto ? "The router picks the model for you" : "You keep your model; the router only observes"}
-        </span>
-      </span>
-      <span
-        style={{
-          width: "30px",
-          height: "16px",
-          "border-radius": "8px",
-          background: props.auto ? theme.good : "rgba(255,255,255,0.14)",
-          position: "relative",
-          "flex-shrink": 0,
-          transition: "background 120ms ease",
-        }}
-      >
-        <span
-          style={{
-            position: "absolute",
-            top: "2px",
-            left: props.auto ? "16px" : "2px",
-            width: "12px",
-            height: "12px",
-            "border-radius": "50%",
-            background: "#fff",
-            transition: "left 120ms ease",
-          }}
-        />
-      </span>
-    </button>
-  )
-}
-
-/**
- * Paste the Plan & balance page. Once.
- *
- * Earlier versions asked for a percentage, a window and a reset time as three
- * separate fields. That is asking the user to do the parsing, and to know which
- * of two allowances the page's percentage refers to — the exact arithmetic
- * mistake this feature exists to prevent.
- *
- * So: one box, paste, see what the router understood, confirm. The preview is
- * not decoration. The user pasted a page and is entitled to see what it was
- * taken to mean before anything is written.
- */
-function PlanPagePaste(props: { onChanged: () => void }) {
-  const ctx = usePlugin<typeof definition>()
-  const [page, setPage] = createSignal("")
-  const [preview, setPreview] = createSignal<any | undefined>(undefined)
-  const [status, setStatus] = createSignal<{ ok: boolean; text: string } | undefined>(undefined)
-  const [busy, setBusy] = createSignal(false)
-
-  const reset = () => {
-    setPage("")
-    setPreview(undefined)
-  }
-
-  const read = async (confirm: boolean) => {
-    if (!page().trim() || busy()) return
-    setBusy(true)
-    try {
-      const result: any = await ctx.client.rpc(SmartRouterRpc).recordPlanPage({
-        page: page(),
-        confirm,
-      })
-      setStatus({ ok: result?.ok !== false, text: result?.message ?? "" })
-      if (result?.ok && !confirm) {
-        setPreview(result.preview)
-      } else if (result?.ok && confirm) {
-        reset()
-        props.onChanged()
-      }
-    } catch (cause) {
-      setStatus({ ok: false, text: cause instanceof Error ? cause.message : String(cause) })
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  return (
-    <div style={{ display: "flex", "flex-direction": "column", gap: "8px" }}>
-      <span style={{ color: theme.faint, "font-size": "11px", "text-transform": "uppercase", "letter-spacing": "0.04em" }}>
-        Account balance
-      </span>
-      <span style={{ color: theme.muted, "font-size": "11px", "line-height": "1.45" }}>
-        OpenDesign does not expose usage to an API key, so the router can only see what it routed
-        itself. Paste <strong style={{ color: theme.text }}>either</strong> console page and it works
-        out which one it got. <em>Plan &amp; balance</em> seeds your real usage; <em>Usage</em> checks
-        whether the router's cost model matches what you were charged.
-      </span>
-
-      <textarea
-        value={page()}
-        onInput={(event) => {
-          setPage((event.currentTarget as HTMLTextAreaElement).value)
-          setPreview(undefined)
-        }}
-        placeholder={"Paste Plan & balance or Usage — navigation and all is fine."}
-        aria-label="Paste your Plan and balance page"
-        rows={3}
-        style={{
-          width: "100%",
-          resize: "vertical",
-          padding: "8px 9px",
-          "border-radius": "7px",
-          border: `1px solid ${theme.border}`,
-          background: "transparent",
-          color: theme.text,
-          "font-size": "11px",
-          "font-family": "inherit",
-          "line-height": 1.45,
-          "box-sizing": "border-box",
-        }}
+      <DecisionInspector
+        view={view()}
+        expanded={expandedCandidates()}
+        onToggle={() => setExpandedCandidates((value) => !value)}
+        hovered={hovered()}
+        onHover={setHovered}
       />
 
-      <Show when={preview()}>
-        <div
-          style={{
-            display: "flex",
-            "flex-direction": "column",
-            gap: "4px",
-            padding: "8px 9px",
-            "border-radius": "7px",
-            border: `1px solid ${theme.border}`,
-            background: theme.surface,
-          }}
-        >
-          <span style={{ color: theme.text, "font-size": "11.5px", "line-height": 1.45 }}>
-            {preview().summary}
-          </span>
-          <Show when={preview().missing?.length > 0}>
-            <span style={{ color: theme.warn, "font-size": "10.5px" }}>
-              Not on the page: {preview().missing.join(", ")}
-            </span>
-          </Show>
+      <Allowances providers={providers()} />
 
-          <Show when={preview().reconciliation}>
-            <span
-              style={{
-                color: preview().reconciliation.differ > 0 ? theme.warn : theme.good,
-                "font-size": "10.5px",
-                "line-height": 1.45,
-              }}
-            >
-              {preview().reconciliation.summary}
-            </span>
-            <For each={preview().reconciliation.rows.filter((row: any) => row.verdict === "differs")}>
-              {(row: any) => (
-                <span style={{ color: theme.faint, "font-size": "10.5px" }}>
-                  {row.modelName}: charged {row.chargedUsd.toFixed(2)}, implied{" "}
-                  {row.impliedMultiplier?.toFixed(2)}x vs catalog {row.catalogMultiplier?.toFixed(2)}x
-                </span>
-              )}
-            </For>
-          </Show>
-        </div>
+      <Show when={needsReading()}>
+        <AccountPaste onChanged={() => void load()} />
       </Show>
 
-      <div style={{ display: "flex", gap: "6px" }}>
-        <Show
-          when={preview()}
-          fallback={
-            <button
-              type="button"
-              onClick={() => void read(false)}
-              disabled={busy() || !page().trim()}
-              style={buttonStyle(Boolean(page().trim()) && !busy())}
-            >
-              {busy() ? "Reading…" : "Read page"}
-            </button>
-          }
-        >
-          {/* A usage page is evidence about the catalog, not a reading of the
-              allowance, so there is nothing to apply. Offering "Use this"
-              would imply otherwise. */}
-          <Show when={preview().kind === "allowance"}>
-            <button type="button" onClick={() => void read(true)} disabled={busy()} style={buttonStyle(!busy())}>
-              {busy() ? "Saving…" : "Use this"}
-            </button>
-          </Show>
-          <button type="button" onClick={reset} disabled={busy()} style={buttonStyle(false)}>
-            {preview().kind === "usage" ? "Done" : "Cancel"}
-          </button>
-        </Show>
-      </div>
-
-      <Show when={status()}>
-        <span style={{ color: status()!.ok ? theme.good : theme.bad, "font-size": "10.5px", "line-height": 1.45 }}>
-          {status()!.text}
-        </span>
-      </Show>
-      <span style={{ color: theme.faint, "font-size": "10.5px", "line-height": 1.4 }}>
-        A new account reads 0%. A spent one reads 100%, and routing leaves the provider until the
-        window resets.
-      </span>
+      <ProviderList status={status()} />
     </div>
   )
 }
 
-const buttonStyle = (enabled: boolean) => ({
-  padding: "6px 12px",
-  "border-radius": "7px",
-  border: `1px solid ${theme.border}`,
-  background: enabled ? theme.surface : "transparent",
-  color: enabled ? theme.text : theme.faint,
-  "font-size": "11px",
-  "font-family": "inherit",
-  cursor: enabled ? "pointer" : "default",
-})
-
-
-/**
- * Providers and their models.
- *
- * The question this answers is "why is that model not being used?", which has
- * three different answers that must not be collapsed into one: the provider has
- * no credential on this machine, the model is deliberately excluded, or the
- * model simply is not approved. "Unavailable" for all three is what makes people
- * think a model has gone missing.
- */
-/**
- * A disclosure row: something you can open.
- *
- * The affordance is the hard part. A row that merely responds to a click is
- * invisible as a control — no border, no cursor change, no hover, nothing that
- * says "there is more behind this". So every toggle here gets all four: a
- * rotating caret, a hover fill, `cursor: pointer`, and `aria-expanded`. The
- * caret sits in a fixed-width box so the labels do not shift when it rotates,
- * which is the small detail that makes a list feel built rather than assembled.
- */
-function Disclosure(props: {
-  id: string
-  open: boolean
-  onToggle: () => void
-  /** Left content. */
-  children: unknown
-  /** Right content, e.g. counts. */
-  aside?: unknown
-  subdued?: boolean
-  hovered: boolean
-  onHover: (id: string | undefined) => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={props.onToggle}
-      onMouseEnter={() => props.onHover(props.id)}
-      onMouseLeave={() => props.onHover(undefined)}
-      aria-expanded={props.open}
-      title={props.open ? "Collapse" : "Expand"}
-      style={{
-        display: "flex",
-        "justify-content": "space-between",
-        "align-items": "center",
-        gap: "8px",
-        width: "100%",
-        background: props.hovered ? theme.surface : "transparent",
-        border: "none",
-        "border-radius": "6px",
-        padding: "6px 6px",
-        margin: "-6px -6px",
-        color: "inherit",
-        font: "inherit",
-        cursor: "pointer",
-        "text-align": "left",
-        transition: "background 100ms ease",
-      }}
-    >
-      <span style={{ display: "flex", gap: "7px", "align-items": "center", "min-width": 0 }}>
-        <span
-          aria-hidden="true"
-          style={{
-            display: "inline-block",
-            width: "9px",
-            color: props.hovered ? theme.text : theme.faint,
-            "font-size": "10px",
-            "flex-shrink": 0,
-            transform: props.open ? "rotate(90deg)" : "none",
-            transition: "transform 120ms ease",
-          }}
-        >
-          ▸
-        </span>
-        {props.children as never}
-      </span>
-      <span style={{ display: "flex", gap: "8px", "align-items": "baseline", "flex-shrink": 0 }}>
-        {props.aside as never}
-      </span>
-    </button>
-  )
-}
-
-function ProviderModels(props: { status: RouterStatus | undefined }) {
-  /**
-   * Providers, not their catalogs.
-   *
-   * The question this answers is "what can route right now, and what is not
-   * configured". Listing every model answered a question nobody asked and
-   * buried the rest of the panel under forty rows of names.
-   *
-   * Collapsed by default except the section itself, which carries the summary
-   * that is most of the value: one line telling you how many providers are live.
-   */
-  const [sectionOpen, setSectionOpen] = createSignal(true)
-  const [notConfiguredOpen, setNotConfiguredOpen] = createSignal(false)
-  const [hovered, setHovered] = createSignal<string | undefined>(undefined)
-
-  const groups = () => {
-    const status = props.status
-    if (!status?.models) return []
-    const active = ((status.quota ?? []) as Array<{ providerID?: string; error?: string }>)
-      .filter((snapshot) => !snapshot.error)
-      .map((snapshot) => snapshot.providerID ?? "")
-    return providerGroups({
-      models: status.models,
-      quota: (status.quota ?? []) as Array<{ providerID: string; label?: string }>,
-      activeProviders: active,
-    })
-  }
-
-  const activeGroups = () => groups().filter((group) => group.state === "active")
-  const inactiveGroups = () => groups().filter((group) => group.state !== "active")
-
-  const ProviderRow = (rowProps: { group: ReturnType<typeof groups>[number] }) => (
-    <div
-      style={{
-        display: "flex",
-        "justify-content": "space-between",
-        gap: "8px",
-        "align-items": "baseline",
-        padding: "7px 10px",
-        "border-radius": "7px",
-        border: `1px solid ${theme.border}`,
-        background: rowProps.group.state === "active" ? theme.surface : "transparent",
-      }}
-    >
-      <span style={{ display: "flex", "flex-direction": "column", gap: "2px", "min-width": 0 }}>
-        <span style={{ "font-size": "12.5px", "font-weight": 550, color: theme.text }}>
-          {rowProps.group.label}
-        </span>
-        <Show when={rowProps.group.note}>
-          <span style={{ color: theme.warn, "font-size": "10.5px", "line-height": 1.4 }}>
-            {rowProps.group.note}
-          </span>
-        </Show>
-      </span>
-      <span style={{ display: "flex", gap: "8px", "align-items": "baseline", "flex-shrink": 0 }}>
-        <span style={{ color: theme.faint, "font-size": "10.5px" }}>
-          {rowProps.group.approvedCount} of {rowProps.group.totalCount} models
-        </span>
-        <span
-          style={{
-            color: rowProps.group.state === "active" ? theme.good : theme.faint,
-            "font-size": "10px",
-            "text-transform": "uppercase",
-            "letter-spacing": "0.04em",
-            "font-weight": 600,
-          }}
-        >
-          {rowProps.group.state === "active" ? "active" : "not configured"}
-        </span>
-      </span>
-    </div>
-  )
-
-  return (
-    <div style={{ display: "flex", "flex-direction": "column", gap: "8px" }}>
-      <Disclosure
-        id="section"
-        open={sectionOpen()}
-        onToggle={() => setSectionOpen((open) => !open)}
-        hovered={hovered() === "section"}
-        onHover={setHovered}
-        aside={
-          <span style={{ color: theme.faint, "font-size": "10.5px" }}>
-            {activeGroups().length} active
-            {inactiveGroups().length > 0 ? ` · ${inactiveGroups().length} not configured` : ""}
-          </span>
-        }
-      >
-        <span
-          style={{
-            color: theme.faint,
-            "font-size": "11px",
-            "text-transform": "uppercase",
-            "letter-spacing": "0.04em",
-          }}
-        >
-          Providers
-        </span>
-      </Disclosure>
-
-      <Show when={sectionOpen()}>
-        <For each={activeGroups()}>{(group) => <ProviderRow group={group} />}</For>
-
-        <Show when={inactiveGroups().length > 0}>
-          <div
-            style={{
-              display: "flex",
-              "flex-direction": "column",
-              gap: "6px",
-              "padding-top": "4px",
-              "border-top": `1px solid ${theme.border}`,
-            }}
-          >
-            <Disclosure
-              id="not-configured"
-              open={notConfiguredOpen()}
-              onToggle={() => setNotConfiguredOpen((open) => !open)}
-              hovered={hovered() === "not-configured"}
-              onHover={setHovered}
-              aside={
-                <span style={{ color: theme.faint, "font-size": "10.5px" }}>
-                  {inactiveGroups().length}
-                </span>
-              }
-            >
-              <span style={{ color: theme.muted, "font-size": "11.5px" }}>Not configured</span>
-            </Disclosure>
-
-            <Show when={notConfiguredOpen()}>
-              <For each={inactiveGroups()}>{(group) => <ProviderRow group={group} />}</For>
-            </Show>
-          </div>
-        </Show>
-      </Show>
-    </div>
-  )
+const tab: PanelTab = {
+  id: "router",
+  get title() {
+    return "Router"
+  },
+  closable: "hover",
 }
 
 const definition = Plugin.define({
   i18n: {
     en: {
-      "command.open": "Open Smart Router panel",
+      "command.open": "Open Smart Router",
       "panel.title": "Router",
     },
   },
@@ -905,12 +1098,17 @@ export default Plugin.define({
       id: "router",
       region: "side",
       list: (input) => (input.open.includes("router") ? [tab] : []),
-      render: (props: PanelProps) => <DecisionInspector sessionID={props.session.id} />,
+      render: (props: PanelProps) => <SmartRouterPanel sessionID={props.session.id} />,
     })
 
     ctx.add(Slot, {
       at: "window.bottom",
-      render: () => <span style={{ "font-size": "11px", color: theme.faint }}>Router</span>,
+      render: () => (
+        <span style={{ display: "inline-flex", "align-items": "center", gap: "5px" }}>
+          <BrandMark size={12} />
+          <span style={{ "font-size": type.micro, color: theme.faint }}>Smart Router</span>
+        </span>
+      ),
     })
   },
 })
