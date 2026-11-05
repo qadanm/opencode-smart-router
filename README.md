@@ -9,7 +9,7 @@
 <p>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/OpenCode-2.x-000000.svg" alt="OpenCode 2.x">
-  <img src="https://img.shields.io/badge/tests-721%20passing-2ea44f.svg" alt="721 tests">
+  <img src="https://img.shields.io/badge/tests-759%20passing-2ea44f.svg" alt="759 tests">
   <img src="https://img.shields.io/badge/runtime-Node%2020.12%2B-339933.svg" alt="Node 20.12+">
 </p>
 
@@ -148,6 +148,32 @@ Then it does the part that matters:
 When a genuinely near-expiry window and a cheap provider disagree, the router picks
 the option that spends money you have already committed to losing.
 
+## Self-healing routing
+
+Other routers stop when the wire misbehaves. This one recovers, in three steps,
+and every step is visible in the panel:
+
+1. **Repairs the prompt in flight.** Some models reject a rebuilt session: the
+   Anthropic protocol accepts only user and assistant message roles, and a
+   mid-session notice otherwise kills the whole turn with a 400 error. The
+   router folds those notices into user messages before the request leaves, so
+   the turn continues on the chosen model. You see nothing, because nothing
+   went wrong. OpenAI-compatible gateways are untouched.
+
+2. **Never retries a doomed request.** A deterministic rejection (the provider
+   refused the request shape before generating anything) would produce the
+   identical 400 on every retry. The router classifies it as its own failure
+   class, declines the host's retry, and instead of burning turns records that
+   the model is healthy while the request shape was not.
+
+3. **Fails over and continues.** With the rejecting model held back, the router
+   re-routes the same task to the next best eligible choice, switches the
+   session, and continues the turn with a single `[router]` notice. One
+   failover per prompt, never a loop. The hold is five minutes and sits on the
+   model for every session, because a gateway that rejects one rebuilt session
+   will reject others like it. The panel's last decision shows what was
+   rejected and what took over.
+
 ## What it will not do
 
 - Never buys credits, changes billing, or enables top-ups.
@@ -251,7 +277,7 @@ npm run verify    # clean room: empty HOME, fresh install, typecheck, tests, bui
 npm run mutate    # prove each safety test fails when its property breaks
 ```
 
-721 tests across 56 files cover classification, eligibility, quota parsing,
+759 tests across 63 files cover classification, eligibility, quota parsing,
 credential discovery and its security properties, ledger accounting, pool
 reconciliation, documented peak pricing, cache-aware routing, premium protection,
 purchased-credit blocking, manual overrides, failure classification, configuration

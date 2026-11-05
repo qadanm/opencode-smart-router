@@ -234,6 +234,87 @@ describe("decision summary", () => {
     expect(view?.rows[0]?.verdict).toBe("chosen")
     expect(view?.rows[1]?.reason).toBe("weekly allowance 94% used")
   })
+
+  it("maps a failover self-heal annotation to a panel line", () => {
+    const view = summariseDecision({
+      id: "dec_2",
+      at: 1,
+      sessionID: "ses_1",
+      mode: "balanced",
+      dryRun: false,
+      runtime: "automatic",
+      task: { kind: "code", tier: 2 },
+      chosen: { providerID: "commandcode", id: "deepseek-v4.1-flash" },
+      switched: true,
+      switchReason: "selfheal",
+      reasons: [],
+      warnings: [],
+      candidates: [],
+      premium: { state: "allowed" },
+      quota: [],
+      contextTokens: 8_000,
+      cachedTokens: 0,
+      estimatedUsd: 0,
+      needsPremiumApproval: false,
+      manualOverride: false,
+      selfheal: {
+        rejected: "commandcode/claude-haiku-5-5",
+        action: "continued on commandcode/deepseek-v4.1-flash",
+      },
+    } as never)
+    expect(view?.selfheal).toBe(
+      "rejected commandcode/claude-haiku-5-5 · continued on commandcode/deepseek-v4.1-flash",
+    )
+  })
+
+  it("maps a noted-only self-heal annotation", () => {
+    const view = summariseDecision({
+      id: "dec_3",
+      at: 1,
+      sessionID: "ses_1",
+      mode: "balanced",
+      dryRun: false,
+      runtime: "manual",
+      task: { kind: "code", tier: 2 },
+      switchReason: "manual",
+      reasons: [],
+      warnings: [],
+      candidates: [],
+      premium: { state: "allowed" },
+      quota: [],
+      contextTokens: 8_000,
+      cachedTokens: 0,
+      estimatedUsd: 0,
+      needsPremiumApproval: false,
+      manualOverride: false,
+      selfheal: { rejected: "commandcode/claude-haiku-5-5", action: "noted" },
+    } as never)
+    expect(view?.selfheal).toBe("rejected commandcode/claude-haiku-5-5 · noted for the next prompt")
+  })
+
+  it("leaves the self-heal line absent for ordinary decisions", () => {
+    const view = summariseDecision({
+      id: "dec_4",
+      at: 1,
+      sessionID: "ses_1",
+      mode: "balanced",
+      dryRun: false,
+      runtime: "manual",
+      task: { kind: "code", tier: 2 },
+      switchReason: "manual",
+      reasons: [],
+      warnings: [],
+      candidates: [],
+      premium: { state: "allowed" },
+      quota: [],
+      contextTokens: 8_000,
+      cachedTokens: 0,
+      estimatedUsd: 0,
+      needsPremiumApproval: false,
+      manualOverride: false,
+    } as never)
+    expect(view?.selfheal).toBeUndefined()
+  })
 })
 
 describe("provider rows", () => {

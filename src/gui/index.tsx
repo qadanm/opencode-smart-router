@@ -537,6 +537,15 @@ function DecisionInspector(props: { view: DecisionView | undefined; hovered: str
               </For>
             </div>
           </Show>
+
+          <Show when={props.view!.selfheal}>
+            <div style={{ display: "flex", gap: space.sm, "align-items": "baseline", "padding-top": space.xs }}>
+              <span style={{ color: theme.brandTo, "font-size": type.caption, "line-height": "1.6" }}>›</span>
+              <span style={{ color: theme.text, "font-size": type.caption, "line-height": 1.5 }}>
+                Self-healed: {props.view!.selfheal}
+              </span>
+            </div>
+          </Show>
         </Card>
 
         <Show when={props.view!.rows.length > 0}>

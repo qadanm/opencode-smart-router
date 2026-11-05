@@ -57,6 +57,13 @@ export type FailureClass =
    * window resets.
    */
   | "quota_exhausted"
+  /**
+   * The provider rejected the request shape itself (an Anthropic-protocol
+   * discriminator failure is the observed case) before generating anything.
+   * Retrying is useless; the router repairs, or fails the turn over to the
+   * next best choice.
+   */
+  | "prompt_rejected"
   | "unknown"
 
 export interface CostTier {
@@ -110,6 +117,12 @@ export interface ModelRecord {
   readonly approvalSource: "seed" | "user" | "discovered"
   /** Monthly included usage allowance in US dollars at public list prices. */
   readonly monthlyAllowanceUsd: number
+  /**
+   * Which wire protocol the provider's serving path speaks. Seeded records
+   * may state it; `src/core/models/protocol.ts` otherwise infers it from the
+   * model family. Only the Anthropic Messages protocol forces prompt repair.
+   */
+  readonly protocol?: "anthropic" | "openai-compat"
   readonly notes?: string
 }
 
@@ -301,6 +314,11 @@ export interface RoutingDecision {
   readonly needsPremiumApproval: boolean
   readonly manualOverride: boolean
   readonly error?: string
+  /**
+   * Present when the router recovered a deterministic provider rejection for
+   * this prompt: which model rejected the request and what happened next.
+   */
+  readonly selfheal?: { readonly rejected: string; readonly action: string }
 }
 
 export interface ModelFailureRecord {

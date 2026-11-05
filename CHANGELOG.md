@@ -3,6 +3,19 @@
 Notable changes to OpenCode Smart Router. Dates are the day the change landed on
 `main`.
 
+## Unreleased
+
+### Added
+
+- **Self-healing routing.** The router repairs prompts a strict provider would
+  reject (mid-session system notices on the Anthropic protocol), refuses to
+  retry a deterministic request rejection, and fails a rejected turn over to
+  the next best eligible model, continuing it with one router-marked notice.
+  The panel's last decision records what was rejected and what took over.
+  Discovered on a live Command Code session where a rebuilt prompt reached
+  the Anthropic path with a system role inside `messages[]` and died with
+  "Invalid discriminator value. Expected 'user' | 'assistant'".
+
 ## 0.3.0 — 2026-11-05
 
 The release where the router gained a face, and where several numbers it had been
