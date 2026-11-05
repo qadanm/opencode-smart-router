@@ -124,19 +124,23 @@ export const SmartRouterRpc = Rpc.define({
      * to divide by a cap they may not know is where the arithmetic mistakes come
      * from. The server converts it against the window the page was describing.
      */
-    recordAccountReading: method({
+    /**
+     * Record the account's balance page, pasted whole.
+     *
+     * One field, because that is the actual task: select the page, copy, paste.
+     * The server reads the plan, the percentage, which window it belongs to, the
+     * reset time, the billing period and the wallet out of the text. A form with
+     * four boxes asks the user to do that parsing by hand and get it right.
+     */
+    recordPlanPage: method({
       type: "object",
       properties: {
-        /** The figure as copied: "42%", "$37.80", or "42". */
-        reading: { type: "string" },
-        /** Which allowance it came from. Defaults to the Design Plan. */
-        pool: { type: "string", enum: ["design-plan", "plan-models"] },
-        /** Which window the percentage refers to. Defaults to weekly, as the page reports. */
-        pctOf: { type: "string", enum: ["weekly", "monthly"] },
-        /** The page's "resets in" text, or an ISO timestamp. */
-        resetsIn: { type: "string" },
+        /** The pasted page text. */
+        page: { type: "string" },
+        /** Apply it without previewing. Defaults to false: the user confirms first. */
+        confirm: { type: "boolean" },
       },
-      required: ["reading"],
+      required: ["page"],
       additionalProperties: false,
     }),
     report: method(emptyInput),

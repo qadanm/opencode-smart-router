@@ -19,7 +19,8 @@ import { decideCompaction, describeMode } from "../core/context/strategy.js"
 import { buildProviderUsageReport } from "../core/quota/report.js"
 import { resolvePlan, resolvePlanWithReason } from "../core/plans/catalog.js"
 import { loadSettings, validateSettings, type SettingsLoadResult } from "../core/config.js"
-import { parseAccountReading, parseResetIn, writeSettingsPatch } from "../core/config-writer.js"
+import { writeSettingsPatch } from "../core/config-writer.js"
+import { describePlanPage, parsePlanPage } from "../core/plan-page.js"
 import {
   applyCredentialDefaults,
   credentialEnvVars,
@@ -496,43 +497,58 @@ export class RouterController {
    * Writes through config-writer, which preserves every other key, validates the
    * result and keeps a backup, so a mistake here is recoverable.
    */
-  private async recordAccountReading(input: {
-    reading?: string
-    pool?: string
-    pctOf?: string
-    resetsIn?: string
-  }): Promise<{ ok: boolean; message: string; config?: unknown; backup?: string }> {
-    const parsed = parseAccountReading(input.reading ?? "")
-    if (!parsed) {
-      return { ok: false, message: "Enter the figure from your account page, for example 42% or $37.80." }
+  private async recordPlanPage(input: {
+    page?: string
+    confirm?: boolean
+  }): Promise<{
+    ok: boolean
+    message: string
+    preview?: { summary: string; found: string[]; missing: string[]; apply: Record<string, unknown> }
+    backup?: string
+  }> {
+    const page = input.page ?? ""
+    const reading = parsePlanPage(page)
+    if (reading.designPlanUsedPct === undefined) {
+      return {
+        ok: false,
+        message: describePlanPage(reading),
+      }
     }
+
     const at = Date.now()
-    const pool = input.pool === "plan-models" ? "plan-models" : "design-plan"
     const baseline: Record<string, unknown> = { at }
-    if (parsed.kind === "pct") {
-      if (pool === "plan-models") baseline.planModelsUsedPct = parsed.value
-      else baseline.designPlanUsedPct = parsed.value
-      if (input.pctOf === "monthly" || input.pctOf === "weekly") baseline.pctOf = input.pctOf
-      else baseline.pctOf = "weekly"
-    } else if (pool === "plan-models") {
-      baseline.planModelsUsedUsd = parsed.value
-    } else {
-      baseline.designPlanUsedUsd = parsed.value
+    baseline.designPlanUsedPct = reading.designPlanUsedPct
+    baseline.pctOf = reading.pctOf ?? "weekly"
+    if (reading.resetsAt !== undefined) baseline.weeklyResetsAt = reading.resetsAt
+    if (reading.periodEndsAt !== undefined) baseline.monthlyResetsAt = reading.periodEndsAt
+
+    // The plan the page states is the plan the caps should be resolved against.
+    // Only applied when it names a tier this catalog knows.
+    const patch: Record<string, unknown> = { providers: { opendesign: { baseline } } }
+    if (reading.plan && resolvePlan("opendesign", reading.plan.toLowerCase())) {
+      ;(patch.providers as any).opendesign.plan = reading.plan.toLowerCase()
     }
-    if (input.resetsIn) {
-      const resetsAt = parseResetIn(input.resetsIn, at)
-      if (resetsAt !== undefined) baseline.weeklyResetsAt = resetsAt
+
+    const preview = {
+      summary: describePlanPage(reading),
+      found: [...reading.found],
+      missing: [...reading.missing],
+      apply: patch,
+    }
+
+    if (input.confirm !== true) {
+      // Show what was understood before changing anything. The user pasted a
+      // page; they are entitled to see what it was taken to mean first.
+      return { ok: true, message: preview.summary, preview }
     }
 
     try {
       const result = writeSettingsPatch({
-        patch: { providers: { opendesign: { baseline } } },
+        patch,
         validate: (merged) => {
-          // Round-trip through the real loader so the file can never contain
-          // something the router would then reject or silently repair.
           const loaded = validateSettings(merged)
           if (loaded.settings.providers.opendesign?.baseline === undefined) {
-            return "That reading could not be applied. Check the value and try again."
+            return "That reading could not be applied. Check the page and try again."
           }
           return undefined
         },
@@ -540,9 +556,8 @@ export class RouterController {
       await this.reloadSettingsFromDisk()
       return {
         ok: true,
-        message: parsed.kind === "pct"
-          ? `Recorded ${parsed.value}% of the ${input.pctOf === "monthly" ? "monthly" : "seven-day"} allowance.`
-          : `Recorded ${parsed.value} US dollars of usage.`,
+        message: `Recorded. ${preview.summary}.`,
+        preview,
         ...(result.backup ? { backup: result.backup } : {}),
       }
     } catch (error) {
@@ -2100,7 +2115,7 @@ export class RouterController {
   private async registerRpc() {
     const implementation: any = {
       status: async (input: any) => this.statusFor(input?.sessionID),
-      recordAccountReading: async (input: any) => this.recordAccountReading(input),
+      recordPlanPage: async (input: any) => this.recordPlanPage(input),
       preview: async (input: any) => {
         const sessionID = input?.sessionID ?? "preview"
         const session = this.ledger.getSession(sessionID)

@@ -248,7 +248,7 @@ function DecisionInspector(props: { sessionID: string | undefined }) {
       <div style={{ height: "1px", background: theme.border }} />
 
       <Show when={providers().some((provider) => provider.source === "estimate")}>
-        <AccountReading onChanged={() => void load()} />
+        <PlanPagePaste onChanged={() => void load()} />
       </Show>
 
       <div style={{ height: "1px", background: theme.border }} />
@@ -470,37 +470,42 @@ function AutoSwitch(props: { sessionID: string | undefined; auto: boolean; onCha
 }
 
 /**
- * Record what the account page shows, as a form.
+ * Paste the Plan & balance page. Once.
  *
- * The percentage is accepted exactly as the page writes it and converted on the
- * server, because the user should not have to know that Pro's seven-day window
- * is $90. The helper text says what the number buys, so this reads as a feature
- * rather than a chore.
+ * Earlier versions asked for a percentage, a window and a reset time as three
+ * separate fields. That is asking the user to do the parsing, and to know which
+ * of two allowances the page's percentage refers to — the exact arithmetic
+ * mistake this feature exists to prevent.
+ *
+ * So: one box, paste, see what the router understood, confirm. The preview is
+ * not decoration. The user pasted a page and is entitled to see what it was
+ * taken to mean before anything is written.
  */
-function AccountReading(props: { onChanged: () => void }) {
+function PlanPagePaste(props: { onChanged: () => void }) {
   const ctx = usePlugin<typeof definition>()
-  const [reading, setReading] = createSignal("")
-  const [resetsIn, setResetsIn] = createSignal("")
-  const [pctOf, setPctOf] = createSignal<"weekly" | "monthly">("weekly")
+  const [page, setPage] = createSignal("")
+  const [preview, setPreview] = createSignal<any | undefined>(undefined)
   const [status, setStatus] = createSignal<{ ok: boolean; text: string } | undefined>(undefined)
   const [busy, setBusy] = createSignal(false)
 
-  const submit = async () => {
-    if (!reading().trim() || busy()) return
+  const reset = () => {
+    setPage("")
+    setPreview(undefined)
+  }
+
+  const read = async (confirm: boolean) => {
+    if (!page().trim() || busy()) return
     setBusy(true)
     try {
-      const result: any = await ctx.client.rpc(SmartRouterRpc).recordAccountReading({
-        reading: reading().trim(),
-        ...(resetsIn().trim() ? { resetsIn: resetsIn().trim() } : {}),
-        pctOf: pctOf(),
+      const result: any = await ctx.client.rpc(SmartRouterRpc).recordPlanPage({
+        page: page(),
+        confirm,
       })
-      setStatus({
-        ok: result?.ok !== false,
-        text: result?.message ?? (result?.ok === false ? "Could not record that reading." : "Recorded."),
-      })
-      if (result?.ok !== false) {
-        setReading("")
-        setResetsIn("")
+      setStatus({ ok: result?.ok !== false, text: result?.message ?? "" })
+      if (result?.ok && !confirm) {
+        setPreview(result.preview)
+      } else if (result?.ok && confirm) {
+        reset()
         props.onChanged()
       }
     } catch (cause) {
@@ -511,86 +516,84 @@ function AccountReading(props: { onChanged: () => void }) {
   }
 
   return (
-    <div style={{ display: "flex", "flex-direction": "column", gap: "7px" }}>
+    <div style={{ display: "flex", "flex-direction": "column", gap: "8px" }}>
       <span style={{ color: theme.faint, "font-size": "11px", "text-transform": "uppercase", "letter-spacing": "0.04em" }}>
-        Account reading
+        Account balance
       </span>
       <span style={{ color: theme.muted, "font-size": "11px", "line-height": "1.45" }}>
-        OpenDesign does not expose usage to an API key, so the router can only count what it routed
-        itself. Paste the figure from your account page and it will count the rest of your account too.
+        OpenDesign does not expose usage to an API key, so the router can only see what it routed
+        itself. Copy your <strong style={{ color: theme.text }}>Plan &amp; balance</strong> page and
+        paste it here — it reads the plan, the usage, the window and the reset time.
       </span>
 
-      <div style={{ display: "flex", gap: "6px" }}>
-        <input
-          value={reading()}
-          onInput={(event) => setReading((event.currentTarget as HTMLInputElement).value)}
-          placeholder="42%"
-          aria-label="Usage from your account page"
-          style={{
-            flex: 1,
-            padding: "7px 9px",
-            "border-radius": "7px",
-            border: `1px solid ${theme.border}`,
-            background: "transparent",
-            color: theme.text,
-            "font-size": "12px",
-            "font-family": "inherit",
-          }}
-        />
-        <input
-          value={resetsIn()}
-          onInput={(event) => setResetsIn((event.currentTarget as HTMLInputElement).value)}
-          placeholder="resets in 0d 23h"
-          aria-label="Resets in, as shown on the page"
-          style={{
-            flex: 1,
-            padding: "7px 9px",
-            "border-radius": "7px",
-            border: `1px solid ${theme.border}`,
-            background: "transparent",
-            color: theme.text,
-            "font-size": "12px",
-            "font-family": "inherit",
-          }}
-        />
-      </div>
+      <textarea
+        value={page()}
+        onInput={(event) => {
+          setPage((event.currentTarget as HTMLTextAreaElement).value)
+          setPreview(undefined)
+        }}
+        placeholder={"Paste the whole page here. Navigation and all is fine."}
+        aria-label="Paste your Plan and balance page"
+        rows={3}
+        style={{
+          width: "100%",
+          resize: "vertical",
+          padding: "8px 9px",
+          "border-radius": "7px",
+          border: `1px solid ${theme.border}`,
+          background: "transparent",
+          color: theme.text,
+          "font-size": "11px",
+          "font-family": "inherit",
+          "line-height": 1.45,
+          "box-sizing": "border-box",
+        }}
+      />
 
-      <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
-        <select
-          value={pctOf()}
-          onChange={(event) => setPctOf((event.currentTarget as HTMLSelectElement).value as "weekly" | "monthly")}
-          aria-label="Which allowance the percentage refers to"
+      <Show when={preview()}>
+        <div
           style={{
-            padding: "6px 8px",
+            display: "flex",
+            "flex-direction": "column",
+            gap: "4px",
+            padding: "8px 9px",
             "border-radius": "7px",
             border: `1px solid ${theme.border}`,
-            background: "transparent",
-            color: theme.text,
-            "font-size": "11px",
-            "font-family": "inherit",
+            background: theme.surface,
           }}
         >
-          <option value="weekly">of the 7-day allowance</option>
-          <option value="monthly">of the monthly allowance</option>
-        </select>
-        <button
-          type="button"
-          onClick={() => void submit()}
-          disabled={busy() || !reading().trim()}
-          style={{
-            "margin-left": "auto",
-            padding: "6px 12px",
-            "border-radius": "7px",
-            border: `1px solid ${theme.border}`,
-            background: reading().trim() ? theme.surface : "transparent",
-            color: reading().trim() ? theme.text : theme.faint,
-            "font-size": "11px",
-            "font-family": "inherit",
-            cursor: reading().trim() && !busy() ? "pointer" : "default",
-          }}
+          <span style={{ color: theme.text, "font-size": "11.5px", "line-height": 1.45 }}>
+            {preview().summary}
+          </span>
+          <Show when={preview().missing?.length > 0}>
+            <span style={{ color: theme.warn, "font-size": "10.5px" }}>
+              Not on the page: {preview().missing.join(", ")}
+            </span>
+          </Show>
+        </div>
+      </Show>
+
+      <div style={{ display: "flex", gap: "6px" }}>
+        <Show
+          when={preview()}
+          fallback={
+            <button
+              type="button"
+              onClick={() => void read(false)}
+              disabled={busy() || !page().trim()}
+              style={buttonStyle(Boolean(page().trim()) && !busy())}
+            >
+              {busy() ? "Reading…" : "Read page"}
+            </button>
+          }
         >
-          {busy() ? "Saving…" : "Record"}
-        </button>
+          <button type="button" onClick={() => void read(true)} disabled={busy()} style={buttonStyle(!busy())}>
+            {busy() ? "Saving…" : "Use this"}
+          </button>
+          <button type="button" onClick={reset} disabled={busy()} style={buttonStyle(false)}>
+            Cancel
+          </button>
+        </Show>
       </div>
 
       <Show when={status()}>
@@ -599,12 +602,23 @@ function AccountReading(props: { onChanged: () => void }) {
         </span>
       </Show>
       <span style={{ color: theme.faint, "font-size": "10.5px", "line-height": 1.4 }}>
-        A brand-new account reports 0% — enter that and the router stops guessing. A full account
-        reports 100% and routing moves elsewhere until the window resets.
+        A new account reads 0%. A spent one reads 100%, and routing leaves the provider until the
+        window resets.
       </span>
     </div>
   )
 }
+
+const buttonStyle = (enabled: boolean) => ({
+  padding: "6px 12px",
+  "border-radius": "7px",
+  border: `1px solid ${theme.border}`,
+  background: enabled ? theme.surface : "transparent",
+  color: enabled ? theme.text : theme.faint,
+  "font-size": "11px",
+  "font-family": "inherit",
+  cursor: enabled ? "pointer" : "default",
+})
 
 const definition = Plugin.define({
   i18n: {
