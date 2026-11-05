@@ -195,14 +195,14 @@ panel's last decision records what was rejected and what took over.
 
 ## Status
 
-Development snapshot. Routing is running on the maintainer's machine by explicit
-approval; premium escalation and purchased-credit spending are disabled. Current
-behavior and open questions are in
+Version 0.4.0. Routing runs on the maintainer's machine in automatic mode;
+premium escalation and purchased-credit spending are disabled. Current behavior
+and open questions are in
 [docs/PRO-MIGRATION-2026-10-29.md](docs/PRO-MIGRATION-2026-10-29.md).
 
-Not yet on npm. The unscoped name `opencode-smart-router` belongs to an unrelated
-GPL project, so this package publishes under a scope. See
-[docs/PUBLICATION-READINESS.md](docs/PUBLICATION-READINESS.md).
+Published on npm as `@qadanm/opencode-smart-router`. The unscoped name
+`opencode-smart-router` belongs to an unrelated GPL project, so this package
+lives under a scope.
 
 ## Commands
 
