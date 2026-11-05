@@ -309,7 +309,18 @@ Two rules keep this honest:
   monthly one ($360). 42% of the week is $37.80, which is 10.5% of the month.
   Entering `151.20` because "42% of 360" would overstate usage fourfold.
 
-A control key remains the only path to figures the provider confirms.
+### The control key is not obtainable through the product
+
+Checked on 2026-11-04 against the account's API keys page. It offers exactly one
+kind of key, `sk-amr-…`, described as connecting tools "to model services", and
+every listed key carries the same prefix. There is no control-key type, no
+account-scope option and no separate privilege to grant.
+
+So the `controlKeyPath` support below is real but unreachable for an ordinary
+customer: it exists for a credential this product does not issue. Do not present
+it as the fix for estimated numbers, and do not tell users to go and find one.
+The evidence says the account-control endpoints come from a different surface
+than the one customers can authenticate against.
 
 A control key is optional and only changes quota reporting from estimated to
 verified. Supply it only if you accept that it is a privileged credential:

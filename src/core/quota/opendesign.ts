@@ -811,7 +811,7 @@ const probeEstimated = (input: OpenDesignQuotaInput, now: number): OpenDesignQuo
       ? `Starts from the usage you reported on ${new Date(input.settings.baseline!.at).toISOString().slice(0, 10)} and adds every OpenDesign request this router has routed since.`
       : "Estimated from this router's own OpenDesign usage. OpenDesign publishes no quota API for an inference key.",
     seeded.applied
-      ? `The reported reading still excludes other clients, and a ${marginPct}% margin is applied, so this remains a lower bound. A control key gives the account's exact figures.`
+      ? `The reported reading still excludes other clients, and a ${marginPct}% margin is applied, so this remains a lower bound. There is no exact source without an account control key, and the account API-key page issues inference keys only.`
       : `A ${marginPct}% safety margin is applied. Usage from the OpenDesign app or other clients on the same subscription is not visible, so this is a lower bound.`,
     "Wallet balance is not included and is never used for automatic routing.",
     ...planNotes(caps),
