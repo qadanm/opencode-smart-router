@@ -18,6 +18,7 @@ import { computeContextHealth } from "../core/context-health.js"
 import { decideCompaction, describeMode } from "../core/context/strategy.js"
 import { repairMessages } from "../core/reprompt.js"
 import { providerProtocol } from "../core/models/protocol.js"
+import { PromptRouteTracker } from "./route-tracker.js"
 import { buildProviderUsageReport } from "../core/quota/report.js"
 import { resolvePlan, resolvePlanWithReason } from "../core/plans/catalog.js"
 import { loadSettings, validateSettings, type SettingsLoadResult } from "../core/config.js"
@@ -228,6 +229,8 @@ export class RouterController {
    * The agent loop folds prompts; title and compaction runs do not.
    */
   private readonly requestKinds = new Map<string, { kind: string; at: number }>()
+  /** The routed task per session's current prompt, for prompt-rejection failover. */
+  private readonly promptRoutes = new PromptRouteTracker()
   /** Memoized calibrated floor; see routingFloor(). */
   private floorCache?: { at: number; value: { floor: number; calibration?: CalibrationResult } }
   /**
@@ -1564,7 +1567,17 @@ export class RouterController {
         if (this.inflight.has(sessionID)) return
         this.inflight.add(sessionID)
         try {
-          await this.routePrompt(sessionID, event.prompt?.text ?? "", event.prompt?.files)
+          const decision = await this.routePrompt(sessionID, event.prompt?.text ?? "", event.prompt?.files)
+          if (decision) {
+            // Available to the retry hook, which has no prompt linkage of its
+            // own: a deterministic rejection re-routes this same task.
+            this.promptRoutes.set(sessionID, {
+              messageID: typeof event.messageID === "string" ? event.messageID : undefined,
+              task: decision.task,
+              decision,
+              at: Date.now(),
+            })
+          }
         } catch (error) {
           if (error instanceof RouterBlockedError || (error as any)?.name === "RouterBlockedError") throw error
           await this.handleRoutingFailure(sessionID, event.prompt?.text ?? "", event.prompt?.files, error)
@@ -3049,6 +3062,7 @@ export class RouterController {
   async dispose() {
     if (this.cleanupDone) return
     this.cleanupDone = true
+    this.promptRoutes.clearAll()
     if (this.bridgeID) sharedCore.removeBridge(this.bridgeID)
     await Promise.allSettled(this.registrations.map((registration) => registration?.dispose?.()))
     // Start the write immediately, but do not block a reload on storage. The
