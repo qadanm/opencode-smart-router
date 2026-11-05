@@ -1600,20 +1600,38 @@ export default Plugin.define({
      */
     const panelKey = `${ctx.id}:router`
     let autoOpened = false
+    /**
+     * Every step is wrapped, because this runs inside `setup`.
+     *
+     * A GUI whose setup throws does not load at all — it does not lose the panel,
+     * it loses the plugin — and the host reports it as a generic request failure
+     * rather than a stack. Auto-opening is a convenience; it must not be able to
+     * take the surface down with it.
+     */
     const tryAutoOpen = () => {
-      if (autoOpened) return
-      if (!ctx.layout.ready()) return
-      const session = ctx.sessions.current()
-      if (!session) return
-      autoOpened = true
-      if (ctx.layout.state(panelKey, session) === "closed") {
-        ctx.layout.open(panelKey, session)
+      try {
+        if (autoOpened) return
+        if (!ctx.layout.ready()) return
+        const session = ctx.sessions.current()
+        if (!session) return
+        autoOpened = true
+        if (ctx.layout.state(panelKey, session) === "closed") {
+          ctx.layout.open(panelKey, session)
+        }
+      } catch {
+        // Auto-open is best effort. Never let it surface as a plugin failure.
+        autoOpened = true
       }
     }
-    const autoOpenTimer = setInterval(tryAutoOpen, 400)
+    const autoOpenTimer = setInterval(() => {
+      try {
+        tryAutoOpen()
+      } catch {
+        clearInterval(autoOpenTimer)
+      }
+    }, 400)
     // Give up after a while rather than polling for the life of the window.
     const autoOpenDeadline = setTimeout(() => clearInterval(autoOpenTimer), 30_000)
-    tryAutoOpen()
 
     ctx.add(Slot, {
       at: "window.bottom",
