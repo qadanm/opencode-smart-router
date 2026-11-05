@@ -31,13 +31,13 @@
 <br>
 
 <p>
-  <a href="assets/screenshots/router-panel.png"><img alt="The router panel in OpenCode's side panel: the model it chose and why, the allowance windows it is spending against, and every provider it can route to" src="assets/screenshots/router-panel.png" width="400"></a>
+  <a href="assets/screenshots/router-panel.png"><img alt="The router panel beside a live OpenCode session: the model it chose and why, the allowance windows it is spending against, and every provider it can route to" src="assets/screenshots/router-panel.png" width="720"></a>
 </p>
 
 <table>
   <tr>
     <td align="center" width="50%">
-      <a href="assets/screenshots/router-decision.png"><img alt="The decision inspector: the winning model with its estimated cost, the runner-ups it beat, and the two models it refused, each with its reason" src="assets/screenshots/router-decision.png" width="376"></a>
+      <a href="assets/screenshots/router-decision.png"><img alt="The decision inspector: the winning model with its estimated cost, and the runner-ups it beat" src="assets/screenshots/router-decision.png" width="376"></a>
       <br><sub>The choice, laid out with its runner-ups</sub>
     </td>
     <td align="center" width="50%">
@@ -48,7 +48,7 @@
 </table>
 
 <p>
-  <a href="assets/screenshots/router-onboarding.png"><img alt="First-run onboarding: what the router found on this machine, what it learned from your history, and the one thing it cannot see, with the exact page to paste" src="assets/screenshots/router-onboarding.png" width="400"></a>
+  <a href="assets/screenshots/router-onboarding.png"><img alt="First-run onboarding: what the router found on this machine, what it learned from your history, and the one thing it cannot see, with the exact page to paste" src="assets/screenshots/router-onboarding.png" width="720"></a>
 </p>
 
 </div>

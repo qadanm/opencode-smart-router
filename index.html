@@ -5,45 +5,35 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>OpenCode Smart Router — routes by your plan, not a price list</title>
 <meta name="description" content="A model router for OpenCode that bills against subscription windows instead of token prices. MIT licensed, runs locally, no account.">
-<meta name="color-scheme" content="light dark">
+<meta name="color-scheme" content="dark">
 <meta property="og:title" content="OpenCode Smart Router">
 <meta property="og:description" content="Routes by your plan, not a price list. Subscription-aware model routing for OpenCode.">
 <meta property="og:type" content="website">
+<meta property="og:image" content="assets/screenshots/router-panel.png">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f766e'/%3E%3Cg stroke='%23fff' stroke-width='2.4' stroke-linecap='round' fill='none'%3E%3Cpath d='M8 16h5'/%3E%3Cpath d='M13 16c3 0 3-6 6-6h4'/%3E%3Cpath d='M13 16c3 0 3 6 6 6h4'/%3E%3Cpath d='M13 16h10'/%3E%3C/g%3E%3C/svg%3E">
 <style>
   :root {
-    --bg: #ffffff;
-    --bg-soft: #fafafa;
-    --bg-raised: #ffffff;
-    --ink: #0a0a0b;
-    --ink-2: #3f3f46;
-    --ink-3: #71717a;
-    --ink-4: #a1a1aa;
-    --line: #e4e4e7;
-    --line-2: #d4d4d8;
-    --accent: #0f766e;
-    --accent-soft: #ecfdf5;
-    --accent-line: #99f6e4;
+    --bg: #0c0c0f;
+    --bg-soft: #101014;
+    --bg-raised: #16161b;
+    --ink: #e8e8ec;
+    --ink-2: #9a9aa6;
+    --ink-3: #6f6f7c;
+    --ink-4: #585862;
+    --line: rgba(255, 255, 255, 0.09);
+    --line-2: rgba(255, 255, 255, 0.16);
+    --brand: #0f766e;
+    --brand-to: #0891b2;
+    --brand-bright: #2dd4bf;
+    --brand-soft: rgba(8, 145, 178, 0.14);
+    --good: #7ad19a;
+    --warn: #e0b463;
     --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
     --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
     --r: 12px;
     --maxw: 1080px;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #08080a;
-      --bg-soft: #0e0e11;
-      --bg-raised: #141417;
-      --ink: #fafafa;
-      --ink-2: #d4d4d8;
-      --ink-3: #a1a1aa;
-      --ink-4: #71717a;
-      --line: #26262b;
-      --line-2: #34343b;
-      --accent: #2dd4bf;
-      --accent-soft: #0b2622;
-      --accent-line: #134e4a;
-    }
+    --grad: linear-gradient(135deg, #0f766e 0%, #0891b2 100%);
   }
 
   * { box-sizing: border-box; }
@@ -54,7 +44,10 @@
   }
   body {
     margin: 0;
-    background: var(--bg);
+    background:
+      radial-gradient(1100px 460px at 14% -4%, rgba(15, 118, 110, 0.16), transparent 60%),
+      radial-gradient(900px 420px at 92% 2%, rgba(8, 145, 178, 0.10), transparent 58%),
+      var(--bg);
     color: var(--ink);
     font-family: var(--sans);
     font-size: 16.5px;
@@ -62,49 +55,53 @@
     -webkit-font-smoothing: antialiased;
   }
   .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
-  a { color: var(--accent); text-underline-offset: 3px; }
-  a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
-  code { font-family: var(--mono); font-size: .87em; background: var(--bg-soft); border: 1px solid var(--line); padding: .1em .36em; border-radius: 5px; }
+  a { color: var(--brand-bright); text-underline-offset: 3px; }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--brand-to); outline-offset: 3px; border-radius: 6px; }
+  code { font-family: var(--mono); font-size: .87em; background: var(--bg-raised); border: 1px solid var(--line); padding: .1em .36em; border-radius: 5px; }
 
   /* nav */
   header {
     position: sticky; top: 0; z-index: 10;
-    background: color-mix(in srgb, var(--bg) 86%, transparent);
-    backdrop-filter: saturate(180%) blur(12px);
-    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    background: rgba(12, 12, 15, 0.82);
+    backdrop-filter: saturate(160%) blur(14px);
+    -webkit-backdrop-filter: saturate(160%) blur(14px);
     border-bottom: 1px solid var(--line);
   }
-  .nav { display: flex; align-items: center; gap: 18px; height: 58px; }
-  .nav img { width: 168px; height: auto; display: block; }
+  .nav { display: flex; align-items: center; gap: 18px; height: 60px; }
+  .wordmark { display: flex; align-items: center; gap: 9px; text-decoration: none; color: var(--ink); }
+  .wordmark .lines { display: flex; flex-direction: column; gap: 0; }
+  .wordmark .name { font-size: 16px; font-weight: 650; letter-spacing: -0.2px; }
+  .wordmark .for { font-size: 10.5px; letter-spacing: 0.09em; font-weight: 600; color: var(--ink-3); }
   .nav .spacer { flex: 1; }
-  .nav a { color: var(--ink-2); text-decoration: none; font-size: 14px; font-weight: 500; }
-  .nav a:hover { color: var(--ink); }
+  .nav a.link { color: var(--ink-2); text-decoration: none; font-size: 14px; font-weight: 500; }
+  .nav a.link:hover { color: var(--ink); }
   .nav .ghost {
     border: 1px solid var(--line-2); border-radius: 8px; padding: 6px 12px;
-    color: var(--ink); background: var(--bg-raised);
+    color: var(--ink); background: var(--bg-raised); text-decoration: none;
+    font-size: 14px; font-weight: 550;
   }
-  .nav .ghost:hover { border-color: var(--accent); color: var(--accent); }
-  @media (max-width: 620px) { .nav .hide-sm { display: none; } }
+  .nav .ghost:hover { border-color: var(--brand-to); color: var(--brand-bright); }
+  @media (max-width: 680px) { .nav .hide-sm { display: none; } }
 
   /* hero */
-  .hero { padding: 82px 0 56px; text-align: center; }
+  .hero { padding: 84px 0 54px; text-align: center; }
   .eyebrow {
     display: inline-flex; align-items: center; gap: 8px;
     font-size: 12px; font-weight: 600; letter-spacing: .04em;
-    color: var(--accent); background: var(--accent-soft);
-    border: 1px solid var(--accent-line); border-radius: 999px;
+    color: var(--brand-bright); background: var(--brand-soft);
+    border: 1px solid rgba(8, 145, 178, 0.35); border-radius: 999px;
     padding: 5px 13px; margin-bottom: 26px;
   }
   .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
   h1 {
-    font-size: clamp(2.15rem, 5.6vw, 3.65rem);
-    line-height: 1.06; letter-spacing: -.035em;
-    font-weight: 700; margin: 0 auto 20px; max-width: 19ch;
+    font-size: clamp(2.2rem, 5.6vw, 3.8rem);
+    line-height: 1.05; letter-spacing: -.035em;
+    font-weight: 700; margin: 0 auto 20px; max-width: 20ch;
   }
-  h1 em { font-style: normal; color: var(--accent); }
+  h1 em { font-style: normal; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
   .lede {
-    font-size: clamp(1.02rem, 2vw, 1.2rem); color: var(--ink-3);
-    max-width: 60ch; margin: 0 auto 34px;
+    font-size: clamp(1.02rem, 2vw, 1.22rem); color: var(--ink-2);
+    max-width: 58ch; margin: 0 auto 34px;
   }
   .cta { display: flex; gap: 11px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px; }
   .btn {
@@ -113,30 +110,30 @@
     text-decoration: none; border: 1px solid transparent; transition: transform .12s ease, opacity .12s ease;
   }
   .btn:hover { transform: translateY(-1px); }
-  .btn-primary { background: var(--accent); color: #fff; }
-  @media (prefers-color-scheme: dark) { .btn-primary { color: #06201d; } }
-  .btn-primary:hover { opacity: .91; }
+  .btn-primary { background: var(--grad); color: #fff; }
+  .btn-primary:hover { opacity: .92; }
   .btn-secondary { background: var(--bg-raised); color: var(--ink); border-color: var(--line-2); }
-  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
-  .meta { font-size: 13px; color: var(--ink-4); }
+  .btn-secondary:hover { border-color: var(--brand-to); color: var(--brand-bright); }
+  .meta { font-size: 13px; color: var(--ink-3); }
 
   /* install block */
   .install {
     margin: 46px auto 0; max-width: 560px;
     background: var(--bg-soft); border: 1px solid var(--line);
     border-radius: var(--r); overflow: hidden; text-align: left;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, .35);
   }
   .install-bar {
     display: flex; align-items: center; gap: 8px;
     padding: 9px 14px; border-bottom: 1px solid var(--line);
     font-size: 11px; font-weight: 700; letter-spacing: .08em;
-    text-transform: uppercase; color: var(--ink-4);
+    text-transform: uppercase; color: var(--ink-3);
   }
   .install-bar .lights { display: flex; gap: 5px; margin-right: 2px; }
-  .install-bar .lights i { width: 8px; height: 8px; border-radius: 50%; background: var(--line-2); }
+  .install-bar .lights i { width: 8px; height: 8px; border-radius: 50%; background: #2b2b32; }
   .install-body { display: flex; align-items: center; gap: 10px; padding: 14px; }
   .install-body code {
-    flex: 1; background: none; border: 0; padding: 0; font-size: 13.5px;
+    flex: 1; min-width: 0; background: none; border: 0; padding: 0; font-size: 13.5px;
     color: var(--ink); overflow-x: auto; white-space: pre;
   }
   .copy {
@@ -145,24 +142,37 @@
     background: var(--bg-raised); color: var(--ink-2);
     border: 1px solid var(--line-2);
   }
-  .copy:hover { color: var(--accent); border-color: var(--accent); }
-  .copy.done { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+  .copy:hover { color: var(--brand-bright); border-color: var(--brand-to); }
+  .copy.done { color: var(--good); border-color: var(--good); background: rgba(122, 209, 154, 0.10); }
 
   /* sections */
-  section { padding: 72px 0; border-top: 1px solid var(--line); }
+  section { padding: 76px 0; border-top: 1px solid var(--line); }
   .section-head { max-width: 62ch; margin-bottom: 38px; }
-  .kicker { font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); margin: 0 0 12px; }
-  h2 { font-size: clamp(1.5rem, 3.2vw, 2.05rem); letter-spacing: -.025em; line-height: 1.18; margin: 0 0 14px; font-weight: 680; }
-  .section-head p { color: var(--ink-3); margin: 0; font-size: 1.02rem; }
+  .section-head.centered { margin-left: auto; margin-right: auto; text-align: center; }
+  .kicker { font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--brand-bright); margin: 0 0 12px; }
+  h2 { font-size: clamp(1.55rem, 3.2vw, 2.1rem); letter-spacing: -.025em; line-height: 1.18; margin: 0 0 14px; font-weight: 680; }
+  .section-head p { color: var(--ink-2); margin: 0; font-size: 1.02rem; }
 
   figure { margin: 0; }
   figure img { width: 100%; height: auto; display: block; border-radius: var(--r); border: 1px solid var(--line); }
-  .fig-dark { display: none; }
-  @media (prefers-color-scheme: dark) {
-    .fig-light { display: none; }
-    .fig-dark { display: block; }
+  figcaption { font-size: 13px; color: var(--ink-3); margin-top: 12px; text-align: center; }
+
+  /* showcase */
+  .showcase { text-align: center; }
+  .showcase .shot {
+    max-width: 960px; margin: 0 auto;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    box-shadow: 0 1px 0 rgba(255,255,255,.05) inset, 0 40px 90px rgba(0, 0, 0, .55);
+    display: block; width: 100%; height: auto;
   }
-  figcaption { font-size: 13px; color: var(--ink-4); margin-top: 12px; text-align: center; }
+  .shot-caption { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 22px; }
+  .shot-caption .cap {
+    font-size: 13px; color: var(--ink-2);
+    background: var(--bg-raised); border: 1px solid var(--line);
+    border-radius: 999px; padding: 6px 14px;
+  }
+  .shot-caption .cap b { color: var(--ink); font-weight: 600; }
 
   /* steps */
   .steps { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); counter-reset: s; }
@@ -174,12 +184,12 @@
     counter-increment: s; content: counter(s);
     display: inline-grid; place-items: center;
     width: 26px; height: 26px; border-radius: 8px; margin-bottom: 12px;
-    background: var(--accent-soft); color: var(--accent);
-    border: 1px solid var(--accent-line);
+    background: var(--brand-soft); color: var(--brand-bright);
+    border: 1px solid rgba(8, 145, 178, 0.35);
     font-size: 12.5px; font-weight: 700;
   }
   .step h3 { font-size: 15px; margin: 0 0 6px; font-weight: 650; letter-spacing: -.01em; }
-  .step p { margin: 0; font-size: 14px; color: var(--ink-3); }
+  .step p { margin: 0; font-size: 14px; color: var(--ink-2); }
 
   /* feature grid */
   .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(255px, 1fr)); }
@@ -188,29 +198,44 @@
     border-radius: var(--r); padding: 22px;
   }
   .card h3 { font-size: 15px; margin: 0 0 7px; font-weight: 650; letter-spacing: -.01em; }
-  .card p { margin: 0; font-size: 14px; color: var(--ink-3); }
-  .card .mark { color: var(--accent); font-weight: 700; margin-right: 6px; }
+  .card p { margin: 0; font-size: 14px; color: var(--ink-2); }
+
+  /* two-up shots */
+  .duo { display: grid; gap: 22px; grid-template-columns: 1fr 1fr; align-items: start; }
+  @media (max-width: 780px) { .duo { grid-template-columns: 1fr; } }
+  .duo figure { min-width: 0; margin: 0; }
+  .duo figure img { max-width: 100%; height: auto; display: block; border-radius: 14px; box-shadow: 0 24px 60px rgba(0, 0, 0, .45); }
+
+  /* first run */
+  .firstrun { display: grid; gap: 34px; grid-template-columns: 1.15fr .85fr; align-items: center; margin-top: 8px; }
+  @media (max-width: 860px) { .firstrun { grid-template-columns: 1fr; } }
+  .firstrun > * { min-width: 0; }
+  .firstrun img { width: 100%; height: auto; display: block; border-radius: 14px; border: 1px solid var(--line); box-shadow: 0 24px 60px rgba(0, 0, 0, .45); }
+  .firstrun ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 14px; }
+  .firstrun li { display: flex; gap: 10px; align-items: baseline; color: var(--ink-2); font-size: 15px; line-height: 1.55; }
+  .firstrun li::before { content: "›"; color: var(--brand-to); font-weight: 700; flex-shrink: 0; }
+  .firstrun li b { color: var(--ink); font-weight: 600; }
 
   /* command table */
   .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r); }
   table { width: 100%; border-collapse: collapse; font-size: 14px; background: var(--bg-raised); }
   th, td { text-align: left; padding: 11px 16px; border-bottom: 1px solid var(--line); }
-  th { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-4); font-weight: 700; background: var(--bg-soft); }
+  th { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-3); font-weight: 700; background: var(--bg-soft); }
   tr:last-child td { border-bottom: 0; }
   td code { white-space: nowrap; }
 
   /* footer */
   footer { border-top: 1px solid var(--line); padding: 40px 0 56px; }
   .foot { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
-  .foot p { margin: 0; font-size: 13.5px; color: var(--ink-4); }
+  .foot p { margin: 0; font-size: 13.5px; color: var(--ink-3); }
   .foot nav { display: flex; gap: 18px; flex-wrap: wrap; }
   .foot nav a { font-size: 13.5px; color: var(--ink-3); text-decoration: none; }
-  .foot nav a:hover { color: var(--accent); }
+  .foot nav a:hover { color: var(--brand-bright); }
 
   @media (max-width: 720px) {
     .hero { padding: 56px 0 40px; }
-    section { padding: 52px 0; }
-    .nav img { width: 148px; }
+    section { padding: 54px 0; }
+    .wordmark .name { font-size: 15px; }
   }
 </style>
 </head>
@@ -218,15 +243,38 @@
 
 <header>
   <div class="wrap nav">
-    <a href="#" aria-label="OpenCode Smart Router home">
-      <img alt="OpenCode Smart Router" src="assets/logo.svg">
+    <a class="wordmark" href="#" aria-label="Smart Router home">
+      <svg width="26" height="26" viewBox="0 0 60 60" aria-hidden="true" style="display:block;">
+        <defs>
+          <linearGradient id="wm" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#0f766e"/>
+            <stop offset="100%" stop-color="#0891b2"/>
+          </linearGradient>
+        </defs>
+        <g fill="none" stroke="url(#wm)" stroke-width="4" stroke-linecap="round">
+          <path d="M8 30h12"/>
+          <path d="M20 30c7 0 8-14 15-14h8"/>
+          <path d="M20 30c7 0 8 14 15 14h8"/>
+          <path d="M20 30h23"/>
+        </g>
+        <circle cx="5" cy="30" r="4.5" fill="url(#wm)"/>
+        <g fill="url(#wm)">
+          <rect x="45" y="10" width="9" height="9" rx="2.5"/>
+          <rect x="45" y="25.5" width="9" height="9" rx="2.5"/>
+          <rect x="45" y="41" width="9" height="9" rx="2.5"/>
+        </g>
+      </svg>
+      <span class="lines">
+        <span class="name">Smart Router</span>
+        <span class="for">FOR OPENCODE</span>
+      </span>
     </a>
     <span class="spacer"></span>
-    <a class="hide-sm" href="#how">How it works</a>
-    <a class="hide-sm" href="#commands">Commands</a>
-    <a class="hide-sm" href="docs/ARCHITECTURE.md">Docs</a>
-    <a class="hide-sm" href="https://github.com/qadanm/opencode-smart-router">GitHub</a>
-    <a class="ghost" href="https://github.com/qadanm/opencode-smart-router#readme">Read the README</a>
+    <a class="link hide-sm" href="#tour">Inside the panel</a>
+    <a class="link hide-sm" href="#how">How it decides</a>
+    <a class="link hide-sm" href="#commands">Commands</a>
+    <a class="link hide-sm" href="https://github.com/qadanm/opencode-smart-router">GitHub</a>
+    <a class="ghost" href="#install">Install</a>
   </div>
 </header>
 
@@ -240,9 +288,9 @@
     </p>
     <div class="cta">
       <a class="btn btn-primary" href="#install">Install in one command</a>
-      <a class="btn btn-secondary" href="README.md">Read the README</a>
+      <a class="btn btn-secondary" href="#tour">See it in a session</a>
     </div>
-    <p class="meta">Node 20.12+ &middot; OpenCode 2.x &middot; 491 tests passing</p>
+    <p class="meta">Node 20.12+ &middot; OpenCode 2.x &middot; 721 tests passing</p>
 
     <div class="install" id="install">
       <div class="install-bar">
@@ -255,6 +303,25 @@
       </div>
     </div>
   </div>
+
+  <section id="tour" class="showcase">
+    <div class="wrap">
+      <div class="section-head centered">
+        <p class="kicker">Inside OpenCode</p>
+        <h2>A panel that explains every choice it makes for you</h2>
+        <p>
+          The router lives beside your session. When it picks a model, it shows the choice,
+          the price, and the reasons &mdash; and what is left in every allowance it is spending against.
+        </p>
+      </div>
+      <img class="shot" alt="An OpenCode session with the Smart Router panel beside it: the router chose opendesign/glm-5.3-flash for a refactor, shows its estimated cost and the reasons it won, and both providers' allowance windows" src="assets/screenshots/router-panel.png">
+      <div class="shot-caption">
+        <span class="cap"><b>Chosen:</b> cheapest model that clears the intelligence floor</span>
+        <span class="cap"><b>Spending against:</b> 7-day and monthly windows, per provider</span>
+        <span class="cap"><b>Honest:</b> lower-bound estimates marked with ≥</span>
+      </div>
+    </div>
+  </section>
 
   <section id="why">
     <div class="wrap">
@@ -270,8 +337,7 @@
         </p>
       </div>
       <figure>
-        <img class="fig-light" alt="Two routers, same three prompts: a price-per-token router picks the same model every time and lets an allowance expire, while the smart router spends the window that resets in 40 minutes first and then settles" src="assets/demo.svg">
-        <img class="fig-dark" alt="Two routers, same three prompts: a price-per-token router picks the same model every time and lets an allowance expire, while the smart router spends the window that resets in 40 minutes first and then settles" src="assets/demo.svg">
+        <img alt="Two routers, same three prompts: a price-per-token router picks the same model every time and lets an allowance expire, while the smart router spends the window that resets in 40 minutes first and then settles" src="assets/demo-dark.svg">
         <figcaption>The same three prompts, minutes apart. Only the pricing model differs.</figcaption>
       </figure>
     </div>
@@ -280,7 +346,7 @@
   <section id="how">
     <div class="wrap">
       <div class="section-head">
-        <p class="kicker">How it works</p>
+        <p class="kicker">How it decides</p>
         <h2>Classify, filter, price, pick</h2>
         <p>
           Classification is local and takes about a millisecond. No model call is spent
@@ -306,9 +372,50 @@
         </div>
       </div>
       <figure style="margin-top:34px">
-        <img alt="Pipeline: classify, eligibility, price, pick, send" src="assets/pipeline-light.svg">
+        <img alt="Pipeline: classify, eligibility, price, pick, send" src="assets/pipeline-dark.svg">
         <figcaption>Eligibility runs before cost, so a cheap model that cannot serve the task is never considered.</figcaption>
       </figure>
+    </div>
+  </section>
+
+  <section id="decisions">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="kicker">Two things no other router shows you</p>
+        <h2>Why it chose that. What is left to spend.</h2>
+      </div>
+      <div class="duo">
+        <figure>
+          <img alt="The decision inspector beside a chat: the winning model with its estimated cost, the task tier, the context size, and the three reasons it beat the runner-ups" src="assets/screenshots/router-decision.png">
+          <figcaption>Every decision, with its runner-ups and its reasons.</figcaption>
+        </figure>
+        <figure>
+          <img alt="Allowance meters beside a chat: five-hour, seven-day and monthly windows for two providers, the credit pools behind them, and reset times" src="assets/screenshots/router-allowances.png">
+          <figcaption>Every window and every pool, with reset times.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section id="firstrun">
+    <div class="wrap">
+      <div class="section-head">
+        <p class="kicker">First run</p>
+        <h2>Zero decisions during setup</h2>
+        <p>
+          The router reads what is already on the machine, configures itself, and reports what it
+          did. One optional paste makes the estimates exact. You press one button.
+        </p>
+      </div>
+      <div class="firstrun">
+        <img alt="Onboarding beside an empty draft session: what the router found on this machine, the 1,284 requests it imported from OpenCode's history, and the OpenDesign paste step already recorded" src="assets/screenshots/router-onboarding.png">
+        <ul>
+          <li><b>Detected, not asked.</b> Credentials are found in OpenCode's own store; nothing to configure.</li>
+          <li><b>Day one is not a guess.</b> Your request history is imported so the seven-day window starts accurate.</li>
+          <li><b>One honest gap, named.</b> OpenDesign exposes no usage API &mdash; one paste of the Plan &amp; balance page closes it.</li>
+          <li><b>Then one button:</b> Start routing.</li>
+        </ul>
+      </div>
     </div>
   </section>
 
@@ -334,7 +441,7 @@
       <div class="section-head">
         <p class="kicker">Control</p>
         <h2>Everything is a slash command</h2>
-        <p>No GUI required, and routing keeps working with the command panel closed.</p>
+        <p>No GUI required, and routing keeps working with the panel closed.</p>
       </div>
       <div class="table-wrap">
         <table>

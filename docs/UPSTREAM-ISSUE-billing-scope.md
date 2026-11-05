@@ -56,3 +56,18 @@ Either:
 - Auth: OpenDesign inference key (Design Plan)
 - Model: deepseek-v4.1-flash, glm-5.3-flash (chat-completions protocol)
 - Time: 2026-10-28, ~10:00–12:00 UTC
+
+## Update 2026-11-05
+
+The same failure recurred with a different error surface:
+
+```
+[code=database_unavailable] resolve Billing Scope: status 503: database_unavailable
+```
+
+Same signature: pre-request billing-scope resolution returns 503, the client
+retries and the retry succeeds, no credits consumed. This confirms the two
+codes (`workspace_billing_scope_unavailable`, `database_unavailable`) are the
+same upstream dependency failing with different error mappings, and strengthens
+request 3 above: a distinguishable retryable error would let clients back off
+cleanly.

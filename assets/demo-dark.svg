@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="300" viewBox="0 0 760 300" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif">
+  <rect width="760" height="300" fill="#101014"/>
+  <text x="24" y="30" font-size="12" font-weight="700" fill="#e8e8ec">Same three subscriptions. Two routers.</text>
+
+  <text x="24" y="66" font-size="11" font-weight="700" fill="#6f6f7c" letter-spacing=".6">PRICE PER TOKEN</text>
+  <g font-size="12">
+    <rect x="24" y="78" width="330" height="44" rx="8" fill="#1a1a20" stroke="#2a2a31"/>
+    <text x="40" y="105" font-weight="600" fill="#e8e8ec">deepseek-v4.1-flash</text>
+    <text x="337" y="105" text-anchor="end" font-size="11" fill="#6f6f7c">cheapest on paper</text>
+    <rect x="24" y="130" width="330" height="44" rx="8" fill="#1a1a20" stroke="#2a2a31"/>
+    <text x="40" y="157" font-weight="600" fill="#e8e8ec">deepseek-v4.1-flash</text>
+    <text x="337" y="157" text-anchor="end" font-size="11" fill="#6f6f7c">same choice again</text>
+    <rect x="24" y="182" width="330" height="44" rx="8" fill="#1a1a20" stroke="#2a2a31"/>
+    <text x="40" y="209" font-weight="600" fill="#e8e8ec">deepseek-v4.1-flash</text>
+    <text x="337" y="209" text-anchor="end" font-size="11" fill="#e08a8a">allowance dies unused</text>
+  </g>
+
+  <text x="406" y="66" font-size="11" font-weight="700" fill="#2dd4bf" letter-spacing=".6">SMART ROUTER</text>
+  <g font-size="12">
+    <rect x="406" y="78" width="330" height="44" rx="8" fill="#0e2229" stroke="#0891b2" stroke-width="1.5"/>
+    <text x="422" y="105" font-weight="600" fill="#e8e8ec">commandcode / haiku</text>
+    <text x="719" y="105" text-anchor="end" font-size="11" fill="#2dd4bf">window resets in 40m</text>
+    <rect x="406" y="130" width="330" height="44" rx="8" fill="#0e2229" stroke="#0891b2" stroke-width="1.5"/>
+    <text x="422" y="157" font-weight="600" fill="#e8e8ec">opendesign / deepseek</text>
+    <text x="719" y="157" text-anchor="end" font-size="11" fill="#2dd4bf">cheapest once that empties</text>
+    <rect x="406" y="182" width="330" height="44" rx="8" fill="#0e2229" stroke="#0891b2" stroke-width="1.5"/>
+    <text x="422" y="209" font-weight="600" fill="#e8e8ec">opendesign / deepseek</text>
+    <text x="719" y="209" text-anchor="end" font-size="11" fill="#2dd4bf">steady, nothing wasted</text>
+  </g>
+
+  <line x1="24" y1="240" x2="736" y2="240" stroke="#26262b" opacity="0"/>
+</svg>

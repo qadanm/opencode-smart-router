@@ -11,6 +11,23 @@ An independent product engineer on **OpenDesign Pro**, with Command Code Pro
 also configured and OpenCode Go discovered but left off. They use OpenCode
 daily for a long-running TypeScript refactor.
 
+## The mock session
+
+`router-panel.png`, `router-decision.png` and `router-allowances.png` place the
+panel inside a mock OpenCode app frame (`.appframe` / `.appbody` in
+`styles.css`) so the shots read as the product in use, not a floating panel:
+
+- **Chat pane:** a session titled *checkout-validation refactor*. The user asks
+  to fix plus-address email validation; the assistant reply (styled as the
+  routed model, `opendesign/glm-5.3-flash`) answers with a small code diff.
+- **Composer chip** matches the panel's current model, so chat and panel agree
+  on the same task, model and numbers. One message per shot: the panel shot
+  shows state, the decision shot zooms the reasoning card, the allowances shot
+  zooms the budget rows.
+- **Onboarding** (`router-onboarding.png`) keeps the app frame but shows the
+  draft setup state on the left and the payoff ("Recorded.") on the right.
+- All data in the chat and panel is invented; no real conversation is depicted.
+
 ## The dataset, and where each number comes from
 
 Every figure is calibrated against the plan catalog (`src/core/plans/catalog.ts`)

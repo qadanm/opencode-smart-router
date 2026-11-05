@@ -6,112 +6,139 @@
 <title>Smart Router — onboarding</title>
 </head>
 <body>
-<div class="stage">
-<div class="panel">
-  <div class="body" style="padding:18px 16px;">
+<div class="stage stage-wide">
+<div class="appframe" style="width:1060px;">
+  <div class="appbar">
+    <span class="lights"><i></i><i></i><i></i></span>
+    <span class="title">OpenCode — new session</span>
+    <span class="bar-spacer"></span>
+  </div>
+  <div class="appbody">
 
-    <div class="onb-hero">
-      <svg width="44" height="44" viewBox="0 0 60 60" aria-hidden="true" style="flex-shrink:0;display:block;">
-        <defs>
-          <linearGradient id="sr" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#0f766e"/>
-            <stop offset="100%" stop-color="#0891b2"/>
-          </linearGradient>
-        </defs>
-        <g fill="none" stroke="url(#sr)" stroke-width="4" stroke-linecap="round">
-          <path d="M8 30h12"/>
-          <path d="M20 30c7 0 8-14 15-14h8"/>
-          <path d="M20 30c7 0 8 14 15 14h8"/>
-          <path d="M20 30h23"/>
-        </g>
-        <circle cx="5" cy="30" r="4.5" fill="url(#sr)"/>
-        <g fill="url(#sr)">
-          <rect x="45" y="10" width="9" height="9" rx="2.5"/>
-          <rect x="45" y="25.5" width="9" height="9" rx="2.5"/>
-          <rect x="45" y="41" width="9" height="9" rx="2.5"/>
-        </g>
-      </svg>
-      <span class="onb-title">Your router is ready</span>
-      <span class="onb-sub">It found what is already on this machine and configured itself. Here is exactly what it did.</span>
-    </div>
-
-    <div class="section">
-      <div class="sec-head">
-        <span class="label">Found on this machine</span>
-      </div>
-
-      <div class="onb-found">
-        <span class="pcol">
-          <span class="pname">Command Code Pro</span>
-          <span class="pnote">API key in OpenCode's credential store</span>
-        </span>
-        <span class="chip good">enabled</span>
-      </div>
-      <div class="onb-found">
-        <span class="pcol">
-          <span class="pname">OpenDesign Pro</span>
-          <span class="pnote">API key in OpenCode's credential store</span>
-        </span>
-        <span class="chip good">enabled</span>
-      </div>
-      <div class="onb-found">
-        <span class="pcol">
-          <span class="pname">OpenCode Go</span>
-          <span class="pnote">API key in OpenCode's credential store</span>
-        </span>
-        <span class="chip">off</span>
+    <div class="chat" style="align-items:center;justify-content:center;">
+      <div class="draft">
+        <svg width="34" height="34" viewBox="0 0 60 60" aria-hidden="true" style="opacity:.5;">
+          <defs>
+            <linearGradient id="sr2" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#0f766e"/>
+              <stop offset="100%" stop-color="#0891b2"/>
+            </linearGradient>
+          </defs>
+          <g fill="none" stroke="url(#sr2)" stroke-width="4" stroke-linecap="round">
+            <path d="M8 30h12"/>
+            <path d="M20 30c7 0 8-14 15-14h8"/>
+            <path d="M20 30c7 0 8 14 15 14h8"/>
+            <path d="M20 30h23"/>
+          </g>
+          <circle cx="5" cy="30" r="4.5" fill="url(#sr2)"/>
+          <g fill="url(#sr2)">
+            <rect x="45" y="10" width="9" height="9" rx="2.5"/>
+            <rect x="45" y="25.5" width="9" height="9" rx="2.5"/>
+            <rect x="45" y="41" width="9" height="9" rx="2.5"/>
+          </g>
+        </svg>
+        <span class="d-title">Draft session</span>
+        <span class="d-sub">Describe a change to get started.</span>
       </div>
     </div>
 
-    <div class="section not-first">
-      <div class="sec-head">
-        <span class="label">Learned from your history</span>
-        <span class="sec-aside">imported</span>
-      </div>
-      <div class="card accent">
-        <span class="onb-history"><strong>1,284</strong> <span class="rep">requests from OpenCode's own database</span></span>
-        <span class="onb-explain">Each one carries its own timestamp and the model that served it, so the seven-day window starts accurate instead of empty.</span>
-      </div>
-    </div>
+    <div class="sidepanel">
+      <div class="panelbody" style="padding:18px 16px;">
 
-    <div class="section not-first">
-      <div class="sec-head">
-        <span class="label">What it will do</span>
-      </div>
-      <div class="onb-points">
-        <div class="onb-point"><span class="why-caret">›</span><span class="why-text">Pick the cheapest model that can actually do the job, and say why.</span></div>
-        <div class="onb-point"><span class="why-caret">›</span><span class="why-text">Stop before an allowance runs out, not after a request fails.</span></div>
-        <div class="onb-point"><span class="why-caret">›</span><span class="why-text">Count what you spend here, and never guess silently.</span></div>
-      </div>
-    </div>
-
-    <div class="section not-first">
-      <div class="sec-head">
-        <span class="label">One thing it cannot see</span>
-        <span class="chip warn">needed for accuracy</span>
-      </div>
-      <div class="card">
-        <span style="font-size:14px;font-weight:550;">OpenDesign does not expose usage to an API key</span>
-        <span class="onb-explain">So the router can only count what <em>it</em> has routed. Anything you spent before installing it — in the desktop app, or with another tool — is invisible, which makes its estimate far too optimistic.</span>
-        <span class="onb-explain">Paste your <strong style="color:var(--text);">Plan &amp; balance</strong> page once and it knows your real position. This is the only page worth pasting: it carries the percentage, which window it belongs to, and when it resets.</span>
-
-        <span class="console-btn"><span class="ic">↗</span>Open Plan &amp; balance</span>
-
-        <textarea class="focused" rows="4">Teams · Plan &amp; balance
-Design Plan — 15% of $360.00 · resets Nov 28
-Seven-day — 53% of $90.00 · resets in 3 days
-Plan models — $108.40 of $120.00</textarea>
-        <div class="btnrow">
-          <span class="btn enabled" style="cursor:pointer;">Check it</span>
-          <span class="btn-note">Optional — you can skip and paste later.</span>
+        <div class="onb-hero">
+          <svg width="44" height="44" viewBox="0 0 60 60" aria-hidden="true" style="flex-shrink:0;display:block;">
+            <defs>
+              <linearGradient id="sr" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#0f766e"/>
+                <stop offset="100%" stop-color="#0891b2"/>
+              </linearGradient>
+            </defs>
+            <g fill="none" stroke="url(#sr)" stroke-width="4" stroke-linecap="round">
+              <path d="M8 30h12"/>
+              <path d="M20 30c7 0 8-14 15-14h8"/>
+              <path d="M20 30c7 0 8 14 15 14h8"/>
+              <path d="M20 30h23"/>
+            </g>
+            <circle cx="5" cy="30" r="4.5" fill="url(#sr)"/>
+            <g fill="url(#sr)">
+              <rect x="45" y="10" width="9" height="9" rx="2.5"/>
+              <rect x="45" y="25.5" width="9" height="9" rx="2.5"/>
+              <rect x="45" y="41" width="9" height="9" rx="2.5"/>
+            </g>
+          </svg>
+          <span class="onb-title">Your router is ready</span>
+          <span class="onb-sub">It found what is already on this machine and configured itself. Here is exactly what it did.</span>
         </div>
+
+        <div class="section">
+          <div class="sec-head">
+            <span class="label">Found on this machine</span>
+          </div>
+
+          <div class="onb-found">
+            <span class="pcol">
+              <span class="pname">Command Code Pro</span>
+              <span class="pnote">API key in OpenCode's credential store</span>
+            </span>
+            <span class="chip good">enabled</span>
+          </div>
+          <div class="onb-found">
+            <span class="pcol">
+              <span class="pname">OpenDesign Pro</span>
+              <span class="pnote">API key in OpenCode's credential store</span>
+            </span>
+            <span class="chip good">enabled</span>
+          </div>
+          <div class="onb-found">
+            <span class="pcol">
+              <span class="pname">OpenCode Go</span>
+              <span class="pnote">API key in OpenCode's credential store</span>
+            </span>
+            <span class="chip">off</span>
+          </div>
+        </div>
+
+        <div class="section not-first">
+          <div class="sec-head">
+            <span class="label">Learned from your history</span>
+            <span class="sec-aside">imported</span>
+          </div>
+          <div class="card accent">
+            <span class="onb-history"><strong>1,284</strong> <span class="rep">requests from OpenCode's own database</span></span>
+            <span class="onb-explain">Each one carries its own timestamp and the model that served it, so the seven-day window starts accurate instead of empty.</span>
+          </div>
+        </div>
+
+        <div class="section not-first">
+          <div class="sec-head">
+            <span class="label">What it will do</span>
+          </div>
+          <div class="onb-points">
+            <div class="onb-point"><span class="why-caret">›</span><span class="why-text">Pick the cheapest model that can actually do the job, and say why.</span></div>
+            <div class="onb-point"><span class="why-caret">›</span><span class="why-text">Stop before an allowance runs out, not after a request fails.</span></div>
+            <div class="onb-point"><span class="why-caret">›</span><span class="why-text">Count what you spend here, and never guess silently.</span></div>
+          </div>
+        </div>
+
+        <div class="section not-first">
+          <div class="sec-head">
+            <span class="label">One thing it cannot see</span>
+            <span class="chip warn">needed for accuracy</span>
+          </div>
+          <div class="card">
+            <span style="font-size:14px;font-weight:550;">OpenDesign does not expose usage to an API key</span>
+            <span class="onb-explain">Paste your <strong style="color:var(--text);">Plan &amp; balance</strong> page once and it knows your real position. This is the only page worth pasting: it carries the percentage, which window it belongs to, and when it resets.</span>
+            <span style="color:var(--good);font-size:13px;">Recorded. Your allowance now starts from what the account actually shows.</span>
+          </div>
+        </div>
+
+        <button class="start-btn" type="button">Start routing</button>
       </div>
     </div>
 
-    <button class="start-btn" type="button">Start routing</button>
   </div>
 </div>
 </div>
 </body>
 </html>
-<script>addEventListener("load",()=>{document.title="H"+Math.ceil(document.querySelector(".panel").getBoundingClientRect().bottom+28)})</script>
+<script>addEventListener("load",()=>{document.title="H"+Math.ceil(document.querySelector(".appframe").getBoundingClientRect().bottom+28)})</script>
