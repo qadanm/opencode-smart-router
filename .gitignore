@@ -6,3 +6,4 @@ coverage/
 .superpowers/
 dist-release/
 dist-fault/
+.worktrees/
