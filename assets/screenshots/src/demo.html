@@ -1,0 +1,439 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>demo</title>
+<style>
+  :root {
+    --text: #e8e8ec;
+    --muted: #9a9aa6;
+    --faint: #6f6f7c;
+    --border: rgba(255, 255, 255, 0.09);
+    --border-strong: rgba(255, 255, 255, 0.16);
+    --surface: rgba(255, 255, 255, 0.04);
+    --raised: rgba(255, 255, 255, 0.07);
+    --good: #7ad19a;
+    --warn: #e0b463;
+    --bad: #e08a8a;
+    --brand: #0f766e;
+    --brand-to: #0891b2;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  body {
+    width: 1200px; height: 675px; overflow: hidden;
+    background:
+      radial-gradient(960px 420px at 10% -10%, rgba(15, 118, 110, 0.17), transparent 62%),
+      radial-gradient(820px 360px at 96% 4%, rgba(8, 145, 178, 0.11), transparent 60%),
+      linear-gradient(172deg, #15151a 0%, #101013 58%, #0c0c0f 100%);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    color: var(--text);
+    position: relative;
+  }
+  body::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    box-shadow: inset 0 0 140px rgba(0, 0, 0, 0.42);
+  }
+  .kicker {
+    position: absolute; top: 26px; left: 0; right: 0;
+    text-align: center; font-size: 11px; letter-spacing: 0.22em;
+    text-transform: uppercase; color: var(--faint); font-weight: 600;
+    opacity: 0; transform: translateY(6px);
+  }
+  .kicker .dot { color: var(--brand); }
+  .window {
+    position: absolute; left: 70px; top: 62px;
+    width: 1060px; height: 560px;
+    border-radius: 14px; border: 1px solid rgba(255,255,255,0.10);
+    background: #121216; overflow: hidden;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.05) inset, 0 40px 90px rgba(0,0,0,0.6);
+    display: flex; flex-direction: column;
+    opacity: 0; transform: scale(0.97);
+  }
+  .appbar {
+    height: 40px; display: flex; align-items: center; gap: 8px;
+    padding: 0 14px; border-bottom: 1px solid rgba(255,255,255,0.09);
+    background: rgba(255,255,255,0.02); flex-shrink: 0;
+  }
+  .lights { display: flex; gap: 6px; }
+  .lights i { width: 10px; height: 10px; border-radius: 50%; background: #2b2b32; display: block; }
+  .appbar .title { flex: 1; text-align: center; font-size: 12.5px; color: var(--faint); }
+  .appbar .bar-spacer { width: 44px; }
+  .appbar .routertab {
+    font-size: 11px; color: var(--muted); border: 1px solid var(--border);
+    border-radius: 6px; padding: 3px 9px; display: flex; gap: 6px; align-items: center;
+  }
+  .appbar .routertab b { font-weight: inherit; color: var(--text); }
+  .appbody { display: flex; align-items: stretch; flex: 1; min-height: 0; }
+  .chat { flex: 1; padding: 18px 22px 14px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .chat::-webkit-scrollbar { display: none; }
+
+  .u1, .a1, .u2, .a2, .errchip, .healtag { visibility: hidden; }
+  .healtag { opacity: 0; }
+  .bubble-theirs {
+    align-self: flex-end; max-width: 78%;
+    background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+    color: var(--text); font-size: 13px; line-height: 1.5;
+    padding: 9px 13px; border-radius: 12px 12px 3px 12px;
+  }
+  .bubble-mine {
+    align-self: flex-start; max-width: 88%;
+    font-size: 13px; line-height: 1.55; color: var(--muted);
+  }
+  .reply .who {
+    font-size: 10.5px; letter-spacing: 0.08em; color: var(--faint);
+    margin-bottom: 5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  .reply .who b { color: var(--muted); font-weight: 600; }
+  .codeblock {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11.5px; line-height: 1.55;
+    background: #0e0e12; border: 1px solid var(--border); border-radius: 8px;
+    padding: 9px 12px; margin-top: 8px; color: var(--muted); overflow: hidden; white-space: pre;
+  }
+  .codeblock .add { color: var(--good); }
+  .errchip {
+    align-self: flex-start; display: flex; gap: 8px; align-items: baseline;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px; line-height: 1.5; color: var(--bad);
+    background: rgba(224, 138, 138, 0.07); border: 1px solid rgba(224,138,138,0.25);
+    padding: 8px 12px; border-radius: 9px;
+  }
+  .healtag {
+    align-self: flex-start; display: inline-flex; gap: 7px; align-items: baseline;
+    font-size: 11.5px; color: var(--brand-to);
+    background: rgba(8,145,178,0.09); border: 1px solid rgba(8,145,178,0.3);
+    padding: 6px 11px; border-radius: 999px; font-weight: 500;
+  }
+  .healtag b { color: #7dd3e8; font-weight: 600; }
+
+  .panelcol {
+    width: 320px; flex-shrink: 0; border-left: 1px solid rgba(255,255,255,0.09);
+    background: rgba(0,0,0,0.16); padding: 14px 14px 12px;
+    display: flex; flex-direction: column; gap: 10px; overflow: hidden;
+    font-size: 12px;
+  }
+  .phead { display: flex; justify-content: space-between; align-items: baseline; }
+  .phead .brandrow { display: flex; gap: 7px; align-items: center; }
+  .brandmark { width: 15px; height: 15px; display: block; }
+  .phead .name { font-size: 12.5px; font-weight: 650; letter-spacing: -0.01em; color: var(--text); }
+  .phead .sub { font-size: 9px; letter-spacing: 0.18em; color: var(--faint); text-transform: uppercase; }
+  .phead .balance { font-size: 10px; color: var(--faint); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .currentchip {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 7px 10px;
+  }
+  .currentchip .k { font-size: 9.5px; letter-spacing: 0.14em; color: var(--faint); text-transform: uppercase; }
+  .currentchip .v { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px; color: var(--text); transition: none; }
+  .card {
+    background: linear-gradient(178deg, #1a1a20 0%, #141419 100%);
+    border: 1px solid var(--border); border-radius: 10px; padding: 11px 12px;
+  }
+  .card .label { font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--faint); display: flex; justify-content: space-between; }
+  .card .label .n { text-transform: none; letter-spacing: 0 }
+  .chosenrow { display: flex; justify-content: space-between; align-items: center; margin-top: 9px; }
+  .chosenrow .model { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chip-good { font-size: 9.5px; padding: 2px 8px; border-radius: 999px; border: 1px solid rgba(122,209,154,0.35); color: var(--good); letter-spacing: 0.08em; font-weight: 600; flex-shrink: 0; }
+  .statline { display: flex; gap: 14px; margin-top: 8px; }
+  .statline .s { display: flex; flex-direction: column; gap: 1px; }
+  .statline .sk { font-size: 8.5px; letter-spacing: 0.12em; color: var(--faint); text-transform: uppercase; }
+  .statline .sv { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px; color: var(--muted); }
+  .why { margin-top: 9px; border-top: 1px solid var(--border); padding-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+  .why .wl { display: flex; gap: 7px; font-size: 11px; line-height: 1.45; color: var(--muted); }
+  .why .wl::before { content: "›"; color: var(--brand-to); font-weight: 700; }
+  .selfhealline {
+    margin-top: 9px; border-top: 1px solid var(--border); padding-top: 8px;
+    font-size: 11px; line-height: 1.5; color: var(--brand-to);
+    opacity: 0;
+  }
+  .selfhealline b { color: #7dd3e8; font-weight: 600; }
+  .cands { margin-top: 9px; border-top: 1px solid var(--border); padding-top: 8px; display: flex; flex-direction: column; gap: 3px; }
+  .cands .ch { font-size: 8.5px; letter-spacing: 0.14em; color: var(--faint); text-transform: uppercase; margin-bottom: 2px; }
+  .cander { display: flex; justify-content: space-between; gap: 8px; font-size: 10.5px; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .cander span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cander .r { color: var(--faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .allowrow { margin-top: 9px; display: flex; flex-direction: column; gap: 6px; }
+  .arow .ah { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--muted); margin-bottom: 3px; }
+  .arow .ah .pct { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; color: var(--text); }
+  .bar { height: 4px; border-radius: 3px; background: rgba(255,255,255,0.06); overflow: hidden; }
+  .bar i { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--brand), var(--brand-to)); width: 0; }
+  .arow .span { font-size: 8.5px; letter-spacing: 0.12em; color: var(--faint); text-transform: uppercase; margin-bottom: 4px; }
+
+  .endcard {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 14px;
+    opacity: 0; background: radial-gradient(700px 340px at 50% 42%, rgba(15,118,110,0.13), transparent 65%),
+      linear-gradient(172deg, #141418 0%, #0e0e11 70%, #0c0c0f 100%);
+  }
+  .endcard .wordmark { display: flex; align-items: center; gap: 12px; }
+  .endcard .wordmark svg { width: 44px; height: 44px; }
+  .endcard .wm .n { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; color: #fff; }
+  .endcard .wm .s { font-size: 10.5px; letter-spacing: 0.26em; color: var(--muted); text-transform: uppercase; }
+  .endcard .wm { display: flex; flex-direction: column; gap: 2px; }
+  .endcard h1 { font-size: 34px; font-weight: 700; letter-spacing: -0.025em; color: #fff; margin-top: 8px; }
+  .endcard h1 em { font-style: normal; background: linear-gradient(90deg, #2dd4bf, #38bdf8); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .endcard .npmchip {
+    margin-top: 10px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12.5px; color: var(--muted);
+    border: 1px solid var(--border-strong); border-radius: 10px;
+    padding: 10px 16px; background: var(--surface);
+  }
+  .endcard .npmchip b { color: var(--text); font-weight: 600; }
+</style>
+</head>
+<body>
+  <div class="kicker" id="kicker"></div>
+
+  <div class="window" id="win">
+    <div class="appbar">
+      <span class="lights"><i></i><i></i><i></i></span>
+      <span class="title">checkout-validation refactor</span>
+      <span class="routertab">⚡ <b>Router</b></span>
+    </div>
+    <div class="appbody">
+      <div class="chat">
+        <div class="bubble-theirs u1" id="u1">plus-addressed emails still pass our filter. can you fix it?</div>
+
+        <div class="bubble-mine reply a1" id="a1">
+          <div class="who">⌁ <b>opendesign/glm-5.3-flash</b> · $0.0001</div>
+          <div>The filter split on "+" but ignored aliases after the tag. Fixed locally:</div>
+          <div class="codeblock">- const [user, tag] = raw.split('@')&lt;2 ? [raw] : raw.split('@')
++ const [local, domain] = raw.toLowerCase().split('@')
+- return allowed.has(user)
++ return allowed.has(local.split('+')[0])</div>
+        </div>
+
+        <div class="bubble-theirs u2" id="u2">next: strip the wildcard branch. use haiku to save the weekly window</div>
+
+        <div class="errchip" id="err">⚠ <span>provider.invalid-request · Expected 'user' | 'assistant' at messages[23].role</span></div>
+
+        <div class="healtag" id="heal">↯ moved to <b>deepseek-v4.1-flash</b>, turn continues</div>
+
+        <div class="bubble-mine reply a2" id="a2">
+          <div class="who">⌁ <b>commandcode/deepseek-v4.1-flash</b> · $0.0000</div>
+          <div>Wildcard branch removed. Aliases short-circuit before the membership set lookup.</div>
+        </div>
+      </div>
+
+      <div class="panelcol">
+        <div class="phead">
+          <span class="brandrow">
+            <svg class="brandmark" viewBox="0 0 32 32"><circle cx="16" cy="16" r="15" fill="none" stroke="url(#g1)" stroke-width="2.5"/><path d="M7 19c3-2 6-2 9-4s5-4 9-4" fill="none" stroke="url(#g1)" stroke-width="2.5" stroke-linecap="round"/><defs><linearGradient id="g1" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#0f766e"/><stop offset="1" stop-color="#0891b2"/></linearGradient></defs></svg>
+            <span>
+              <span class="name">Smart Router</span><br>
+              <span class="sub">For OpenCode</span>
+            </span>
+          </span>
+          <span class="balance">AUTOMATIC</span>
+        </div>
+
+        <div class="currentchip" id="currentchip"><span class="k">Current model</span><span class="v" id="curval">—</span></div>
+
+        <div class="card" id="decision">
+          <div class="label">Last decision <span class="n" id="eligible">7 eligible · 0 blocked</span></div>
+          <div class="chosenrow"><span class="model" id="chosen">—</span><span class="chip-good">CHOSEN</span></div>
+          <div class="statline"><span class="s"><span class="sk">est cost</span><span class="sv" id="cost">—</span></span><span class="s"><span class="sk">task</span><span class="sv">feature · T2</span></span><span class="s"><span class="sk">context</span><span class="sv">82k</span></span></div>
+          <div class="why">
+            <div class="wl" id="w1">Cheapest eligible route after the switch penalty.</div>
+            <div class="wl" id="w2">Entire windows are fresh; 0% of the 5 hour allowance used.</div>
+            <div class="wl" id="w3">OpenDesign GOAT covers this task inside the plan.</div>
+          </div>
+          <div class="selfhealline" id="selfheal">Self-healed: rejected <b>claude-haiku-5-5</b>, continued on <b>deepseek-v4.1-flash</b></div>
+          <div class="cands">
+            <div class="ch">Candidates · 7 considered</div>
+            <div class="cander"><span>opendesign/glm-5.3-flash</span><span class="r">kept for cache affinity</span></div>
+            <div class="cander"><span>commandcode/claude-haiku-5-5</span><span class="r">+ switch penalty</span></div>
+            <div class="cander"><span>gpt-6.1-sol</span><span class="r">unapproved · blocked</span></div>
+            <div class="cander"><span>gpt-6-luna</span><span class="r">below the intelligence floor</span></div>
+          </div>
+        </div>
+
+        <div class="card" id="allowcard" style="margin-top:2px">
+          <div class="label">Allowances <span class="n">3 providers</span></div>
+          <div class="allowrow">
+            <div class="arow">
+              <div class="span">OpenCode Go</div>
+              <div class="ah"><span>7d</span><span class="pct">2% · fresh in 4d</span></div>
+              <div class="bar"><i id="b1"></i></div>
+            </div>
+            <div class="arow">
+              <div class="span">Command Code</div>
+              <div class="ah"><span>7d</span><span class="pct">62% · in 2d</span></div>
+              <div class="bar"><i id="b2"></i></div>
+            </div>
+            <div class="arow">
+              <div class="span">Command Code · monthly</div>
+              <div class="ah"><span>monthly</span><span class="pct">81% · in 19d</span></div>
+              <div class="bar"><i id="b3"></i></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="endcard" id="end">
+    <div class="wordmark">
+      <svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="15" fill="none" stroke="url(#g2)" stroke-width="2"/><path d="M7 19c3-2 6-2 9-4s5-4 9-4" fill="none" stroke="url(#g2)" stroke-width="2" stroke-linecap="round"/><defs><linearGradient id="g2" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#2dd4bf"/><stop offset="1" stop-color="#38bdf8"/></linearGradient></defs></svg>
+      <span class="wm"><span class="n">Smart Router</span><span class="s">For OpenCode</span></span>
+    </div>
+    <h1>Routes by <em>your plan,</em> not a price list.</h1>
+    <div class="npmchip">{ "plugin": ["<b>@qadanm/opencode-smart-router</b>"] }</div>
+  </div>
+
+<script>
+const clamp01 = (x) => Math.max(0, Math.min(1, x));
+const span = (t, a, b) => clamp01((t - a) / (b - a));
+const easeOut = (x) => 1 - Math.pow(1 - x, 3);
+const easeInOut = (x) => x < 0.5 ? 4*x*x*x : 1 - Math.pow(-2*x + 2, 3)/2;
+const easeBack = (x) => { const c1 = 1.30158; const c3 = c1 + 1; const y = x - 1; return 1 + c3*y*y*y + c1*y*y; };
+const el = (id) => document.getElementById(id);
+
+function setVis(id, v, a, y) {
+  const node = el(id);
+  node.style.visibility = v;
+  node.style.opacity = a;
+  if (y !== undefined) node.style.transform = "translateY(" + y + "px)";
+}
+
+const log1 = "plus-addressed emails still pass our filter. can you fix it?";
+const log2 = "next: strip the wildcard branch. use haiku to save the weekly window";
+
+const STATE = {
+  glm:  { model: "opendesign/glm-5.3-flash",    cost: "$0.0001", w: ["Substantive engineering work stays above the intelligence floor.", "Cheapest eligible route after the switch penalty.", "OpenDesign GOAT covers this task inside the plan."], selfheal: false },
+  haiku:{ model: "commandcode/claude-haiku-5-5", cost: "$0.0110", w: ["Selected for the least-cost qualified route after estimated exits and quota pressure.", "Weekly window at 62%, two days left: the margin still clears.", "OpenCode GOAT spends its fresh windows first."], selfheal: false },
+  heal: { model: "commandcode/deepseek-v4.1-flash", cost: "$0.0049", w: ["Next best eligible choice after the rejection.", "Weekly window at 62%, two days left: still the cheapest qualified route.", "Rejecting model held back for five minutes."], selfheal: true },
+};
+
+function applyState(state, p) {
+  el("chosen").textContent = state.model;
+  el("cost").textContent = state.cost;
+  ["w1", "w2", "w3"].forEach((id, i) => { const node = el(id); node.textContent = state.w[i]; node.style.opacity = clamp01(p * 4 - i * 0.9); });
+  const sh = el("selfheal");
+  sh.style.opacity = state.selfheal ? clamp01(p * 3 - 1.6) : 0;
+  el("selfheal").innerHTML = state.selfheal
+    ? 'Self-healed: rejected <b>claude-haiku-5-5</b>, continued on <b>deepseek-v4.1-flash</b>'
+    : 'Self-healed.';
+}
+
+// The card swap: old decision fades out and the new one slides in over the same frame.
+function cardAt(t) {
+  // Act 1: glm card lands at 3.6, candidates at 4.8.
+  // Act 3: haiku card at 14.2, heal card at 16.0.
+  let state = null; let p = 0;
+  if (t < 14.0) { state = STATE.glm;  p = span(t, 3.6, 4.4); }
+  else if (t < 15.75) { state = STATE.haiku; p = span(t, 14.2, 14.9); }
+  else { state = STATE.heal; p = span(t, 16.0, 16.7); }
+  applyState(state, p);
+  return p;
+}
+
+function render(t) {
+  // Window entrance.
+  const win = el("win");
+  const winP = easeOut(span(t, 0.05, 0.55));
+  win.style.opacity = winP;
+  win.style.transform = "scale(" + (0.97 + 0.03 * winP) + ") translateY(" + (1 - winP) * 8 + "px)";
+
+  // Kicker text per act.
+  const kick = el("kicker");
+  let kickText = "Decides in milliseconds · Substantive work stays on the floor";
+  let kickP = 0;
+  if (t < 9.6) { kickText = "Decides in milliseconds · Substantive work stays on the floor"; kickP = span(t, 0.6, 0.95); }
+  else if (t < 12.4) { kickText = "Knows your budget · Every window it can spend"; kickP = span(t, 10.0, 10.3); kickP *= 1 - span(t, 12.1, 12.4); }
+  else if (t < 19.4) { kickText = "Self-healing · A rejected turn continues by itself"; kickP = span(t, 12.7, 13.0) * (1 - span(t, 19.1, 19.4)); }
+  else { kickText = ""; }
+  kick.textContent = kickText;
+  kick.style.opacity = clamp01(kickP);
+  kick.style.transform = "translateY(" + (1 - clamp01(kickP)) * 6 + "px)";
+
+  // User prompt 1 types.
+  const u1 = el("u1");
+  if (t >= 0.9) {
+    const p = span(t, 0.9, 2.4);
+    const n = Math.min(log1.length, Math.round(p * log1.length * 1.15));
+    if (t < 2.4) { u1.textContent = log1.slice(0, n) + (Math.floor(p * 30) % 2 ? "▏" : ""); u1.style.caretColor = "transparent"; }
+    else u1.textContent = log1;
+    setVis("u1", "visible", 1);
+  }
+
+  // Panel: routing shimmer, then the card.
+  const ccVal = el("curval");
+  if (t < 3.9) ccVal.textContent = t > 2.8 ? (Math.floor(t * 8) % 2 ? "routing ▖▘" : "routing ▘▖") : "—";
+  else if (t < 14.0) ccVal.textContent = "glm-5.3-flash";
+  else if (t < 15.75) ccVal.textContent = "claude-haiku-5-5";
+  else ccVal.textContent = "deepseek-v4.1-flash";
+
+  const cardP = cardAt(t);
+  el("decision").style.opacity = clamp01(cardP);
+  el("decision").style.transform = "translateY(" + (1 - easeOut(cardP)) * 14 + "px)";
+
+  // Assistant reply 1 streams.
+  if (t >= 6.3) {
+    const p = span(t, 6.3, 9.4);
+    setVis("a1", "visible", 1);
+    const who = el("a1").children[0];
+    const line1 = el("a1").children[1];
+    const code = el("a1").children[2];
+    if (who) who.style.opacity = clamp01(p * 10);
+    if (line1) line1.style.opacity = clamp01(p * 4 - 0.8);
+    if (code) code.style.opacity = clamp01(p * 3.2 - 2.1);
+    if (code) code.style.transform = "translateY(" + (1 - easeOut(clamp01(p * 3.2 - 2.1))) * 6 + "px)";
+  }
+
+  // Second prompt, after the budget act.
+  if (t >= 12.6) {
+    const p = span(t, 12.6, 13.9);
+    const u2 = el("u2");
+    const n = Math.min(log2.length, Math.round(p * log2.length * 1.2));
+    if (t < 13.9) u2.textContent = log2.slice(0, n);
+    else u2.textContent = log2;
+    setVis("u2", "visible", 1);
+  }
+
+  // Error chip, then the heal tag.
+  if (t >= 15.2) setVis("err", "visible", span(t, 15.2, 15.55), (1 - easeOut(span(t, 15.2, 15.55))) * 6);
+  if (t >= 16.2) setVis("heal", "visible", span(t, 16.2, 16.65), (1 - easeOut(span(t, 16.2, 16.65))) * 6);
+  if (t >= 17.1) {
+    const p = span(t, 17.1, 19.2);
+    setVis("a2", "visible", 1);
+    el("a2").children[0].style.opacity = clamp01(p * 6);
+    el("a2").children[1].style.opacity = clamp01(p * 3 - 0.9);
+  }
+
+  // Allowances card lands in the budget act.
+  const ac = el("allowcard");
+  const aP = span(t, 10.4, 11.1);
+  ac.style.opacity = clamp01(aP);
+  ac.style.transform = "translateY(" + (1 - easeOut(aP)) * 14 + "px)";
+  ["b1", "b2", "b3"].forEach((id, i) => {
+    const w = [0.02, 0.62, 0.81][i];
+    const p = easeInOut(span(t, 11.0 + i * 0.3, 12.0 + i * 0.3));
+    el(id).style.width = (w * p * 100) + "%";
+  });
+
+  // Final card: window dissolves under it.
+  const endP = span(t, 19.8, 21.0);
+  const end = el("end");
+  end.style.opacity = easeInOut(endP);
+  win.style.opacity = String(Number(win.style.opacity || 1) * (1 - easeInOut(endP)));
+  if (t >= 21.0) {
+    const p = span(t, 21.0, 21.9);
+    el("end").querySelector("h1").style.opacity = clamp01(p * 2);
+    el("end").querySelector(".npmchip").style.opacity = clamp01(p * 2 - 0.8);
+  }
+}
+
+const params = new URLSearchParams(location.search);
+const t0 = parseFloat(params.get("t") || "0");
+if (params.get("still") === "1") {
+  render(t0);
+} else {
+  const start = performance.now();
+  function loop(now) { render((now - start) / 1000 + t0); requestAnimationFrame(loop); }
+  requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>

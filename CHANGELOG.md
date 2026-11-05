@@ -3,6 +3,13 @@
 Notable changes to OpenCode Smart Router. Dates are the day the change landed on
 `main`.
 
+## Unreleased
+
+### Added
+
+- **Launch kit** (`docs/LAUNCH-KIT.md`): paste-ready copy for Discord, Hacker
+  News, X, and the opencode.cafe submission, plus the demo film assets.
+
 ## 0.4.0 — 2026-11-05
 
 Self-healing routing, and npm distribution.
