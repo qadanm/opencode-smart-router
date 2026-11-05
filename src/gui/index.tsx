@@ -4,6 +4,7 @@ import { SmartRouterRpc } from "../rpc.js"
 import {
   formatPercent,
   formatUsd,
+  formatWindowUsed,
   statusLine,
   summariseDecision,
   toProviderRow,
@@ -240,23 +241,125 @@ function DecisionInspector(props: { sessionID: string | undefined }) {
 
       <div style={{ height: "1px", background: theme.border }} />
 
-      <div style={{ display: "flex", "flex-direction": "column", gap: "6px" }}>
-        <span style={{ color: theme.faint, "font-size": "11px", "text-transform": "uppercase" }}>
+      <div style={{ display: "flex", "flex-direction": "column", gap: "10px" }}>
+        <span style={{ color: theme.faint, "font-size": "11px", "text-transform": "uppercase", "letter-spacing": "0.04em" }}>
           Providers
         </span>
         <For each={providers()}>
           {(provider) => (
-            <div style={{ display: "flex", "flex-direction": "column", gap: "3px" }}>
-              <div style={{ display: "flex", "justify-content": "space-between", gap: "8px" }}>
-                <span style={{ color: provider.error ? theme.bad : theme.text }}>{provider.label}</span>
-                <span style={{ color: theme.muted, "font-size": "11px" }}>
-                  {provider.exhausted ? "exhausted" : formatPercent(provider.monthlyUsedPct) + " monthly"}
+            <div
+              style={{
+                display: "flex",
+                "flex-direction": "column",
+                gap: "7px",
+                padding: "10px",
+                "border-radius": "8px",
+                background: theme.surface,
+                border: `1px solid ${theme.border}`,
+              }}
+            >
+              <div style={{ display: "flex", "justify-content": "space-between", gap: "8px", "align-items": "baseline" }}>
+                <span style={{ color: provider.error ? theme.bad : theme.text, "font-weight": 550, "font-size": "12.5px" }}>
+                  {provider.label}
+                </span>
+                <span
+                  style={{
+                    color: provider.exhausted ? theme.bad : provider.stale ? theme.warn : theme.faint,
+                    "font-size": "10.5px",
+                    "text-transform": "uppercase",
+                    "letter-spacing": "0.03em",
+                  }}
+                >
+                  {provider.exhausted ? `${provider.exhaustedWindow} exhausted` : provider.stale ? "stale" : provider.quotaState ?? provider.source}
                 </span>
               </div>
-              <span style={{ color: theme.faint, "font-size": "11px" }}>
-                {provider.sourceLabel}
-                {provider.error ? ` · ${provider.error}` : ""}
-              </span>
+
+              <For each={provider.windows}>
+                {(window) => (
+                  <div style={{ display: "flex", "align-items": "center", gap: "8px" }}>
+                    <span
+                      style={{
+                        color: theme.faint,
+                        "font-size": "10.5px",
+                        "min-width": "52px",
+                        "font-variant-numeric": "tabular-nums",
+                      }}
+                    >
+                      {window.label}
+                    </span>
+                    <div
+                      style={{
+                        flex: 1,
+                        height: "4px",
+                        "border-radius": "2px",
+                        background: window.reported ? "rgba(255,255,255,0.10)" : "transparent",
+                        overflow: "hidden",
+                        position: "relative",
+                      }}
+                    >
+                      <Show when={window.reported}>
+                        <div
+                          style={{
+                            width: `${Math.min(100, Math.max(0, window.usedPct))}%`,
+                            height: "100%",
+                            background: window.exceeded
+                              ? theme.bad
+                              : window.usedPct >= 80
+                                ? theme.warn
+                                : theme.good,
+                          }}
+                        />
+                      </Show>
+                    </div>
+                    <span
+                      style={{
+                        color: window.reported ? (window.exceeded ? theme.bad : theme.muted) : theme.faint,
+                        "font-size": "10.5px",
+                        "min-width": "74px",
+                        "text-align": "right",
+                        "font-variant-numeric": "tabular-nums",
+                      }}
+                    >
+                      {formatWindowUsed(window)}
+                      {window.resetLabel ? ` · ${window.resetLabel}` : ""}
+                    </span>
+                  </div>
+                )}
+              </For>
+
+              <Show when={provider.pools.length > 0}>
+                <div style={{ display: "flex", "flex-direction": "column", gap: "3px", "padding-top": "3px", "border-top": `1px solid ${theme.border}` }}>
+                  <For each={provider.pools}>
+                    {(pool) => (
+                      <div style={{ display: "flex", "justify-content": "space-between", gap: "8px" }}>
+                        <span style={{ color: theme.muted, "font-size": "10.5px" }}>{pool.label}</span>
+                        <span style={{ color: theme.faint, "font-size": "10.5px", "font-variant-numeric": "tabular-nums" }}>
+                          {formatUsd(pool.remainingUsd)} of {formatUsd(pool.monthlyUsd)}
+                        </span>
+                      </div>
+                    )}
+                  </For>
+                </div>
+              </Show>
+
+              <Show when={provider.caveat && provider.caveat.length > 0}>
+                <span style={{ color: theme.warn, "font-size": "10.5px", "line-height": 1.45 }}>
+                  {provider.caveat}
+                </span>
+              </Show>
+
+              <div style={{ display: "flex", "justify-content": "space-between", gap: "8px" }}>
+                <span style={{ color: theme.faint, "font-size": "10.5px" }}>{provider.sourceLabel}</span>
+                <Show when={provider.extraCreditsUsd !== undefined && provider.extraCreditsUsd! > 0}>
+                  <span style={{ color: theme.faint, "font-size": "10.5px" }}>
+                    wallet {formatUsd(provider.extraCreditsUsd!)} · never auto-spent
+                  </span>
+                </Show>
+              </div>
+
+              <Show when={provider.error}>
+                <span style={{ color: theme.bad, "font-size": "10.5px" }}>{provider.error}</span>
+              </Show>
             </div>
           )}
         </For>

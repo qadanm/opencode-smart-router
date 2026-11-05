@@ -23,6 +23,32 @@ export interface SettingsLoadResult {
   settings: RouterSettings
   warnings: string[]
   sources: string[]
+  /**
+   * Provider ids whose `enabled` the user set explicitly, in plugin options or
+   * in a config file.
+   *
+   * Credential detection fills in the providers a user never mentioned, but it
+   * must never overrule one they did. Without this set, "I turned OpenDesign
+   * off" and "I never configured OpenDesign" are indistinguishable after the
+   * merge, and detection would silently switch a deliberate choice back on.
+   */
+  explicitProviderEnable: ReadonlySet<string>
+}
+
+/**
+ * Provider ids with an explicit boolean `enabled` in a config document. Reads
+ * the raw input rather than the merged settings, because the merge has already
+ * lost the distinction between "set to true" and "defaulted to true".
+ */
+const explicitProviderEnable = (input: unknown): Set<string> => {
+  const found = new Set<string>()
+  if (!isRecord(input)) return found
+  const providers = input.providers
+  if (!isRecord(providers)) return found
+  for (const [id, value] of Object.entries(providers)) {
+    if (isRecord(value) && typeof value.enabled === "boolean") found.add(id)
+  }
+  return found
 }
 
 const providerDefaults = (plan: string, extra: Partial<ProviderSettings> = {}): ProviderSettings => ({
@@ -126,7 +152,11 @@ export const DEFAULT_SETTINGS: RouterSettings = {
     slowRouteMultiple: 2.5,
   },
   ui: {
-    titleIndicator: true,
+    // Off by default. A plugin that renames a stranger's chats on install is a
+    // bug, not a feature: the session title is the user's, and status belongs in
+    // the desktop panel or the terminal's status line. Turning this on is an
+    // explicit choice, and turning it back off restores the original names.
+    titleIndicator: false,
     notifications: true,
     compactMode: false,
     compact: false,
@@ -440,7 +470,7 @@ const validateModels = (value: unknown, base: ModelSettings, warnings: string[])
 export const validateSettings = (input: unknown, base: RouterSettings = DEFAULT_SETTINGS): SettingsLoadResult => {
   const warnings: string[] = []
   if (!isRecord(input)) {
-    return { settings: base, warnings: ["settings must be a JSON object"], sources: [] }
+    return { settings: base, warnings: ["settings must be a JSON object"], sources: [], explicitProviderEnable: new Set() }
   }
 
   const providers: Record<string, ProviderSettings> = { ...base.providers }
@@ -716,7 +746,7 @@ export const validateSettings = (input: unknown, base: RouterSettings = DEFAULT_
     warnings.push("premium.mode is allowed but premium.monthlyBudgetUsd is 0; premium remains unavailable")
   }
 
-  return { settings, warnings, sources: [] }
+  return { settings, warnings, sources: [], explicitProviderEnable: new Set() }
 }
 
 /**
@@ -894,16 +924,19 @@ export const loadSettings = (input: LoadSettingsInput = {}): SettingsLoadResult 
   const globalPath = join(home, ".config", "opencode", "smart-router.json")
 
   let settings = DEFAULT_SETTINGS
+  const explicit = new Set<string>()
 
   if (input.options !== undefined) {
     settings = validateSettings(input.options, settings).settings
     sources.push("plugin options")
+    for (const id of explicitProviderEnable(input.options)) explicit.add(id)
   }
 
   const globalInput = readJson(globalPath, warnings)
   if (globalInput !== undefined) {
     settings = validateSettings(globalInput, settings).settings
     sources.push(globalPath)
+    for (const id of explicitProviderEnable(globalInput)) explicit.add(id)
   }
 
   const projectDirectory = input.projectDirectory ?? input.directory
@@ -913,8 +946,9 @@ export const loadSettings = (input: LoadSettingsInput = {}): SettingsLoadResult 
     if (projectInput !== undefined) {
       settings = applyProjectGuardrails(settings, projectInput, warnings)
       sources.push(projectPath)
+      for (const id of explicitProviderEnable(projectInput)) explicit.add(id)
     }
   }
 
-  return { settings, warnings, sources }
+  return { settings, warnings, sources, explicitProviderEnable: explicit }
 }

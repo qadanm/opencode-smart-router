@@ -90,7 +90,7 @@
     "slowRouteMultiple": 2.5
   },
   "ui": {
-    "titleIndicator": true,
+    "titleIndicator": false,
     "notifications": true,
     "compactMode": false
   },

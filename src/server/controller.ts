@@ -1,4 +1,5 @@
-import { appendFileSync } from "node:fs"
+import { appendFileSync, existsSync } from "node:fs"
+import { homedir } from "node:os"
 import { resolve } from "node:path"
 import type {
   ModelRecord,
@@ -17,6 +18,13 @@ import { decideCompaction, describeMode } from "../core/context/strategy.js"
 import { buildProviderUsageReport } from "../core/quota/report.js"
 import { resolvePlan, resolvePlanWithReason } from "../core/plans/catalog.js"
 import { loadSettings, type SettingsLoadResult } from "../core/config.js"
+import {
+  applyCredentialDefaults,
+  credentialEnvVars,
+  credentialFileCandidates,
+  describeEnablement,
+  type ProviderEvidence,
+} from "../core/providers/enablement.js"
 import { classifyFailure } from "../core/failures.js"
 import { buildRegistry } from "../core/models/registry.js"
 import type { QuotaService } from "../core/quota/service.js"
@@ -41,6 +49,7 @@ import {
   indicatorState,
   providerShort,
   quotaStateLabel,
+  resolveBaseTitle,
   stripTitlePrefix,
   type Indicator,
 } from "../core/ui.js"
@@ -236,6 +245,7 @@ export class RouterController {
   private readonly stepStarted = new Map<string, number>()
   private readonly contextLoaded = new Set<string>()
   private readonly contextInflight = new Map<string, Promise<void>>()
+  private readonly explicitProviderEnable: ReadonlySet<string>
   private readonly titleQueue = new Map<string, Promise<void>>()
   private readonly notifier = new ChangeNotifier()
   private rpcRegistration: any
@@ -255,6 +265,9 @@ export class RouterController {
     this.settingsBase = loaded.settings
     this.settingsWarnings = loaded.warnings
     this.settingsSources = loaded.sources
+    // Which provider enable/disable flags the user wrote themselves. Detection
+    // fills in the ones they never mentioned and never overrules these.
+    this.explicitProviderEnable = loaded.explicitProviderEnable
     this.ledger = new LedgerStore()
 
     // A plan id that matches nothing must never resolve silently to whatever
@@ -318,6 +331,9 @@ export class RouterController {
   private modelList: unknown = []
 
   async initialize(): Promise<() => void | Promise<void>> {
+    // Before anything reads settings: a provider the user never configured
+    // should be on only if this machine can actually reach it.
+    await this.applyProviderDetection()
     await sharedCore.init({
       ctx: this.ctx,
       getSettings: () => this.settings,
@@ -342,8 +358,107 @@ export class RouterController {
     return () => this.dispose()
   }
 
-  private async resolveQuotaCredentials() {
-    let goAccessToken: string | undefined
+  /**
+   * Decide which providers this machine can actually reach.
+   *
+   * Runs before the shared core reads settings. A provider the user never
+   * mentioned is enabled only when a credential or connection exists for it, so
+   * a stranger stops getting "authentication is failing" for an account they
+   * never claimed. A provider the user did mention is left exactly as they set
+   * it, and any disagreement is reported rather than acted on.
+   *
+   * Nothing here reads a secret. Existence is enough to answer the question.
+   */
+  private async applyProviderDetection(): Promise<void> {
+    try {
+      const evidence: ProviderEvidence[] = []
+
+      const connected = async (integration: string): Promise<boolean> => {
+        try {
+          const connection = await this.ctx.integration.connection.active(integration as never)
+          return Boolean(connection)
+        } catch {
+          return false
+        }
+      }
+
+      const providerKey = async (providerID: string): Promise<boolean> => {
+        try {
+          const provider: any = await this.ctx.provider.get({ providerID })
+          const info = provider?.data ?? provider
+          return typeof info?.settings?.apiKey === "string" && info.settings.apiKey.length > 0
+        } catch {
+          return false
+        }
+      }
+
+      const fileOrEnv = (providerID: string): { has: boolean; source?: string } => {
+        for (const name of credentialEnvVars(providerID)) {
+          if (process.env[name]?.trim()) return { has: true, source: name }
+        }
+        for (const path of credentialFileCandidates(providerID, homedir())) {
+          try {
+            if (existsSync(path)) return { has: true, source: path.replace(homedir(), "~") }
+          } catch {
+            // Unreadable path is not evidence either way.
+          }
+        }
+        return { has: false }
+      }
+
+      const goConnected = await connected("opencode")
+      if (goConnected) evidence.push({ providerID: "opencode-go", hasCredential: true, source: "OpenCode connection" })
+
+      const commandCodeConnection = await connected("commandcode")
+      const commandCodeFiles = fileOrEnv("commandcode")
+      const commandCodeKey = await providerKey("commandcode")
+      evidence.push({
+        providerID: "commandcode",
+        hasCredential: commandCodeConnection || commandCodeFiles.has || commandCodeKey,
+        ...(commandCodeConnection
+          ? { source: "Command Code integration" }
+          : commandCodeFiles.source
+            ? { source: commandCodeFiles.source }
+            : commandCodeKey
+              ? { source: "OpenCode provider settings" }
+              : {}),
+      })
+
+      const openDesignFiles = fileOrEnv("opendesign")
+      const openDesignKey = await providerKey("opendesign")
+      evidence.push({
+        providerID: "opendesign",
+        hasCredential: openDesignFiles.has || openDesignKey,
+        ...(openDesignFiles.source
+          ? { source: openDesignFiles.source }
+          : openDesignKey
+            ? { source: "OpenCode provider settings" }
+            : {}),
+      })
+
+      const result = applyCredentialDefaults(this.settingsBase, this.explicitProviderEnable, evidence)
+      if (result.settings !== this.settingsBase) {
+        this.settingsBase = result.settings
+        this.rebuildRegistry()
+      }
+      for (const line of describeEnablement(result)) {
+        if (!this.settingsWarnings.includes(line)) this.settingsWarnings.push(line)
+      }
+      for (const providerID of result.keptOnByChoice) {
+        const line = `providers.${providerID} stays enabled with no credential found — you asked for it`
+        if (!this.settingsWarnings.includes(line)) this.settingsWarnings.push(line)
+      }
+      for (const providerID of result.keptOffByChoice) {
+        const line = `providers.${providerID} credentials found but the provider stays disabled — you asked for it`
+        if (!this.settingsWarnings.includes(line)) this.settingsWarnings.push(line)
+      }
+    } catch (error) {
+      // Detection is a convenience. A failure must never stop routing.
+      this.settingsWarnings.push(`Provider detection skipped: ${safeError(error)}`)
+    }
+  }
+
+  private async resolveQuotaCredentials() {    let goAccessToken: string | undefined
     let commandCodeIntegrationKey: string | undefined
     try {
       const connection = await this.ctx.integration.connection.active("opencode")
@@ -566,7 +681,6 @@ export class RouterController {
   }
 
   private async applyTitleNow(sessionID: string) {
-    if (!this.settings.ui.titleIndicator) return
     const session = this.ledger.getSession(sessionID)
     if (!session) return
     let info: any
@@ -577,18 +691,41 @@ export class RouterController {
     }
     if (!this.projectMatches(info?.projectID, info?.location?.directory)) return
     const currentTitle = typeof info?.title === "string" ? info.title : undefined
+
+    if (!this.settings.ui.titleIndicator) {
+      /**
+       * The indicator is off. If a previous version of this plugin left its
+       * prefix on the title, put the name back once, the first time the session
+       * is touched. Without this, upgrading would leave every old chat reading
+       * "AUTO · OD · Model — name" forever, because the prefix lives in
+       * OpenCode's database and the router no longer rewrites it.
+       */
+      const stripped = stripTitlePrefix(currentTitle)
+      if (currentTitle && stripped && stripped !== currentTitle.trim()) {
+        try {
+          await this.ctx.session.update({ sessionID, title: stripped })
+          this.ledger.patchSession(sessionID, { title: stripped, indicatorTitle: undefined })
+        } catch {
+          // Leaving the prefix is better than failing the prompt over a title.
+        }
+      }
+      return
+    }
+
     const modelRef = session.pinnedModel ?? session.manualModel ?? session.lastModel
     if (!modelRef) return
 
-    // If the user or the title generator renamed the session, adopt the new
-    // base title instead of fighting it.
-    if (currentTitle && currentTitle !== session.indicatorTitle) {
-      const stripped = stripTitlePrefix(currentTitle) || currentTitle
-      if (stripped && stripped !== session.baseTitle) {
-        session.baseTitle = stripped
-      }
-    }
-    const baseTitle = session.baseTitle || stripTitlePrefix(currentTitle) || session.title || "Session"
+    // Adopt a name the router did not write. Never fall back to `session.title`:
+    // that value is the router's own previous output, so reading it back is how
+    // the prefix used to become the name permanently.
+    const baseTitle = resolveBaseTitle({
+      currentTitle,
+      lastWrittenTitle: session.indicatorTitle,
+      storedBase: session.baseTitle,
+    })
+    // Nothing worth annotating. Leave the user's title exactly as it is.
+    if (!baseTitle) return
+
     const model = this.registry.get(modelRef.providerID, modelRef.id)
     const indicator = this.indicatorFor(sessionID, { ...session, baseTitle })
     const nextTitle = buildIndicatorTitle({

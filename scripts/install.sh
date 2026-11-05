@@ -214,13 +214,42 @@ say "  installed: $INSTALL/index.js"
 # Record what was installed, so a later `--rollback` or audit can tell versions apart.
 if ! $DRY_RUN; then
   node -e '
-    const fs=require("fs"),cp=require("child_process");
+    const fs=require("fs"),cp=require("child_process"),crypto=require("crypto");
     const dir=process.argv[1], root=process.argv[2], sha=process.argv[3];
-    const commit=cp.execSync("git rev-parse HEAD",{cwd:root}).toString().trim();
+    const git=(args)=>cp.execSync("git "+args,{cwd:root}).toString().trim();
+    const commit=git("rev-parse HEAD");
+    // A clean hash is not enough to reproduce a build. Three installs were
+    // attributed to the wrong commit because the tree had uncommitted changes
+    // when the artifact was built. Record that, and hash the diff itself, so a
+    // "which code is running" question has an answer that cannot be stale.
+    let dirty=false, treeDigest=null, changedFiles=0;
+    try {
+      const status=git("status --porcelain --untracked-files=no");
+      changedFiles=status?status.split("\n").filter(Boolean).length:0;
+      dirty=changedFiles>0;
+      if (dirty) {
+        const diff=cp.execSync("git diff HEAD",{cwd:root,maxBuffer:64*1024*1024});
+        treeDigest=crypto.createHash("sha256").update(diff).digest("hex");
+      }
+    } catch(e) { dirty=null; }
+    const guiPath=dir+"/gui-experimental.cjs";
+    const guiSha=fs.existsSync(guiPath)
+      ? crypto.createHash("sha256").update(fs.readFileSync(guiPath)).digest("hex") : null;
+    let version=null;
+    try { version=JSON.parse(fs.readFileSync(root+"/package.json","utf8")).version; } catch(e) {}
     fs.writeFileSync(dir+"/DEPLOYMENT.json", JSON.stringify({
-      deployedAt:new Date().toISOString(), artifactSha256:sha, codeCommit:commit,
+      deployedAt:new Date().toISOString(),
+      artifactSha256:sha,
+      codeCommit:commit,
+      // null means the tree state could not be determined (not a git checkout).
+      dirty,
+      dirtyDiffSha256:treeDigest,
+      changedFiles,
+      packageVersion:version,
+      guiSha256:guiSha,
       installedBy:"scripts/install.sh"
     },null,2)+"\n");
+    if (dirty) console.log("  ! built from a DIRTY tree ("+changedFiles+" modified file(s)) — recorded in DEPLOYMENT.json");
   ' "$INSTALL" "$ROOT" "${SHA:-unknown}"
 fi
 

@@ -125,6 +125,38 @@ export const stripTitlePrefix = (title: string | undefined): string => {
   return (match[2] ?? "").trim()
 }
 
+/**
+ * The name a session should keep, independent of whatever status decoration is
+ * currently in front of it.
+ *
+ * The failure this exists to prevent: the router used to derive the base title
+ * from `session.title`, which holds the last title *the router itself wrote*. So
+ * the first time the separator was lost — compact mode, a BLOCKED rewrite, a
+ * title written before the generator named the chat — the prefix became the
+ * name, and every later write read that prefix back as if it were a title.
+ * There was no way out of that state.
+ *
+ * Rules:
+ *   - A visible title the router did not write is the user's name. Adopt it.
+ *   - Otherwise keep the base already on record.
+ *   - Only fall back to stripping a prefix as a last resort, and return
+ *     `undefined` rather than an empty string, so the caller can leave the
+ *     session alone instead of writing a nameless title.
+ */
+export const resolveBaseTitle = (input: {
+  currentTitle: string | undefined
+  /** The exact title this router last wrote, if any. */
+  lastWrittenTitle: string | undefined
+  storedBase: string | undefined
+}): string | undefined => {
+  const visible = input.currentTitle?.trim()
+  const routerWroteIt = Boolean(visible) && visible === input.lastWrittenTitle
+  if (visible && !routerWroteIt) return visible
+  if (input.storedBase) return input.storedBase
+  const stripped = stripTitlePrefix(input.currentTitle)
+  return stripped || undefined
+}
+
 export const buildIndicatorTitle = (input: {
   state: IndicatorState
   provider?: string
@@ -136,7 +168,10 @@ export const buildIndicatorTitle = (input: {
   const model = input.modelLabel?.trim() || "model"
   const prefix = input.compact ? `${input.state} · ${model}` : `${input.state} · ${provider} · ${model}`
   const base = stripTitlePrefix(input.baseTitle)
-  if (input.compact || !base || base === prefix || base === "Session") return prefix
+  // A prefix on its own is not a name, and neither is the placeholder OpenCode
+  // uses before the title generator has run. Compact shortens the prefix; it
+  // must never delete the name, which is what it used to do.
+  if (!base || base === prefix || base === "Session") return prefix
   return `${prefix} — ${base.slice(0, 150)}`
 }
 
@@ -192,4 +227,10 @@ export class ChangeNotifier {
   }
 }
 
-export const __uiInternals = { stripTitlePrefix, buildIndicatorTitle, providerShort, quotaStateLabel }
+export const __uiInternals = {
+  stripTitlePrefix,
+  buildIndicatorTitle,
+  resolveBaseTitle,
+  providerShort,
+  quotaStateLabel,
+}

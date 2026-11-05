@@ -133,6 +133,9 @@ describe("plugin controller integration", () => {
     const fake = makeCtx(mkdtempSync(join(tmpdir(), "router-ctrl-")))
     const controller = new RouterController({ ctx: fake.ctx, pluginOptions: fake.ctx.options })
     await controller.initialize()
+    // Off by default since the title takeover fix; this test is about the
+    // indicator itself, so it turns it on deliberately.
+    await fake.rpc().setTitleIndicator({ enabled: true })
     await fake.rpc().pin({
       sessionID: "ses_title",
       providerID: "opencode-go",
@@ -401,6 +404,7 @@ describe("plugin controller integration", () => {
     session.model = { providerID: "opencode-go", id: "deepseek-v4.1-flash" }
     const controller = new RouterController({ ctx: fake.ctx, pluginOptions: fake.ctx.options })
     await controller.initialize()
+    await fake.rpc().setTitleIndicator({ enabled: true })
     await fake.rpc().resumeAuto({ sessionID: "ses_resume" })
     await new Promise((resolve) => setTimeout(resolve, 25))
     const updated = await fake.ctx.session.get({ sessionID: "ses_resume" })

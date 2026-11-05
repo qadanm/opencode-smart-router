@@ -44,17 +44,184 @@ export interface DecisionView {
   readonly rows: ReadonlyArray<CandidateRow>
 }
 
+export type WindowID = "fiveHour" | "weekly" | "monthly"
+
+export interface QuotaWindowView {
+  readonly id: WindowID
+  /** Short label used in the panel: 5h, 7d, Monthly. */
+  readonly label: string
+  readonly usedPct: number
+  readonly remainingPct: number
+  readonly usedUsd?: number
+  readonly capUsd?: number
+  readonly resetsAt?: number
+  readonly resetLabel?: string
+  readonly source: "provider" | "estimate" | "unknown"
+  readonly sourceLabel: string
+  readonly exceeded: boolean
+  /**
+   * Whether the provider reports this window at all. A window that does not
+   * exist for a plan is different from a window at 0%, and showing "0%" for a
+   * five-hour cap that does not apply would be a lie.
+   */
+  readonly reported: boolean
+  /**
+   * True when the figure is a lower bound the router derived itself, not a
+   * measurement from the provider.
+   *
+   * This matters more than it looks. OpenDesign publishes no quota endpoint for
+   * an inference key, so the router estimates from the traffic it routed itself.
+   * A user whose account was already 42% used before installing the router saw
+   * "5% monthly" — a true statement about the router's own traffic, and a
+   * dangerously wrong impression of their account. A lower bound must never be
+   * rendered as a measurement.
+   */
+  readonly lowerBound: boolean
+}
+
+export interface PoolRow {
+  readonly id: string
+  readonly label: string
+  readonly source: "provider" | "estimate" | "unknown"
+  readonly sourceLabel: string
+  readonly monthlyUsd: number
+  readonly usedUsd: number
+  readonly remainingUsd: number
+  readonly usedPct: number
+  readonly weeklyPct?: number
+  readonly fiveHourPct?: number
+  readonly resetLabel?: string
+  readonly note: string
+}
+
 export interface ProviderRow {
   readonly providerID: string
   readonly label: string
+  readonly plan: string
   /** `provider` and `estimate` are facts of different strength and are never merged. */
   readonly source: "provider" | "estimate" | "unknown"
   readonly sourceLabel: string
-  readonly monthlyUsedPct: number
-  readonly weeklyUsedPct: number
-  readonly fiveHourUsedPct: number
-  readonly error?: string
+  readonly quotaState?: string
+  readonly stale: boolean
+  readonly fetchedAt: number
+  /** The tightest window that is exhausted, if any. */
   readonly exhausted: boolean
+  readonly exhaustedWindow?: string
+  /** 5h, 7d, monthly — always all three, with `reported` telling the truth. */
+  readonly windows: ReadonlyArray<QuotaWindowView>
+  readonly pools: ReadonlyArray<PoolRow>
+  readonly monthlyRemainingUsd?: number
+  readonly extraCreditsUsd?: number
+  readonly error?: string
+  readonly notes: ReadonlyArray<string>
+  /** The sentence that explains why a figure is a lower bound, if it is one. */
+  readonly caveat?: string
+}
+
+const sourceLabelOf = (source: "provider" | "estimate" | "unknown"): string => {
+  switch (source) {
+    case "provider":
+      return "verified by provider"
+    case "estimate":
+      return "estimated — lower bound"
+    default:
+      return "not reported"
+  }
+}
+
+const windowLabels: Record<WindowID, string> = {
+  fiveHour: "5h",
+  weekly: "7d",
+  monthly: "Monthly",
+}
+
+/** Human reset time. Absolute once it is far away; relative while it matters. */
+export const formatReset = (at: number | undefined, now = Date.now()): string | undefined => {
+  if (at === undefined) return undefined
+  const delta = at - now
+  if (delta <= 0) return "resetting"
+  const minutes = Math.round(delta / 60_000)
+  if (minutes < 60) return `in ${minutes}m`
+  const hours = Math.round(minutes / 60)
+  if (hours < 36) return `in ${hours}h`
+  const days = Math.round(hours / 24)
+  return `in ${days}d`
+}
+
+const toWindow = (
+  id: WindowID,
+  window: { usedPct?: number; remainingPct?: number; usedUsd?: number; capUsd?: number; resetsAt?: number; exceeded?: boolean; source?: "provider" | "estimate" | "unknown" } | undefined,
+  now: number,
+): QuotaWindowView => {
+  const source = window?.source ?? "unknown"
+  const usedPct = window?.usedPct ?? 0
+  // A window is reported when the provider said anything about it. A cap with no
+  // source is an absent window, not an empty one.
+  const reported = source !== "unknown" && (window?.capUsd !== undefined || usedPct > 0)
+  return {
+    id,
+    label: windowLabels[id],
+    usedPct,
+    remainingPct: window?.remainingPct ?? Math.max(0, 100 - usedPct),
+    ...(window?.usedUsd !== undefined ? { usedUsd: window.usedUsd } : {}),
+    ...(window?.capUsd !== undefined ? { capUsd: window.capUsd } : {}),
+    ...(window?.resetsAt !== undefined ? { resetsAt: window.resetsAt } : {}),
+    ...(formatReset(window?.resetsAt, now) ? { resetLabel: formatReset(window?.resetsAt, now)! } : {}),
+    source,
+    sourceLabel: sourceLabelOf(source),
+    exceeded: Boolean(window?.exceeded),
+    reported,
+    lowerBound: source === "estimate",
+  }
+}
+
+export const toProviderRow = (snapshot: ProviderQuotaSnapshot, now = Date.now()): ProviderRow => {
+  const source: ProviderRow["source"] =
+    snapshot.monthly?.source === "provider"
+      ? "provider"
+      : snapshot.monthly?.source === "estimate"
+        ? "estimate"
+        : "unknown"
+  const windows = [
+    toWindow("fiveHour", snapshot.rolling, now),
+    toWindow("weekly", snapshot.weekly, now),
+    toWindow("monthly", snapshot.monthly, now),
+  ]
+  const exhaustedWindow = windows.find((window) => window.exceeded)
+  const pools: PoolRow[] = (snapshot.pools ?? []).map((pool) => ({
+    id: pool.id,
+    label: pool.label,
+    source: pool.source,
+    sourceLabel: sourceLabelOf(pool.source),
+    monthlyUsd: pool.monthlyUsd,
+    usedUsd: pool.usedUsd,
+    remainingUsd: pool.remainingUsd,
+    usedPct: pool.usedPct,
+    ...(pool.weeklyUsedPct !== undefined ? { weeklyPct: pool.weeklyUsedPct } : {}),
+    ...(pool.fiveHourUsedPct !== undefined ? { fiveHourPct: pool.fiveHourUsedPct } : {}),
+    ...(formatReset(pool.resetsAt, now) ? { resetLabel: formatReset(pool.resetsAt, now)! } : {}),
+    note: pool.note,
+  }))
+
+  return {
+    providerID: snapshot.providerID,
+    label: snapshot.label ?? snapshot.providerID,
+    plan: snapshot.plan ?? "",
+    source,
+    sourceLabel: sourceLabelOf(source),
+    ...(snapshot.quotaState ? { quotaState: snapshot.quotaState } : {}),
+    stale: Boolean(snapshot.stale),
+    fetchedAt: snapshot.fetchedAt ?? now,
+    exhausted: Boolean(exhaustedWindow),
+    ...(exhaustedWindow ? { exhaustedWindow: exhaustedWindow.label } : {}),
+    windows,
+    pools,
+    ...(snapshot.monthlyRemainingUsd !== undefined ? { monthlyRemainingUsd: snapshot.monthlyRemainingUsd } : {}),
+    ...(snapshot.extraCredits ? { extraCreditsUsd: snapshot.extraCredits.totalUsd } : {}),
+    ...(snapshot.error ? { error: snapshot.error } : {}),
+    notes: snapshot.notes ?? [],
+    ...(source === "estimate" ? { caveat: (snapshot.notes ?? [])[0] } : {}),
+  }
 }
 
 /** Money at the precision the router actually estimates in. */
@@ -68,15 +235,16 @@ export const formatUsd = (value: number): string => {
 
 export const formatPercent = (value: number): string => (Number.isFinite(value) ? `${Math.round(value)}%` : "—")
 
-const sourceLabel = (source: ProviderRow["source"]): string => {
-  switch (source) {
-    case "provider":
-      return "verified by provider"
-    case "estimate":
-      return "estimated — lower bound"
-    default:
-      return "not probed"
-  }
+/**
+ * A percentage as the panel should show it.
+ *
+ * `≥` is not decoration: it tells the reader the real figure is at least this,
+ * and may be far higher. Without it, an estimate reads as a measurement.
+ */
+export const formatWindowUsed = (window: { usedPct: number; lowerBound: boolean; reported: boolean }): string => {
+  if (!window.reported) return "—"
+  const value = formatPercent(window.usedPct)
+  return window.lowerBound ? `≥${value}` : value
 }
 
 /**
@@ -149,26 +317,6 @@ export const summariseDecision = (decision: RoutingDecision | undefined | null):
     eligibleCount: rows.filter((row) => row.verdict !== "blocked").length,
     blockedCount: rows.filter((row) => row.verdict === "blocked").length,
     rows,
-  }
-}
-
-export const toProviderRow = (snapshot: ProviderQuotaSnapshot): ProviderRow => {
-  const source: ProviderRow["source"] =
-    snapshot.monthly?.source === "provider"
-      ? "provider"
-      : snapshot.monthly?.source === "estimate"
-        ? "estimate"
-        : "unknown"
-  return {
-    providerID: snapshot.providerID,
-    label: snapshot.label ?? snapshot.providerID,
-    source,
-    sourceLabel: sourceLabel(source),
-    monthlyUsedPct: snapshot.monthly?.usedPct ?? 0,
-    weeklyUsedPct: snapshot.weekly?.usedPct ?? 0,
-    fiveHourUsedPct: snapshot.rolling?.usedPct ?? 0,
-    ...(snapshot.error ? { error: snapshot.error } : {}),
-    exhausted: Boolean(snapshot.monthly?.exceeded || snapshot.weekly?.exceeded || snapshot.rolling?.exceeded),
   }
 }
 
