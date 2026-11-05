@@ -522,8 +522,9 @@ function PlanPagePaste(props: { onChanged: () => void }) {
       </span>
       <span style={{ color: theme.muted, "font-size": "11px", "line-height": "1.45" }}>
         OpenDesign does not expose usage to an API key, so the router can only see what it routed
-        itself. Copy your <strong style={{ color: theme.text }}>Plan &amp; balance</strong> page and
-        paste it here — it reads the plan, the usage, the window and the reset time.
+        itself. Paste <strong style={{ color: theme.text }}>either</strong> console page and it works
+        out which one it got. <em>Plan &amp; balance</em> seeds your real usage; <em>Usage</em> checks
+        whether the router's cost model matches what you were charged.
       </span>
 
       <textarea
@@ -532,7 +533,7 @@ function PlanPagePaste(props: { onChanged: () => void }) {
           setPage((event.currentTarget as HTMLTextAreaElement).value)
           setPreview(undefined)
         }}
-        placeholder={"Paste the whole page here. Navigation and all is fine."}
+        placeholder={"Paste Plan & balance or Usage — navigation and all is fine."}
         aria-label="Paste your Plan and balance page"
         rows={3}
         style={{
@@ -570,6 +571,26 @@ function PlanPagePaste(props: { onChanged: () => void }) {
               Not on the page: {preview().missing.join(", ")}
             </span>
           </Show>
+
+          <Show when={preview().reconciliation}>
+            <span
+              style={{
+                color: preview().reconciliation.differ > 0 ? theme.warn : theme.good,
+                "font-size": "10.5px",
+                "line-height": 1.45,
+              }}
+            >
+              {preview().reconciliation.summary}
+            </span>
+            <For each={preview().reconciliation.rows.filter((row: any) => row.verdict === "differs")}>
+              {(row: any) => (
+                <span style={{ color: theme.faint, "font-size": "10.5px" }}>
+                  {row.modelName}: charged {row.chargedUsd.toFixed(2)}, implied{" "}
+                  {row.impliedMultiplier?.toFixed(2)}x vs catalog {row.catalogMultiplier?.toFixed(2)}x
+                </span>
+              )}
+            </For>
+          </Show>
         </div>
       </Show>
 
@@ -587,11 +608,16 @@ function PlanPagePaste(props: { onChanged: () => void }) {
             </button>
           }
         >
-          <button type="button" onClick={() => void read(true)} disabled={busy()} style={buttonStyle(!busy())}>
-            {busy() ? "Saving…" : "Use this"}
-          </button>
+          {/* A usage page is evidence about the catalog, not a reading of the
+              allowance, so there is nothing to apply. Offering "Use this"
+              would imply otherwise. */}
+          <Show when={preview().kind === "allowance"}>
+            <button type="button" onClick={() => void read(true)} disabled={busy()} style={buttonStyle(!busy())}>
+              {busy() ? "Saving…" : "Use this"}
+            </button>
+          </Show>
           <button type="button" onClick={reset} disabled={busy()} style={buttonStyle(false)}>
-            Cancel
+            {preview().kind === "usage" ? "Done" : "Cancel"}
           </button>
         </Show>
       </div>

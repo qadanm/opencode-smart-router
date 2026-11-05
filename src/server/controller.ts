@@ -20,7 +20,8 @@ import { buildProviderUsageReport } from "../core/quota/report.js"
 import { resolvePlan, resolvePlanWithReason } from "../core/plans/catalog.js"
 import { loadSettings, validateSettings, type SettingsLoadResult } from "../core/config.js"
 import { writeSettingsPatch } from "../core/config-writer.js"
-import { describePlanPage, parsePlanPage } from "../core/plan-page.js"
+import { describeConsoleReading, parseConsolePage, type UsageReading } from "../core/plan-page.js"
+import { reconcileUsage } from "../core/quota/reconcile.js"
 import {
   applyCredentialDefaults,
   credentialEnvVars,
@@ -497,48 +498,92 @@ export class RouterController {
    * Writes through config-writer, which preserves every other key, validates the
    * result and keeps a backup, so a mistake here is recoverable.
    */
+  /**
+   * Read whatever console page was pasted.
+   *
+   * One entry point for both page types, because the user should not have to
+   * decide which page we want. An allowance page seeds the estimate; a usage
+   * page checks the cost model against what was actually charged. Both preview
+   * before writing, because a paste is not a promise that it was understood.
+   */
   private async recordPlanPage(input: {
     page?: string
     confirm?: boolean
   }): Promise<{
     ok: boolean
     message: string
-    preview?: { summary: string; found: string[]; missing: string[]; apply: Record<string, unknown> }
+    preview?: {
+      kind: "allowance" | "usage"
+      summary: string
+      found: string[]
+      missing: string[]
+      /** For a usage page: whether the catalog agrees with what was charged. */
+      reconciliation?: { summary: string; agree: number; differ: number; rows: ReadonlyArray<unknown> }
+      apply: Record<string, unknown>
+    }
     backup?: string
   }> {
-    const page = input.page ?? ""
-    const reading = parsePlanPage(page)
-    if (reading.designPlanUsedPct === undefined) {
+    const reading = parseConsolePage(input.page ?? "")
+    if (!reading) {
       return {
         ok: false,
-        message: describePlanPage(reading),
+        message:
+          "That page could not be read. Paste either the Plan & balance page or the Usage page, including its model table.",
       }
     }
 
+    if (reading.kind === "usage") {
+      const reconciliation = reconcileUsage(reading as UsageReading)
+      const summary = describeConsoleReading(reading)
+      // A usage page tells us whether our arithmetic is right. It does not tell
+      // us how much allowance is left, so nothing is written from it — writing a
+      // baseline from a token table would be inventing a percentage.
+      return {
+        ok: true,
+        message: reconciliation.differ > 0 ? `${summary} ${reconciliation.summary}` : summary,
+        preview: {
+          kind: "usage",
+          summary,
+          found: [...reading.found],
+          missing: [...reading.missing],
+          reconciliation: {
+            summary: reconciliation.summary,
+            agree: reconciliation.agree,
+            differ: reconciliation.differ,
+            rows: [...reconciliation.rows] as ReadonlyArray<unknown>,
+          },
+          apply: {},
+        },
+      }
+    }
+
+    if (reading.designPlanUsedPct === undefined) {
+      return { ok: false, message: describeConsoleReading(reading) }
+    }
+
     const at = Date.now()
-    const baseline: Record<string, unknown> = { at }
-    baseline.designPlanUsedPct = reading.designPlanUsedPct
-    baseline.pctOf = reading.pctOf ?? "weekly"
+    const baseline: Record<string, unknown> = {
+      at,
+      designPlanUsedPct: reading.designPlanUsedPct,
+      pctOf: reading.pctOf ?? "weekly",
+    }
     if (reading.resetsAt !== undefined) baseline.weeklyResetsAt = reading.resetsAt
     if (reading.periodEndsAt !== undefined) baseline.monthlyResetsAt = reading.periodEndsAt
 
-    // The plan the page states is the plan the caps should be resolved against.
-    // Only applied when it names a tier this catalog knows.
     const patch: Record<string, unknown> = { providers: { opendesign: { baseline } } }
     if (reading.plan && resolvePlan("opendesign", reading.plan.toLowerCase())) {
       ;(patch.providers as any).opendesign.plan = reading.plan.toLowerCase()
     }
 
     const preview = {
-      summary: describePlanPage(reading),
+      kind: "allowance" as const,
+      summary: describeConsoleReading(reading),
       found: [...reading.found],
       missing: [...reading.missing],
       apply: patch,
     }
 
     if (input.confirm !== true) {
-      // Show what was understood before changing anything. The user pasted a
-      // page; they are entitled to see what it was taken to mean first.
       return { ok: true, message: preview.summary, preview }
     }
 

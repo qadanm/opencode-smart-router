@@ -397,6 +397,42 @@ The plan caps were checked at the same time and were already correct: Pro is
 $360 Design Plan plus $120 plan models, which is the $480 total the pricing page
 advertises, and Design Plan credits are consumed before plan model credits.
 
+### Reading the account: paste any console page
+
+There is no API for usage — upstream `nexu-io/open-design#8674` asks for one and
+remains open, the account host answers 401 to an inference key, and the gateway
+serves no usage route. So the console is the only source, and asking a person to
+translate it is where the errors come from.
+
+The panel therefore accepts **either** page and works out which it was given:
+
+| Page | What it contributes | Writes? |
+|---|---|---|
+| **Plan & balance** | The percentage of the seven-day allowance, its reset time, the tier and the wallet | yes — seeds the baseline |
+| **Usage** | Per-model tokens and charged credits for a date range | no — it is evidence about the catalog |
+| **Billing** | Same shape as Usage when it lists charges | no |
+
+Pasting a *usage* page is the more valuable of the two, because it verifies the
+arithmetic instead of assuming it. For one model, `charged credits / published
+price` is the multiplier the account actually applied: a 0.5x model charged
+$0.15 for $0.30 of usage is confirmation, and a 1x model charged twice what the
+price implies is a catalog bug — which is exactly how ten wrong prices were found
+on 2026-11-04.
+
+Reconciliation is deliberately advisory. One window of one account is not
+evidence about every customer, so a disagreement is shown with the size of the
+gap for a human to act on; it never silently adjusts prices.
+
+The parser is tolerant of what a clipboard actually produces: cells copied one
+per line, or a whole row on one line, with navigation text included. Two details
+worth knowing, both found by these tests:
+
+- A trailing `5.5` is part of a model name (`Claude Haiku 5.5`), not a
+  measurement. An inline row must carry a dollar amount or a real token count.
+- A second dollar figure while a row is open is the `Total` line starting a new
+  row. Without that, the total overwrites the last model's charge and every
+  comparison after it is wrong in a way that looks like a catalog error.
+
 ### The control key is not obtainable through the product
 
 Checked on 2026-11-04 against the account's API keys page. It offers exactly one
