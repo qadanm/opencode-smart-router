@@ -9,14 +9,15 @@ Self-healing routing, and npm distribution.
 
 ### Added
 
-- **Self-healing routing.** The router repairs prompts a strict provider would
-  reject (mid-session system notices on the Anthropic protocol), refuses to
-  retry a deterministic request rejection, and fails a rejected turn over to
-  the next best eligible model, continuing it with one router-marked notice.
-  The panel's last decision records what was rejected and what took over.
-  Discovered on a live Command Code session where a rebuilt prompt reached
-  the Anthropic path with a system role inside `messages[]` and died with
-  "Invalid discriminator value. Expected 'user' | 'assistant'".
+- **Self-healing routing.** A rebuilt session can carry mid-session notices
+  into the prompt as system roles, which kills the turn on any
+  Anthropic-protocol model with a 400 error. The router folds those notices
+  into user messages before the request leaves, refuses the host retry on a
+  deterministic rejection, and continues the turn on the next best eligible
+  model with one notice. The panel records what was rejected and what took
+  over. Found on a live Command Code session: the error was
+  "Invalid discriminator value. Expected 'user' | 'assistant' at
+  messages.23.role".
 - **npm package** (`@qadanm/opencode-smart-router`). One self-contained file
   with no runtime dependencies, loadable with a single `plugin` entry so the
   router appears in OpenCode's own ecosystem path. The full experience stays

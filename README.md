@@ -167,29 +167,22 @@ the option that spends money you have already committed to losing.
 
 ## Self-healing routing
 
-Other routers stop when the wire misbehaves. This one recovers, in three steps,
-and every step is visible in the panel:
+Some providers reject a rebuilt session outright. OpenCode turns mid-session
+notices into system-role messages, and the Anthropic protocol only accepts user
+and assistant roles, so one notice kills the whole turn with a 400 error.
 
-1. **Repairs the prompt in flight.** Some models reject a rebuilt session: the
-   Anthropic protocol accepts only user and assistant message roles, and a
-   mid-session notice otherwise kills the whole turn with a 400 error. The
-   router folds those notices into user messages before the request leaves, so
-   the turn continues on the chosen model. You see nothing, because nothing
-   went wrong. OpenAI-compatible gateways are untouched.
+The router handles this before it can happen. For Anthropic-protocol models it
+folds system entries after the first message into user messages on the way out,
+so the request leaves in a shape the provider accepts. Utility requests, like
+title generation, are left alone.
 
-2. **Never retries a doomed request.** A deterministic rejection (the provider
-   refused the request shape before generating anything) would produce the
-   identical 400 on every retry. The router classifies it as its own failure
-   class, declines the host's retry, and instead of burning turns records that
-   the model is healthy while the request shape was not.
-
-3. **Fails over and continues.** With the rejecting model held back, the router
-   re-routes the same task to the next best eligible choice, switches the
-   session, and continues the turn with a single `[router]` notice. One
-   failover per prompt, never a loop. The hold is five minutes and sits on the
-   model for every session, because a gateway that rejects one rebuilt session
-   will reject others like it. The panel's last decision shows what was
-   rejected and what took over.
+When a provider still says no, a 400 that would reproduce on every retry gets
+its own failure class and the host's retry is refused. The router holds the
+rejecting model back for five minutes, re-routes the same task to the next best
+eligible choice, and continues the turn with a single `[router]` notice. One
+failover per prompt, never a loop. The hold covers every session, because a
+gateway that rejects one rebuilt session will reject others like it. The
+panel's last decision records what was rejected and what took over.
 
 ## What it will not do
 
