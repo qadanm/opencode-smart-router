@@ -128,6 +128,25 @@ fi
 # ── 4. Build the plugin ──────────────────────────────────────────────────────
 step "4/6  Building the plugin bundle"
 run npm --prefix "$ROOT" run build:server
+
+# The desktop GUI is a separate CommonJS bundle. It is optional: a terminal-only
+# machine has no use for it, and vite is a devDependency that a `--omit=dev`
+# install will not have. Build it only when the tool is present, and never fail
+# the install because the GUI could not be built.
+GUI_BUNDLE=""
+if ! $DRY_RUN; then
+  if [[ -x "$ROOT/node_modules/.bin/vite" ]]; then
+    if run npm --prefix "$ROOT" run build:gui >/dev/null 2>&1; then
+      GUI_BUNDLE="$ROOT/dist/gui-experimental.cjs"
+      say "  dist/gui-experimental.cjs  $(wc -c < "$GUI_BUNDLE" | tr -d ' ') bytes"
+    else
+      warn "the desktop GUI failed to build; the router still works without it"
+    fi
+  else
+    warn "vite not installed — skipping the desktop GUI (npm install to include it)"
+  fi
+fi
+
 if ! $DRY_RUN; then
   [[ -f "$ROOT/dist/index.js" ]] || die "build produced no dist/index.js"
   SHA="$(sha256sum "$ROOT/dist/index.js" 2>/dev/null | cut -d' ' -f1 || shasum -a 256 "$ROOT/dist/index.js" | cut -d' ' -f1)"
@@ -171,6 +190,14 @@ TARGET="$INSTALL_ROOT/$STAMP_DIR"
 run mkdir -p "$TARGET"
 run cp "$ROOT/dist/index.js" "$TARGET/index.js"
 run cp "$ROOT/config.example.json" "$TARGET/config.example.json"
+
+# The desktop app loads a GUI entry from the plugin directory. Without a
+# package.json it looks for exactly `gui-experimental.cjs` at the root, so the
+# filename here is part of the contract, not a convention.
+if [[ -n "$GUI_BUNDLE" && -f "$GUI_BUNDLE" ]]; then
+  run cp "$GUI_BUNDLE" "$TARGET/gui-experimental.cjs"
+  say "  desktop GUI: installed"
+fi
 
 # The router resolves @opencode/plugin at runtime, so the host's copy must be reachable
 # from the plugin directory. A symlink to the repo's node_modules keeps the install
