@@ -663,7 +663,16 @@ const buttonStyle = (enabled: boolean) => ({
  * think a model has gone missing.
  */
 function ProviderModels(props: { status: RouterStatus | undefined }) {
+  /**
+   * Everything starts collapsed, including the section itself.
+   *
+   * A model list is reference material: a user opens this panel to see what the
+   * router is doing, not to read 40 model names. Expanding by default would push
+   * the decision and the allowances below the fold on the first screen.
+   */
+  const [sectionOpen, setSectionOpen] = createSignal(false)
   const [expanded, setExpanded] = createSignal<ReadonlyArray<string>>([])
+  const [notConfiguredOpen, setNotConfiguredOpen] = createSignal(false)
 
   const groups = () => {
     const status = props.status
@@ -678,110 +687,183 @@ function ProviderModels(props: { status: RouterStatus | undefined }) {
     })
   }
 
-  const toggle = (providerID: string) =>
+  const active = () => groups().filter((group) => group.state === "active")
+  const inactive = () => groups().filter((group) => group.state !== "active")
+
+  const toggleProvider = (providerID: string) =>
     setExpanded((current) =>
       current.includes(providerID) ? current.filter((id) => id !== providerID) : [...current, providerID],
     )
 
-  return (
-    <div style={{ display: "flex", "flex-direction": "column", gap: "8px" }}>
-      <span style={{ color: theme.faint, "font-size": "11px", "text-transform": "uppercase", "letter-spacing": "0.04em" }}>
-        Providers &amp; models
-      </span>
-      <For each={groups()}>
-        {(group) => (
-          <div
+  /** One provider row, plus its models when expanded. */
+  const ProviderCard = (cardProps: { group: ReturnType<typeof groups>[number] }) => (
+    <div
+      style={{
+        display: "flex",
+        "flex-direction": "column",
+        gap: "6px",
+        padding: "9px 10px",
+        "border-radius": "8px",
+        border: `1px solid ${theme.border}`,
+        background: cardProps.group.state === "active" ? theme.surface : "transparent",
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => toggleProvider(cardProps.group.providerID)}
+        aria-expanded={expanded().includes(cardProps.group.providerID)}
+        style={{
+          display: "flex",
+          "justify-content": "space-between",
+          "align-items": "baseline",
+          gap: "8px",
+          width: "100%",
+          background: "transparent",
+          border: "none",
+          padding: 0,
+          color: "inherit",
+          font: "inherit",
+          cursor: "pointer",
+          "text-align": "left",
+        }}
+      >
+        <span style={{ display: "flex", gap: "6px", "align-items": "baseline" }}>
+          <span style={{ color: theme.faint, "font-size": "9px", width: "8px" }}>
+            {expanded().includes(cardProps.group.providerID) ? "▾" : "▸"}
+          </span>
+          <span style={{ "font-size": "12.5px", "font-weight": 550, color: theme.text }}>
+            {cardProps.group.label}
+          </span>
+        </span>
+        <span style={{ display: "flex", gap: "8px", "align-items": "baseline" }}>
+          <span style={{ color: theme.faint, "font-size": "10.5px" }}>
+            {cardProps.group.approvedCount} of {cardProps.group.totalCount}
+          </span>
+          <span
             style={{
-              display: "flex",
-              "flex-direction": "column",
-              gap: "6px",
-              padding: "9px 10px",
-              "border-radius": "8px",
-              border: `1px solid ${theme.border}`,
-              background: group.state === "active" ? theme.surface : "transparent",
+              color: cardProps.group.state === "active" ? theme.good : theme.faint,
+              "font-size": "10.5px",
+              "text-transform": "uppercase",
+              "letter-spacing": "0.03em",
             }}
           >
-            <button
-              type="button"
-              onClick={() => toggle(group.providerID)}
-              aria-expanded={expanded().includes(group.providerID)}
-              style={{
-                display: "flex",
-                "justify-content": "space-between",
-                "align-items": "baseline",
-                gap: "8px",
-                width: "100%",
-                background: "transparent",
-                border: "none",
-                padding: 0,
-                color: "inherit",
-                font: "inherit",
-                cursor: "pointer",
-                "text-align": "left",
-              }}
-            >
-              <span style={{ "font-size": "12.5px", "font-weight": 550, color: theme.text }}>{group.label}</span>
-              <span style={{ display: "flex", gap: "8px", "align-items": "baseline" }}>
-                <span style={{ color: theme.faint, "font-size": "10.5px" }}>
-                  {group.approvedCount} of {group.totalCount} approved
-                </span>
+            {cardProps.group.state === "active" ? "active" : "not configured"}
+          </span>
+        </span>
+      </button>
+
+      <Show when={cardProps.group.note}>
+        <span style={{ color: theme.warn, "font-size": "10.5px", "line-height": 1.45 }}>
+          {cardProps.group.note}
+        </span>
+      </Show>
+
+      <Show when={expanded().includes(cardProps.group.providerID)}>
+        <div style={{ display: "flex", "flex-direction": "column", gap: "3px", "margin-top": "2px" }}>
+          <For each={cardProps.group.models}>
+            {(model) => (
+              <div style={{ display: "flex", "justify-content": "space-between", gap: "8px", "align-items": "baseline" }}>
                 <span
                   style={{
-                    color: group.state === "active" ? theme.good : theme.faint,
+                    "font-family": mono,
                     "font-size": "10.5px",
-                    "text-transform": "uppercase",
-                    "letter-spacing": "0.03em",
+                    color: model.state === "approved" ? theme.text : theme.faint,
+                    "text-decoration": model.state === "excluded" ? "line-through" : "none",
                   }}
                 >
-                  {group.state === "active" ? "active" : "not configured"}
+                  {model.key.split("/").slice(1).join("/")}
                 </span>
-              </span>
-            </button>
-
-            <Show when={group.note}>
-              <span style={{ color: theme.warn, "font-size": "10.5px", "line-height": 1.45 }}>{group.note}</span>
-            </Show>
-
-            <Show when={expanded().includes(group.providerID)}>
-              <div style={{ display: "flex", "flex-direction": "column", gap: "3px", "margin-top": "2px" }}>
-                <For each={group.models}>
-                  {(model) => (
-                    <div style={{ display: "flex", "justify-content": "space-between", gap: "8px", "align-items": "baseline" }}>
-                      <span
-                        style={{
-                          "font-family": mono,
-                          "font-size": "10.5px",
-                          color: model.state === "approved" ? theme.text : theme.faint,
-                          "text-decoration": model.state === "excluded" ? "line-through" : "none",
-                        }}
-                      >
-                        {model.key.split("/").slice(1).join("/")}
-                      </span>
-                      <span style={{ display: "flex", gap: "8px", "flex-shrink": 0, "align-items": "baseline" }}>
-                        <span style={{ color: theme.faint, "font-size": "10.5px" }}>{model.contextLabel}</span>
-                        <span style={{ color: theme.faint, "font-size": "10.5px" }}>{model.costLabel}</span>
-                        <span
-                          style={{
-                            "font-size": "10px",
-                            color:
-                              model.state === "approved"
-                                ? theme.good
-                                : model.state === "excluded"
-                                  ? theme.bad
-                                  : theme.faint,
-                          }}
-                        >
-                          {model.state}
-                        </span>
-                      </span>
-                    </div>
-                  )}
-                </For>
+                <span style={{ display: "flex", gap: "8px", "flex-shrink": 0, "align-items": "baseline" }}>
+                  <span style={{ color: theme.faint, "font-size": "10.5px" }}>{model.contextLabel}</span>
+                  <span style={{ color: theme.faint, "font-size": "10.5px" }}>{model.costLabel}</span>
+                  <span
+                    style={{
+                      "font-size": "10px",
+                      color:
+                        model.state === "approved"
+                          ? theme.good
+                          : model.state === "excluded"
+                            ? theme.bad
+                            : theme.faint,
+                    }}
+                  >
+                    {model.state}
+                  </span>
+                </span>
               </div>
-            </Show>
-          </div>
-        )}
-      </For>
+            )}
+          </For>
+        </div>
+      </Show>
+    </div>
+  )
+
+  return (
+    <div style={{ display: "flex", "flex-direction": "column", gap: "8px" }}>
+      <button
+        type="button"
+        onClick={() => setSectionOpen((open) => !open)}
+        aria-expanded={sectionOpen()}
+        style={{
+          display: "flex",
+          "justify-content": "space-between",
+          "align-items": "baseline",
+          gap: "8px",
+          width: "100%",
+          background: "transparent",
+          border: "none",
+          padding: 0,
+          color: "inherit",
+          font: "inherit",
+          cursor: "pointer",
+          "text-align": "left",
+        }}
+      >
+        <span style={{ color: theme.faint, "font-size": "11px", "text-transform": "uppercase", "letter-spacing": "0.04em" }}>
+          Providers &amp; models
+        </span>
+        <span style={{ color: theme.faint, "font-size": "10.5px" }}>
+          {sectionOpen()
+            ? "hide"
+            : `${active().length} active${inactive().length > 0 ? ` · ${inactive().length} not configured` : ""}`}
+        </span>
+      </button>
+
+      <Show when={sectionOpen()}>
+        <For each={active()}>{(group) => <ProviderCard group={group} />}</For>
+
+        {/* Providers with nothing to route to are a separate list: they are not
+            part of the current picture, but hiding them entirely is how a user
+            never discovers the router supports a service they already pay for. */}
+        <Show when={inactive().length > 0}>
+          <button
+            type="button"
+            onClick={() => setNotConfiguredOpen((open) => !open)}
+            aria-expanded={notConfiguredOpen()}
+            style={{
+              display: "flex",
+              "justify-content": "space-between",
+              "align-items": "baseline",
+              gap: "8px",
+              width: "100%",
+              background: "transparent",
+              border: "none",
+              padding: "4px 2px",
+              color: "inherit",
+              font: "inherit",
+              cursor: "pointer",
+              "text-align": "left",
+            }}
+          >
+            <span style={{ color: theme.faint, "font-size": "10.5px" }}>
+              {notConfiguredOpen() ? "▾" : "▸"} Not configured ({inactive().length})
+            </span>
+          </button>
+          <Show when={notConfiguredOpen()}>
+            <For each={inactive()}>{(group) => <ProviderCard group={group} />}</For>
+          </Show>
+        </Show>
+      </Show>
     </div>
   )
 }
