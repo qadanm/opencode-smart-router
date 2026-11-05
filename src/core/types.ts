@@ -46,6 +46,17 @@ export type FailureClass =
   | "tool"
   | "capability"
   | "interrupted"
+  /**
+   * The provider refused because the account has no allowance left.
+   *
+   * Distinguished from `auth` (the credential is wrong) and from
+   * `rate_limit` (too fast): here the credential is fine and the request is
+   * well formed, there is simply no credit. It matters because it is the one
+   * reliable signal available for a provider whose quota cannot be read —
+   * retrying cannot help, and the provider should be left alone until its
+   * window resets.
+   */
+  | "quota_exhausted"
   | "unknown"
 
 export interface CostTier {

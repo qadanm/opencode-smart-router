@@ -62,6 +62,7 @@ const emptyFailureCounts = (): Record<FailureClass, number> => ({
   tool: 0,
   capability: 0,
   interrupted: 0,
+  quota_exhausted: 0,
   unknown: 0,
 })
 
@@ -760,6 +761,20 @@ export class LedgerStore {
   /** Active provider outage backoffs, keyed by provider id. */
   providerCooldowns(): Readonly<Record<string, number>> {
     return this.ledger.providerCooldowns ?? {}
+  }
+
+  /**
+   * Hold a provider back until a given time because its allowance is spent.
+   *
+   * Separate from the streak-based backoff in `recordFailure`: a spent
+   * allowance is not a fault that might clear in a minute, it is a fact that
+   * holds until the window resets. Never shortens an existing cooldown, so a
+   * shorter guess cannot undo a longer one.
+   */
+  exhaustProvider(providerID: string, until: number): void {
+    const current = this.ledger.providerCooldowns?.[providerID] ?? 0
+    if (until <= current) return
+    this.ledger.providerCooldowns = { ...(this.ledger.providerCooldowns ?? {}), [providerID]: until }
   }
 
   isProviderCoolingDown(providerID: string, now = Date.now()): boolean {

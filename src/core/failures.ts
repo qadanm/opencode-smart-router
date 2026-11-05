@@ -62,6 +62,58 @@ export const classifyFailure = (input: FailureInput, session?: SessionState): Fa
     }
   }
 
+
+  /**
+   * The account is out of allowance.
+   *
+   * This is the compensation for every provider whose quota cannot be read in
+   * advance: OpenDesign publishes no usage endpoint for an inference key, so the
+   * router's own figure is a lower bound and it will not notice a spent
+   * allowance until the provider says no. The first refusal is therefore the
+   * signal, and it has to be used properly — retrying cannot conjure credit, and
+   * hammering the same exhausted provider wastes a turn each time.
+   *
+   * Checked before the generic 4xx paths because gateways disagree on the status
+   * code: 402 is the honest one, but a 400 or 403 with "insufficient credits" is
+   * common, and treating that as `invalid_request` would blame the user's prompt
+   * for an empty wallet.
+   */
+  if (
+    // 402 is the unambiguous signal. A 5xx is never this: a server fault in the
+    // billing path is an outage, not an empty account, and OpenDesign returns
+    // exactly that as `workspace_billing_scope_unavailable`.
+    status === 402 ||
+    ((status === undefined || status < 500) &&
+      includes(message, [
+        "insufficient credit",
+        "insufficient_credit",
+        "insufficient balance",
+        "insufficient_quota",
+        "no credit left",
+        "out of credit",
+        "credit balance is",
+        "credit limit reached",
+        "quota exceeded",
+        "quota_exceeded",
+        "allowance exhausted",
+        "allowance is exhausted",
+        "exceeded your current quota",
+      ]))
+  ) {
+    return {
+      class: "quota_exhausted",
+      retryable: false,
+      capabilityFailure: false,
+      escalate: true,
+      cooldownMs: 0,
+      reason: "The provider reports no allowance left; retrying the same model cannot help.",
+      // The account is empty, not the model. Charging this to the model would
+      // make a perfectly good model look unreliable and quietly drop it.
+      countAgainstModel: false,
+      providerScoped: true,
+    }
+  }
+
   if (
     includes(message, [
       "context length",

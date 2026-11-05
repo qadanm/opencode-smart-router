@@ -121,6 +121,16 @@ const CONTEXT_SAFE_WINDOW_FRACTION = 0.95
  */
 const PROVIDER_SCOPED_RETRY_ATTEMPTS = 5
 
+/**
+ * How long to avoid a provider whose allowance is spent, when nothing is known
+ * about when it resets.
+ *
+ * Deliberately longer than a transient backoff: an empty allowance does not
+ * recover in seconds, and re-probing it on every prompt costs a failed turn
+ * each time to relearn the same fact. A known reset time always wins over this.
+ */
+const QUOTA_EXHAUSTED_FALLBACK_MS = 30 * 60 * 1000
+
 const unwrap = <T>(value: unknown): T[] => {
   if (Array.isArray(value)) return value as T[]
   if (isRecord(value) && Array.isArray(value.data)) return value.data as T[]
@@ -456,6 +466,23 @@ export class RouterController {
       // Detection is a convenience. A failure must never stop routing.
       this.settingsWarnings.push(`Provider detection skipped: ${safeError(error)}`)
     }
+  }
+
+  /**
+   * When this provider's next window opens, from the best data available.
+   *
+   * Prefers the tightest window that has a reset time, because that is the one
+   * that would unblock the account soonest. Falls back to a modest hold when
+   * nothing is known, which is far better than re-probing on every prompt.
+   */
+  private providerResetAt(providerID: string, now = Date.now()): number {
+    const fallback = now + QUOTA_EXHAUSTED_FALLBACK_MS
+    const snapshot = this.quotaSnapshots().find((entry) => entry.providerID === providerID)
+    if (!snapshot) return fallback
+    const resets = [snapshot.rolling?.resetsAt, snapshot.weekly?.resetsAt, snapshot.monthly?.resetsAt]
+      .filter((value): value is number => typeof value === "number" && value > now)
+      .sort((left, right) => left - right)
+    return resets[0] ?? fallback
   }
 
   private async resolveQuotaCredentials() {    let goAccessToken: string | undefined
@@ -1336,6 +1363,33 @@ export class RouterController {
         this.persistLedgerSoon()
         if (assessment.class === "auth" || assessment.class === "context_overflow" || assessment.class === "image_rejected") {
           event.decision = { retry: false }
+          return
+        }
+
+        /**
+         * The provider has no allowance left.
+         *
+         * This is the compensating control for everything the router cannot
+         * read in advance. For OpenDesign it cannot read usage at all, so its
+         * figure is a lower bound and a spent allowance is only discovered when
+         * the gateway refuses. One refusal is enough: stop retrying this turn,
+         * and hold the provider back until its window resets so the next prompt
+         * routes somewhere that can actually serve it.
+         *
+         * Holding back for the reset, not for a few seconds, is the point. A
+         * short backoff would re-probe an empty account on every prompt and burn
+         * a turn each time to learn something already known.
+         */
+        if (assessment.class === "quota_exhausted") {
+          const providerID = event.model?.providerID
+          if (providerID) {
+            this.ledger.exhaustProvider(providerID, this.providerResetAt(providerID))
+          }
+          this.settingsWarnings.push(
+            `${providerID ?? "The provider"} reported no allowance left. Routing will avoid it until its window resets.`,
+          )
+          event.decision = { retry: false }
+          this.persistLedgerSoon()
           return
         }
         if (assessment.class === "capability") {
