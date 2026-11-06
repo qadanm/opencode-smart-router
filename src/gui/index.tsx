@@ -492,7 +492,12 @@ function AutoSwitch(props: { sessionID: string | undefined; auto: boolean; onCha
  * no sidebar API, so this works on the app's markup; the description says so
  * once, in plain words, instead of hiding it.
  */
-function SidebarToggle(props: { enabled: boolean; active: boolean; onChanged: () => void }) {
+function SidebarToggle(props: {
+  enabled: boolean
+  active: boolean
+  probe: { surface: string | null; rows: number; withProject: number }
+  onChanged: () => void
+}) {
   const ctx = usePlugin<typeof definition>()
   const [busy, setBusy] = createSignal(false)
 
@@ -507,10 +512,18 @@ function SidebarToggle(props: { enabled: boolean; active: boolean; onChanged: ()
     }
   }
 
+  /**
+   * The old copy said "on" and did nothing when the app's markup did not match.
+   * Reporting the probe keeps that honest: the panel names the layout it found,
+   * the row count, and how many rows carried a project name.
+   */
   const detail = () => {
     if (!props.enabled) return "Off. Turn on to group sessions by project in the sidebar."
     if (!props.active) return "On, but paused: another sidebar plugin owns this surface."
-    return "On. Sessions are grouped under project headings."
+    const probe = props.probe
+    if (!probe.surface) return "On. Waiting for a session sidebar to appear."
+    if (probe.withProject === 0) return "On, but this sidebar shows no project names, so there is nothing to group."
+    return `On. Grouping ${probe.withProject} sessions in the ${probe.surface} sidebar.`
   }
 
   return (
@@ -1548,7 +1561,10 @@ function SmartRouterPanel(props: { sessionID: string | undefined }) {
     })()
     const timer = setInterval(() => void load(), 3_000)
     // The panel only reflects the window-scoped controller's state.
-    const reflectTimer = setInterval(() => setSidebar(sidebarFeature.active()), 1_500)
+    const reflectTimer = setInterval(() => {
+      setSidebar(sidebarFeature.active())
+      setSidebarProbe(sidebarFeature.probe())
+    }, 1_500)
     onCleanup(() => {
       clearInterval(timer)
       clearInterval(reflectTimer)
@@ -1556,6 +1572,7 @@ function SmartRouterPanel(props: { sessionID: string | undefined }) {
   })
 
   const [sidebar, setSidebar] = createSignal(sidebarFeature.active())
+  const [sidebarProbe, setSidebarProbe] = createSignal(sidebarFeature.probe())
 
   const view = (): DecisionView | undefined => summariseDecision(status()?.lastDecision as never)
   const providers = (): ProviderRow[] =>
@@ -1629,6 +1646,7 @@ function SmartRouterPanel(props: { sessionID: string | undefined }) {
       <SidebarToggle
         enabled={status()?.sidebarGroups === true}
         active={sidebar()}
+        probe={sidebarProbe()}
         onChanged={() => void load()}
       />
 

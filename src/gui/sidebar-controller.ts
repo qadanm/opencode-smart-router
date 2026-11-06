@@ -13,9 +13,14 @@ import { mountSidebar, styles, type SidebarHandle } from "./sidebar.js"
  */
 const plusPresent = () => document.querySelector("[data-plus-group], [data-plus-shelf], [data-plus-add]") !== null
 
+/** Whether the app is showing a surface this feature can group. */
+export const surfaceAvailable = () => document.querySelector('[data-slot="vertical-tabs-sidebar"], [data-slot="sidebar-inbox"], [data-slot="home-sessions-list"]') !== null
+
 export interface SidebarController {
   /** Re-read the setting and the page; cheap to call on every poll. */
   readonly sync: (enabled: boolean) => void
+  /** What the app's sidebar currently exposes, for the panel to report honestly. */
+  readonly probe: () => { surface: string | null; rows: number; withProject: number }
   /** Ask the new-session flow for this project. */
   readonly onNewSession: (handler: (project: string) => void) => void
   readonly destroy: () => void
@@ -61,6 +66,7 @@ export const createSidebar = (): SidebarController => {
     onNewSession: (handler) => {
       newSession = handler
     },
+    probe: () => handle?.probe() ?? { surface: null, rows: 0, withProject: 0 },
     active: () => handle !== undefined,
     destroy: () => {
       destroyed = true
