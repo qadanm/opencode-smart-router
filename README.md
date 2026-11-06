@@ -11,7 +11,7 @@
   <a href="https://www.npmjs.com/package/@qadanm/opencode-smart-router"><img src="https://img.shields.io/npm/dm/%40qadanm%2Fopencode-smart-router?label=installs&color=cb3837&logo=npm&logoColor=white" alt="npm monthly installs"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/OpenCode-2.x-000000.svg" alt="OpenCode 2.x">
-  <img src="https://img.shields.io/badge/tests-759%20passing-2ea44f.svg" alt="772 tests">
+  <img src="https://img.shields.io/badge/tests-759%20passing-2ea44f.svg" alt="779 tests">
   <img src="https://img.shields.io/badge/runtime-Node%2020.12%2B-339933.svg" alt="Node 20.12+">
 </p>
 
@@ -171,6 +171,21 @@ Then it does the part that matters:
 When a genuinely near-expiry window and a cheap provider disagree, the router picks
 the option that spends money you have already committed to losing.
 
+## Sidebar grouping
+
+A small, opt-in extra in the desktop app: group the session sidebar under
+project headings, with a new-session button per project. Off by default, and
+toggled in the router panel. Paperclip-grade honesty about the mechanism: the
+desktop app has no sidebar API, so this works on the app's markup. It ships with
+three protections the reference implementation does not have. Headings are real
+elements, so screen readers and keyboard navigation see them. The observer
+watches the sidebar, not the whole document. And if another sidebar plugin
+(opencode-plus) is present, this feature stands down rather than fight it.
+
+The router no longer renames sessions. Titles are yours; a status prefix in a
+chat name trades your memory for the plugin's status line, and status already
+lives in the panel and the footer.
+
 ## Self-healing routing
 
 Some providers reject a rebuilt session outright. OpenCode turns mid-session
@@ -232,6 +247,7 @@ command panel closed.
 | `/router-premium-budget <usd>` | Set the premium budget |
 | `/router-reserve provider monthly weekly fiveHour` | Adjust provider reserves |
 | `/router-reset-metrics --confirm` | Reset metrics and routing state, not conversations |
+| `/router-title off` | Strip prefixes this plugin wrote into titles before 0.5.0 |
 
 Selecting a model in the desktop picker is detected and respected. The session
 reports `manual` until you run `/router-auto`.
@@ -293,7 +309,7 @@ npm run verify    # clean room: empty HOME, fresh install, typecheck, tests, bui
 npm run mutate    # prove each safety test fails when its property breaks
 ```
 
-772 tests across 65 files cover classification, eligibility, quota parsing,
+779 tests across 66 files cover classification, eligibility, quota parsing,
 credential discovery and its security properties, ledger accounting, pool
 reconciliation, documented peak pricing, cache-aware routing, premium protection,
 purchased-credit blocking, manual overrides, failure classification, configuration
