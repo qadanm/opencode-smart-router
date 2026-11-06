@@ -2,6 +2,12 @@ import { Command, Panel, Plugin, Slot, usePlugin, type PanelTab, type PanelProps
 import { createSignal, For, onCleanup, onMount, Show } from "solid-js"
 import { SmartRouterRpc } from "../rpc.js"
 import { createSidebar } from "./sidebar-controller.js"
+
+/**
+ * One controller per window. Created at module scope so both the panel toggle and
+ * the plugin setup address the same instance.
+ */
+const sidebarFeature = createSidebar()
 import {
   formatPercent,
   formatUsd,
@@ -1526,53 +1532,7 @@ function SmartRouterPanel(props: { sessionID: string | undefined }) {
      * happens within a frame or two; everywhere else the answer is "no" and
      * nothing changes.
      */
-    /**
-     * Sidebar grouping runs for the life of the window, not the panel tab: the
-     * sidebar is always on screen, and the panel controls it like a switch in a
-     * settings pane. The controller is idempotent, so the poll can call `sync`
-     * freely.
-     */
-    const sidebarController = createSidebar()
-    let lastSidebarValue: boolean | undefined
-    const syncSidebar = () => {
-      const want = status()?.sidebarGroups === true
-      if (want === lastSidebarValue) return
-      lastSidebarValue = want
-      sidebarController.sync(want)
-      setSidebar(sidebarController.active())
-    }
-    sidebarController.onNewSession((project) => {
-      /**
-       * Start a session in the project a heading names.
-       *
-       * Project rows show the project's name, so the directory is resolved from
-       * the app's project list by that name, newest first. A miss opens the new
-       * session draft without a directory rather than pretending nothing
-       * happened.
-       */
-      void (async () => {
-        try {
-          const result: any = await ctx.client.project.list()
-          const projects: any[] = Array.isArray(result?.data) ? result.data : []
-          const match = projects
-            .filter((entry) => (entry.name || String(entry.canonical ?? "").split("/").pop()) === project)
-            .sort((left, right) => (right.time?.active ?? 0) - (left.time?.active ?? 0))[0]
-          if (match?.canonical) {
-            ctx.layout.draft({ server: ctx.sessions.current()?.server?.id ?? "", directory: match.canonical, prompt: "" })
-            return
-          }
-        } catch {
-          // Fall through to the plain draft.
-        }
-        try {
-          const session = ctx.sessions.current()
-          if (session) ctx.layout.draft({ server: session.server.id, directory: session.directory, prompt: "" })
-        } catch {
-          // The picker stays available in the app itself.
-        }
-      })()
-    })
-    onCleanup(() => sidebarController.destroy())
+
 
     void (async () => {
       try {
@@ -1587,14 +1547,15 @@ function SmartRouterPanel(props: { sessionID: string | undefined }) {
       }
     })()
     const timer = setInterval(() => void load(), 3_000)
-    const sidebarTimer = setInterval(syncSidebar, 1_000)
+    // The panel only reflects the window-scoped controller's state.
+    const reflectTimer = setInterval(() => setSidebar(sidebarFeature.active()), 1_500)
     onCleanup(() => {
       clearInterval(timer)
-      clearInterval(sidebarTimer)
+      clearInterval(reflectTimer)
     })
   })
 
-  const [sidebar, setSidebar] = createSignal(false)
+  const [sidebar, setSidebar] = createSignal(sidebarFeature.active())
 
   const view = (): DecisionView | undefined => summariseDecision(status()?.lastDecision as never)
   const providers = (): ProviderRow[] =>
@@ -1794,6 +1755,56 @@ export default Plugin.define({
      */
     const autoOpenTimer = setInterval(tryAutoOpen, 800)
 
+    /**
+     * Sidebar grouping belongs to the window, not to the panel tab: the sidebar
+     * is visible whether or not the panel is open, so closing the panel must not
+     * un-group the sidebar. `setup` owns the controller; the panel only reports
+     * its state and flips the setting through RPC.
+     */
+    sidebarFeature.onNewSession((project) => {
+      /**
+       * Start a session in the project a heading names. The directory comes from
+       * the app's project list by name, newest first; a miss opens a plain draft
+       * so the user is never left with a button that does nothing.
+       */
+      void (async () => {
+        try {
+          const result: any = await ctx.client.project.list()
+          const projects: any[] = Array.isArray(result?.data) ? result.data : []
+          const match = projects
+            .filter((entry) => (entry.name || String(entry.canonical ?? "").split("/").pop()) === project)
+            .sort((left, right) => (right.time?.active ?? 0) - (left.time?.active ?? 0))[0]
+          const session = ctx.sessions.current()
+          if (match?.canonical && session) {
+            ctx.layout.draft({ server: session.server.id, directory: match.canonical, prompt: "" })
+            return
+          }
+        } catch {
+          // Fall through to the plain draft.
+        }
+        try {
+          const session = ctx.sessions.current()
+          if (session) ctx.layout.draft({ server: session.server.id, directory: session.directory, prompt: "" })
+        } catch {
+          // The app's own picker remains available.
+        }
+      })()
+    })
+    let sidebarWanted: boolean | undefined
+    const sidebarTimer = setInterval(() => {
+      void (async () => {
+        try {
+          const status: any = await ctx.client.rpc(SmartRouterRpc).status({})
+          const want = status?.sidebarGroups === true
+          if (want === sidebarWanted) return
+          sidebarWanted = want
+          sidebarFeature.sync(want)
+        } catch {
+          // A failed status read leaves the sidebar as it is.
+        }
+      })()
+    }, 1_500)
+
     ctx.add(Slot, {
       at: "window.bottom",
       render: () => (
@@ -1808,6 +1819,8 @@ export default Plugin.define({
     // registration, because a return before `ctx.add` would skip that contribution.
     return () => {
       clearInterval(autoOpenTimer)
+      clearInterval(sidebarTimer)
+      sidebarFeature.destroy()
     }
   },
 })
