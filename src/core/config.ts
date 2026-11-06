@@ -156,7 +156,6 @@ export const DEFAULT_SETTINGS: RouterSettings = {
     // bug, not a feature: the session title is the user's, and status belongs in
     // the desktop panel or the terminal's status line. Turning this on is an
     // explicit choice, and turning it back off restores the original names.
-    sidebarGroups: false,
     notifications: true,
     compactMode: false,
     compact: false,
@@ -715,7 +714,6 @@ export const validateSettings = (input: unknown, base: RouterSettings = DEFAULT_
     "ui.compactMode",
   )
   const ui = {
-    sidebarGroups: asBoolean(uiInput.sidebarGroups, base.ui.sidebarGroups, warnings, "ui.sidebarGroups"),
     notifications: asBoolean(uiInput.notifications, base.ui.notifications, warnings, "ui.notifications"),
     compactMode: compactToggle,
     compact: compactToggle,

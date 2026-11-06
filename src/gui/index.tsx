@@ -1,13 +1,6 @@
 import { Command, Panel, Plugin, Slot, usePlugin, type PanelTab, type PanelProps } from "@opencode/plugin/gui"
 import { createSignal, For, onCleanup, onMount, Show } from "solid-js"
 import { SmartRouterRpc } from "../rpc.js"
-import { createSidebar } from "./sidebar-controller.js"
-
-/**
- * One controller per window. Created at module scope so both the panel toggle and
- * the plugin setup address the same instance.
- */
-const sidebarFeature = createSidebar()
 import {
   formatPercent,
   formatUsd,
@@ -390,7 +383,6 @@ function BrandHeader(props: { runtime: string; mode: string }) {
 interface RouterStatus {
   mode?: string
   runtime?: string
-  sidebarGroups?: boolean
   current?: { providerID: string; id: string }
   quota?: ReadonlyArray<unknown>
   lastDecision?: unknown
@@ -484,100 +476,6 @@ function AutoSwitch(props: { sessionID: string | undefined; auto: boolean; onCha
   )
 }
 
-
-/**
- * Sidebar grouping.
- *
- * Off by default and described as what it is: a nice extra. The desktop app has
- * no sidebar API, so this works on the app's markup; the description says so
- * once, in plain words, instead of hiding it.
- */
-function SidebarToggle(props: {
-  enabled: boolean
-  active: boolean
-  probe: { surface: string | null; rows: number; withProject: number }
-  onChanged: () => void
-}) {
-  const ctx = usePlugin<typeof definition>()
-  const [busy, setBusy] = createSignal(false)
-
-  const toggle = async () => {
-    if (busy()) return
-    setBusy(true)
-    try {
-      await ctx.client.rpc(SmartRouterRpc).setSidebarGroups({ enabled: !props.enabled })
-      props.onChanged()
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  /**
-   * The old copy said "on" and did nothing when the app's markup did not match.
-   * Reporting the probe keeps that honest: the panel names the layout it found,
-   * the row count, and how many rows carried a project name.
-   */
-  const detail = () => {
-    if (!props.enabled) return "Off. Turn on to group sessions by project in the sidebar."
-    if (!props.active) return "On, but paused: another sidebar plugin owns this surface."
-    const probe = props.probe
-    if (!probe.surface) return "On. Waiting for a session sidebar to appear."
-    if (probe.withProject === 0) return "On, but this sidebar shows no project names, so there is nothing to group."
-    return `On. Grouping ${probe.withProject} sessions in the ${probe.surface} sidebar.`
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={() => void toggle()}
-      disabled={busy()}
-      aria-pressed={props.enabled}
-      style={{
-        display: "flex",
-        "align-items": "center",
-        "justify-content": "space-between",
-        gap: space.md,
-        width: "100%",
-        padding: "9px 11px",
-        "border-radius": radius.md,
-        border: `1px solid ${props.enabled ? "transparent" : theme.border}`,
-        background: props.enabled ? "rgba(15,118,110,0.14)" : "transparent",
-        color: theme.text,
-        cursor: busy() ? "default" : "pointer",
-        font: "inherit",
-        "text-align": "left",
-      }}
-    >
-      <span style={{ display: "flex", "flex-direction": "column", gap: "1px" }}>
-        <span style={{ "font-size": type.body, "font-weight": 600 }}>Group sessions by project</span>
-        <span style={{ color: props.enabled ? theme.brandTo : theme.faint, "font-size": type.caption }}>{detail()}</span>
-      </span>
-      <span
-        aria-hidden="true"
-        style={{
-          width: "30px",
-          height: "16px",
-          "border-radius": "8px",
-          background: props.enabled ? brandGradient : "rgba(255,255,255,0.14)",
-          position: "relative",
-          "flex-shrink": 0,
-        }}
-      >
-        <span
-          style={{
-            position: "absolute",
-            top: "2px",
-            left: props.enabled ? "16px" : "2px",
-            width: "12px",
-            height: "12px",
-            "border-radius": "50%",
-            background: "#fff",
-          }}
-        />
-      </span>
-    </button>
-  )
-}
 
 function DecisionInspector(props: { view: DecisionView | undefined; hovered: string | undefined; onHover: (id: string | undefined) => void; expanded: boolean; onToggle: () => void }) {
   return (
@@ -1561,18 +1459,9 @@ function SmartRouterPanel(props: { sessionID: string | undefined }) {
     })()
     const timer = setInterval(() => void load(), 3_000)
     // The panel only reflects the window-scoped controller's state.
-    const reflectTimer = setInterval(() => {
-      setSidebar(sidebarFeature.active())
-      setSidebarProbe(sidebarFeature.probe())
-    }, 1_500)
-    onCleanup(() => {
-      clearInterval(timer)
-      clearInterval(reflectTimer)
-    })
+    onCleanup(() => clearInterval(timer))
   })
 
-  const [sidebar, setSidebar] = createSignal(sidebarFeature.active())
-  const [sidebarProbe, setSidebarProbe] = createSignal(sidebarFeature.probe())
 
   const view = (): DecisionView | undefined => summariseDecision(status()?.lastDecision as never)
   const providers = (): ProviderRow[] =>
@@ -1640,13 +1529,6 @@ function SmartRouterPanel(props: { sessionID: string | undefined }) {
       <AutoSwitch
         sessionID={props.sessionID}
         auto={(status()?.runtime ?? "automatic") === "automatic"}
-        onChanged={() => void load()}
-      />
-
-      <SidebarToggle
-        enabled={status()?.sidebarGroups === true}
-        active={sidebar()}
-        probe={sidebarProbe()}
         onChanged={() => void load()}
       />
 
@@ -1773,55 +1655,6 @@ export default Plugin.define({
      */
     const autoOpenTimer = setInterval(tryAutoOpen, 800)
 
-    /**
-     * Sidebar grouping belongs to the window, not to the panel tab: the sidebar
-     * is visible whether or not the panel is open, so closing the panel must not
-     * un-group the sidebar. `setup` owns the controller; the panel only reports
-     * its state and flips the setting through RPC.
-     */
-    sidebarFeature.onNewSession((project) => {
-      /**
-       * Start a session in the project a heading names. The directory comes from
-       * the app's project list by name, newest first; a miss opens a plain draft
-       * so the user is never left with a button that does nothing.
-       */
-      void (async () => {
-        try {
-          const result: any = await ctx.client.project.list()
-          const projects: any[] = Array.isArray(result?.data) ? result.data : []
-          const match = projects
-            .filter((entry) => (entry.name || String(entry.canonical ?? "").split("/").pop()) === project)
-            .sort((left, right) => (right.time?.active ?? 0) - (left.time?.active ?? 0))[0]
-          const session = ctx.sessions.current()
-          if (match?.canonical && session) {
-            ctx.layout.draft({ server: session.server.id, directory: match.canonical, prompt: "" })
-            return
-          }
-        } catch {
-          // Fall through to the plain draft.
-        }
-        try {
-          const session = ctx.sessions.current()
-          if (session) ctx.layout.draft({ server: session.server.id, directory: session.directory, prompt: "" })
-        } catch {
-          // The app's own picker remains available.
-        }
-      })()
-    })
-    let sidebarWanted: boolean | undefined
-    const sidebarTimer = setInterval(() => {
-      void (async () => {
-        try {
-          const status: any = await ctx.client.rpc(SmartRouterRpc).status({})
-          const want = status?.sidebarGroups === true
-          if (want === sidebarWanted) return
-          sidebarWanted = want
-          sidebarFeature.sync(want)
-        } catch {
-          // A failed status read leaves the sidebar as it is.
-        }
-      })()
-    }, 1_500)
 
     ctx.add(Slot, {
       at: "window.bottom",
@@ -1837,8 +1670,6 @@ export default Plugin.define({
     // registration, because a return before `ctx.add` would skip that contribution.
     return () => {
       clearInterval(autoOpenTimer)
-      clearInterval(sidebarTimer)
-      sidebarFeature.destroy()
     }
   },
 })

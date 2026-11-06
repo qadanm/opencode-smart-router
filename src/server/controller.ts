@@ -170,7 +170,6 @@ const applyRuntime = (base: RouterSettings, runtime: RuntimeOverrides): RouterSe
   if (runtime.mode) next.mode = runtime.mode
   if (runtime.paused === true) next.enabled = false
   if (typeof runtime.dryRun === "boolean") next.dryRun = runtime.dryRun
-  if (typeof runtime.sidebarGroups === "boolean") next.ui.sidebarGroups = runtime.sidebarGroups
   if (typeof runtime.compactMode === "boolean") {
     next.ui.compactMode = runtime.compactMode
     next.ui.compact = runtime.compactMode
@@ -1187,7 +1186,6 @@ export class RouterController {
       mode: this.settings.mode,
       runtime,
       dryRun: this.settings.dryRun,
-      sidebarGroups: this.settings.ui.sidebarGroups,
       ...(sessionID ? { sessionID } : {}),
       ...(current ? { current } : {}),
       ...(currentModel ? { currentTier: currentModel.tier } : {}),
@@ -2727,13 +2725,6 @@ export class RouterController {
         // old callers and ignored; `enabled: false` runs the one-time cleanup of
         // titles written by earlier versions.
         if (input?.enabled !== true) await this.restoreTitles()
-        const summary = this.statusFor()
-        void this.emit("status", { summary })
-        return summary
-      },
-      setSidebarGroups: async (input: any) => {
-        this.runtime.sidebarGroups = Boolean(input.enabled)
-        this.persistRuntime()
         const summary = this.statusFor()
         void this.emit("status", { summary })
         return summary

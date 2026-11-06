@@ -91,8 +91,7 @@
   },
   "ui": {
     "notifications": true,
-    "compactMode": false,
-    "sidebarGroups": false
+    "compactMode": false
   },
   "logging": {
     "storePromptText": false,

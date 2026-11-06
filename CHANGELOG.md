@@ -10,6 +10,38 @@ Notable changes to OpenCode Smart Router. Dates are the day the change landed on
 - **Launch kit** (`docs/LAUNCH-KIT.md`): paste-ready copy for Discord, Hacker
   News, X, and the opencode.cafe submission, plus the demo film assets.
 
+## 0.5.0 — 2026-11-06
+
+The router stops taking things that are not its to take.
+
+### Changed
+
+- **The router no longer renames sessions.** The `AUTO · OD · model — name`
+  title prefix is gone, for new chats and for every chat going forward. A chat
+  title is the owner's name for the work; status belongs in the panel, the
+  terminal footer and the decision record. The `ui.titleIndicator` setting is
+  removed and ignored if present.
+- `/router-title off` now strips prefixes this plugin wrote in earlier versions
+  and reports how many titles it cleaned. Titles that lost their separator are
+  left alone rather than rewritten.
+- Existing installs were repaired in place: every prefixed title was restored
+  from its separator, or from the session's own first user message when the
+  separator was already gone.
+
+### Added
+
+- Earlier review pass carried in this release: self-heal floor fallback, real
+  safety-margin enforcement, task-scoped rejection memory, strict failure joins,
+  request-clock threading, and metric-neutral decision notes.
+
+### Removed
+
+- **Sidebar project grouping (never released on npm).** The desktop app ships
+  this natively behind Settings -> Experimental -> Organize vertical sidebar ->
+  Projects (upstream commit `2bb4988`, after the installed v2.2.5). A plugin
+  copy would duplicate app code and fight the native version. The reasoning and
+  the prior-art notes are in `docs/SIDEBAR-GROUPING-TABLED.md`.
+
 ## 0.4.0 — 2026-11-05
 
 Self-healing routing, and npm distribution.
