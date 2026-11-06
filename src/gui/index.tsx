@@ -1,6 +1,7 @@
 import { Command, Panel, Plugin, Slot, usePlugin, type PanelTab, type PanelProps } from "@opencode/plugin/gui"
 import { createSignal, For, onCleanup, onMount, Show } from "solid-js"
 import { SmartRouterRpc } from "../rpc.js"
+import { createSidebar } from "./sidebar-controller.js"
 import {
   formatPercent,
   formatUsd,
@@ -383,6 +384,7 @@ function BrandHeader(props: { runtime: string; mode: string }) {
 interface RouterStatus {
   mode?: string
   runtime?: string
+  sidebarGroups?: boolean
   current?: { providerID: string; id: string }
   quota?: ReadonlyArray<unknown>
   lastDecision?: unknown
@@ -476,6 +478,87 @@ function AutoSwitch(props: { sessionID: string | undefined; auto: boolean; onCha
   )
 }
 
+
+/**
+ * Sidebar grouping.
+ *
+ * Off by default and described as what it is: a nice extra. The desktop app has
+ * no sidebar API, so this works on the app's markup; the description says so
+ * once, in plain words, instead of hiding it.
+ */
+function SidebarToggle(props: { enabled: boolean; active: boolean; onChanged: () => void }) {
+  const ctx = usePlugin<typeof definition>()
+  const [busy, setBusy] = createSignal(false)
+
+  const toggle = async () => {
+    if (busy()) return
+    setBusy(true)
+    try {
+      await ctx.client.rpc(SmartRouterRpc).setSidebarGroups({ enabled: !props.enabled })
+      props.onChanged()
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const detail = () => {
+    if (!props.enabled) return "Off. Turn on to group sessions by project in the sidebar."
+    if (!props.active) return "On, but paused: another sidebar plugin owns this surface."
+    return "On. Sessions are grouped under project headings."
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => void toggle()}
+      disabled={busy()}
+      aria-pressed={props.enabled}
+      style={{
+        display: "flex",
+        "align-items": "center",
+        "justify-content": "space-between",
+        gap: space.md,
+        width: "100%",
+        padding: "9px 11px",
+        "border-radius": radius.md,
+        border: `1px solid ${props.enabled ? "transparent" : theme.border}`,
+        background: props.enabled ? "rgba(15,118,110,0.14)" : "transparent",
+        color: theme.text,
+        cursor: busy() ? "default" : "pointer",
+        font: "inherit",
+        "text-align": "left",
+      }}
+    >
+      <span style={{ display: "flex", "flex-direction": "column", gap: "1px" }}>
+        <span style={{ "font-size": type.body, "font-weight": 600 }}>Group sessions by project</span>
+        <span style={{ color: props.enabled ? theme.brandTo : theme.faint, "font-size": type.caption }}>{detail()}</span>
+      </span>
+      <span
+        aria-hidden="true"
+        style={{
+          width: "30px",
+          height: "16px",
+          "border-radius": "8px",
+          background: props.enabled ? brandGradient : "rgba(255,255,255,0.14)",
+          position: "relative",
+          "flex-shrink": 0,
+        }}
+      >
+        <span
+          style={{
+            position: "absolute",
+            top: "2px",
+            left: props.enabled ? "16px" : "2px",
+            width: "12px",
+            height: "12px",
+            "border-radius": "50%",
+            background: "#fff",
+          }}
+        />
+      </span>
+    </button>
+  )
+}
 
 function DecisionInspector(props: { view: DecisionView | undefined; hovered: string | undefined; onHover: (id: string | undefined) => void; expanded: boolean; onToggle: () => void }) {
   return (
@@ -1443,6 +1526,54 @@ function SmartRouterPanel(props: { sessionID: string | undefined }) {
      * happens within a frame or two; everywhere else the answer is "no" and
      * nothing changes.
      */
+    /**
+     * Sidebar grouping runs for the life of the window, not the panel tab: the
+     * sidebar is always on screen, and the panel controls it like a switch in a
+     * settings pane. The controller is idempotent, so the poll can call `sync`
+     * freely.
+     */
+    const sidebarController = createSidebar()
+    let lastSidebarValue: boolean | undefined
+    const syncSidebar = () => {
+      const want = status()?.sidebarGroups === true
+      if (want === lastSidebarValue) return
+      lastSidebarValue = want
+      sidebarController.sync(want)
+      setSidebar(sidebarController.active())
+    }
+    sidebarController.onNewSession((project) => {
+      /**
+       * Start a session in the project a heading names.
+       *
+       * Project rows show the project's name, so the directory is resolved from
+       * the app's project list by that name, newest first. A miss opens the new
+       * session draft without a directory rather than pretending nothing
+       * happened.
+       */
+      void (async () => {
+        try {
+          const result: any = await ctx.client.project.list()
+          const projects: any[] = Array.isArray(result?.data) ? result.data : []
+          const match = projects
+            .filter((entry) => (entry.name || String(entry.canonical ?? "").split("/").pop()) === project)
+            .sort((left, right) => (right.time?.active ?? 0) - (left.time?.active ?? 0))[0]
+          if (match?.canonical) {
+            ctx.layout.draft({ server: ctx.sessions.current()?.server?.id ?? "", directory: match.canonical, prompt: "" })
+            return
+          }
+        } catch {
+          // Fall through to the plain draft.
+        }
+        try {
+          const session = ctx.sessions.current()
+          if (session) ctx.layout.draft({ server: session.server.id, directory: session.directory, prompt: "" })
+        } catch {
+          // The picker stays available in the app itself.
+        }
+      })()
+    })
+    onCleanup(() => sidebarController.destroy())
+
     void (async () => {
       try {
         const state: any = await Promise.race([
@@ -1456,8 +1587,14 @@ function SmartRouterPanel(props: { sessionID: string | undefined }) {
       }
     })()
     const timer = setInterval(() => void load(), 3_000)
-    onCleanup(() => clearInterval(timer))
+    const sidebarTimer = setInterval(syncSidebar, 1_000)
+    onCleanup(() => {
+      clearInterval(timer)
+      clearInterval(sidebarTimer)
+    })
   })
+
+  const [sidebar, setSidebar] = createSignal(false)
 
   const view = (): DecisionView | undefined => summariseDecision(status()?.lastDecision as never)
   const providers = (): ProviderRow[] =>
@@ -1525,6 +1662,12 @@ function SmartRouterPanel(props: { sessionID: string | undefined }) {
       <AutoSwitch
         sessionID={props.sessionID}
         auto={(status()?.runtime ?? "automatic") === "automatic"}
+        onChanged={() => void load()}
+      />
+
+      <SidebarToggle
+        enabled={status()?.sidebarGroups === true}
+        active={sidebar()}
         onChanged={() => void load()}
       />
 

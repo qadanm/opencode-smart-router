@@ -2,18 +2,17 @@ import { describe, expect, it } from "vitest"
 import { buildIndicatorTitle, resolveBaseTitle, stripTitlePrefix } from "../src/core/ui.js"
 
 /**
- * Regression tests for the session-title takeover.
+ * Regression tests for the session-title takeover, and for its removal.
  *
  * The router used to rewrite every chat title to `AUTO · OD · Model — name` and
  * recover the name by stripping that prefix. When the separator was lost, the
  * name was lost with it, and the next write read the prefix back as the name.
  *
- * The bug was the *sequence*, not any single call, so these tests simulate the
- * sequence: rename, switch model, rename again, with the router writing between
- * each step.
+ * Version 0.5 removes the rewriting entirely: the router never writes a session
+ * title. These tests keep the recovery helpers honest, because they are still
+ * needed to clean titles written by older versions.
  */
 
-/** One round of the real controller: read the title, resolve a base, write it back. */
 const tick = (state: { visible: string | undefined; lastWritten: string | undefined; base: string | undefined }, modelLabel: string) => {
   const base = resolveBaseTitle({
     currentTitle: state.visible,
@@ -30,7 +29,7 @@ const rename = (state: { visible: string | undefined; base: string | undefined }
   state.visible = title
 }
 
-describe("title indicator never destroys the name", () => {
+describe("title helpers never destroy the name", () => {
   it("keeps the name across five renames and model switches", () => {
     const state: { visible: string | undefined; lastWritten: string | undefined; base: string | undefined } = {
       visible: "Fix the login bug",
@@ -50,18 +49,11 @@ describe("title indicator never destroys the name", () => {
   })
 
   it("does not turn a prefix into the name when the title has no base", () => {
-    const state = {
-      visible: "AUTO · CC · DeepSeek",
-      lastWritten: "AUTO · CC · DeepSeek",
-      base: undefined as string | undefined,
-    }
     const base = resolveBaseTitle({
-      currentTitle: state.visible,
-      lastWrittenTitle: state.lastWritten,
-      storedBase: state.base,
+      currentTitle: "AUTO · CC · DeepSeek",
+      lastWrittenTitle: "AUTO · CC · DeepSeek",
+      storedBase: undefined,
     })
-    // No name to protect, and nothing worth writing. The caller must skip the
-    // write rather than rewrite the title as "AUTO · CC · DeepSeek".
     expect(base).toBeUndefined()
   })
 
@@ -78,24 +70,12 @@ describe("title indicator never destroys the name", () => {
   })
 
   it("stays idempotent when the title already carries a prefix", () => {
-    const first = buildIndicatorTitle({
-      state: "AUTO",
-      provider: "opendesign",
-      modelLabel: "DeepSeek",
-      baseTitle: "My chat",
-    })
-    const second = buildIndicatorTitle({
-      state: "AUTO",
-      provider: "opendesign",
-      modelLabel: "DeepSeek",
-      baseTitle: first,
-    })
+    const first = buildIndicatorTitle({ state: "AUTO", provider: "opendesign", modelLabel: "DeepSeek", baseTitle: "My chat" })
+    const second = buildIndicatorTitle({ state: "AUTO", provider: "opendesign", modelLabel: "DeepSeek", baseTitle: first })
     expect(second).toBe(first)
   })
 
   it("adopts a rename the router did not write, including one that looks like a prefix", () => {
-    // A user could legitimately name a chat "AUTO · something". Because it is not
-    // equal to the last title the router wrote, it is treated as the user's name.
     const base = resolveBaseTitle({
       currentTitle: "AUTO · notes for monday",
       lastWrittenTitle: "AUTO · CC · Model — old name",
@@ -105,17 +85,10 @@ describe("title indicator never destroys the name", () => {
   })
 
   it("restores a name from a title a previous version already damaged", () => {
-    // Recovery path for users upgrading from the broken version: the stored base
-    // is gone, but the separator still survives in the visible title.
-    const state = {
-      visible: "AUTO · CC · Model — Real name",
-      lastWritten: "AUTO · CC · Model — Real name",
-      base: undefined as string | undefined,
-    }
     const base = resolveBaseTitle({
-      currentTitle: state.visible,
-      lastWrittenTitle: state.lastWritten,
-      storedBase: state.base,
+      currentTitle: "AUTO · CC · Model — Real name",
+      lastWrittenTitle: "AUTO · CC · Model — Real name",
+      storedBase: undefined,
     })
     expect(base).toBe("Real name")
   })
@@ -139,9 +112,11 @@ describe("stripTitlePrefix", () => {
   })
 })
 
-describe("defaults", () => {
-  it("ships with the title indicator off", async () => {
+describe("the router no longer renames sessions", () => {
+  it("ships with the title indicator off and the feature removed from settings", async () => {
     const { DEFAULT_SETTINGS } = await import("../src/core/config.js")
-    expect(DEFAULT_SETTINGS.ui.titleIndicator).toBe(false)
+    // Accepts either a removed key or an explicitly off flag: both mean the
+    // router never takes the title.
+    expect((DEFAULT_SETTINGS.ui as { titleIndicator?: boolean }).titleIndicator ?? false).toBe(false)
   })
 })

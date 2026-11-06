@@ -129,13 +129,10 @@ describe("plugin controller integration", () => {
     await controller.dispose()
   })
 
-  it("writes a persistent AUTO/MANUAL title and exposes the indicator state", async () => {
+  it("never renames a session, while the indicator state stays available", async () => {
     const fake = makeCtx(mkdtempSync(join(tmpdir(), "router-ctrl-")))
     const controller = new RouterController({ ctx: fake.ctx, pluginOptions: fake.ctx.options })
     await controller.initialize()
-    // Off by default since the title takeover fix; this test is about the
-    // indicator itself, so it turns it on deliberately.
-    await fake.rpc().setTitleIndicator({ enabled: true })
     await fake.rpc().pin({
       sessionID: "ses_title",
       providerID: "opencode-go",
@@ -143,17 +140,17 @@ describe("plugin controller integration", () => {
       variant: "max",
     })
     await new Promise((resolve) => setTimeout(resolve, 80))
-    expect(fake.titles.get("ses_title")).toMatch(/^MANUAL · Go · DeepSeek V4\.1 Flash/)
+    // The title is the owner's. Pinning a model must not touch it.
+    expect(fake.titles.get("ses_title")).toBeUndefined()
+    expect((await fake.ctx.session.get({ sessionID: "ses_title" })).title).toBe("test")
     expect((await fake.rpc().status({ sessionID: "ses_title" })).indicator.state).toBe("MANUAL")
     await fake.rpc().resumeAuto({ sessionID: "ses_title" })
     await new Promise((resolve) => setTimeout(resolve, 80))
-    expect(fake.titles.get("ses_title")).toMatch(/^AUTO · Go · DeepSeek V4\.1 Flash/)
+    expect(fake.titles.get("ses_title")).toBeUndefined()
     expect((await fake.rpc().status({ sessionID: "ses_title" })).indicator.state).toBe("AUTO")
+    // The legacy cleanup path still works and reports what it cleaned.
     await fake.rpc().setTitleIndicator({ enabled: false })
-    expect(fake.titles.get("ses_title")).toBe("test")
-    await fake.rpc().setTitleIndicator({ enabled: true })
-    await new Promise((resolve) => setTimeout(resolve, 80))
-    expect(fake.titles.get("ses_title")).toMatch(/^AUTO · Go · DeepSeek V4\.1 Flash/)
+    expect(fake.titles.get("ses_title")).toBeUndefined()
     await controller.dispose()
   })
 
@@ -398,17 +395,18 @@ describe("plugin controller integration", () => {
     await controller.dispose()
   })
 
-  it("refreshes the title from the actual current model on resumeAuto", async () => {
+  it("keeps the owner's title on resumeAuto and reports the current model in status", async () => {
     const fake = makeCtx(mkdtempSync(join(tmpdir(), "router-resume-")))
     const session = await fake.ctx.session.get({ sessionID: "ses_resume" })
     session.model = { providerID: "opencode-go", id: "deepseek-v4.1-flash" }
     const controller = new RouterController({ ctx: fake.ctx, pluginOptions: fake.ctx.options })
     await controller.initialize()
-    await fake.rpc().setTitleIndicator({ enabled: true })
     await fake.rpc().resumeAuto({ sessionID: "ses_resume" })
     await new Promise((resolve) => setTimeout(resolve, 25))
     const updated = await fake.ctx.session.get({ sessionID: "ses_resume" })
-    expect(updated.title).toContain("DeepSeek")
+    expect(updated.title).toBe("test")
+    const status = await fake.rpc().status({ sessionID: "ses_resume" })
+    expect(status.indicator.model).toBe("deepseek-v4.1-flash")
     await controller.dispose()
   })
 

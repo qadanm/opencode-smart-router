@@ -167,6 +167,12 @@ export const SmartRouterRpc = Rpc.define({
       required: ["enabled"],
       additionalProperties: false,
     }),
+    setSidebarGroups: method({
+      type: "object",
+      properties: { enabled: { type: "boolean" } },
+      required: ["enabled"],
+      additionalProperties: false,
+    }),
   },
   events: {
     decision: {

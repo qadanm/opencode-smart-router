@@ -686,8 +686,14 @@ export interface SpeedSettings {
 }
 
 export interface UiSettings {
-  /** Prefix the session title with AUTO / MANUAL / PAUSED / DRY RUN and the current model. */
-  readonly titleIndicator: boolean
+  /**
+   * Group the desktop sidebar's sessions under project headings.
+   *
+   * Off by default: it is a nice thing to have, not a thing a router should
+   * impose. The desktop app has no sidebar API, so this works on the app's
+   * markup and turns itself off when that markup changes.
+   */
+  readonly sidebarGroups: boolean
   /** Send a native macOS notification when the provider or model changes. */
   readonly notifications: boolean
   /** Use a shorter, denser indicator title and UI chrome (compact mode). */
@@ -770,6 +776,8 @@ export interface RouterStatus {
   readonly mode: Mode
   readonly runtime: RuntimeMode
   readonly dryRun: boolean
+  /** Whether the desktop sidebar groups sessions under project headings. */
+  readonly sidebarGroups: boolean
   readonly sessionID?: string
   readonly current?: ModelRef
   readonly currentTier?: 1 | 2 | 3

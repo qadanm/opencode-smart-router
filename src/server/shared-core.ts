@@ -21,6 +21,7 @@ export interface RuntimeOverrides {
   excluded?: string[]
   approved?: string[]
   titleIndicator?: boolean
+  sidebarGroups?: boolean
   compactMode?: boolean
   compact?: boolean
 }

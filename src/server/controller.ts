@@ -51,12 +51,10 @@ import { decidePremium, evaluateEligibility } from "../core/policy/eligibility.j
 import { sharedCore, type RuntimeOverrides } from "./shared-core.js"
 import {
   ChangeNotifier,
-  buildIndicatorTitle,
   formatQuotaLines,
   indicatorState,
   providerShort,
   quotaStateLabel,
-  resolveBaseTitle,
   stripTitlePrefix,
   type Indicator,
 } from "../core/ui.js"
@@ -172,7 +170,7 @@ const applyRuntime = (base: RouterSettings, runtime: RuntimeOverrides): RouterSe
   if (runtime.mode) next.mode = runtime.mode
   if (runtime.paused === true) next.enabled = false
   if (typeof runtime.dryRun === "boolean") next.dryRun = runtime.dryRun
-  if (typeof runtime.titleIndicator === "boolean") next.ui.titleIndicator = runtime.titleIndicator
+  if (typeof runtime.sidebarGroups === "boolean") next.ui.sidebarGroups = runtime.sidebarGroups
   if (typeof runtime.compactMode === "boolean") {
     next.ui.compactMode = runtime.compactMode
     next.ui.compact = runtime.compactMode
@@ -937,7 +935,7 @@ export class RouterController {
       state,
       ...(ref ? { provider: providerShort(ref.providerID), model: ref.id } : {}),
       ...(model ? { modelLabel: model.name } : ref ? { modelLabel: ref.id } : {}),
-      ...(session?.indicatorTitle ? { title: session.indicatorTitle } : {}),
+
     }
   }
 
@@ -954,6 +952,19 @@ export class RouterController {
     return next
   }
 
+  /**
+   * The router never renames a session.
+   *
+   * A chat title is the owner's name for the work, and a plugin that rewrites it
+   * to advertise which model it picked trades the owner's memory for the
+   * plugin's status line. Status lives in the panel, the terminal footer and the
+   * decision record instead.
+   *
+   * One exception remains, and it only runs against titles this plugin wrote in
+   * an older version: a single pass that strips the prefix when the session is
+   * next touched, so upgrades heal instead of leaving `AUTO · OD · model`
+   * forever.
+   */
   private async applyTitleNow(sessionID: string) {
     const session = this.ledger.getSession(sessionID)
     if (!session) return
@@ -966,7 +977,7 @@ export class RouterController {
     if (!this.projectMatches(info?.projectID, info?.location?.directory)) return
     const currentTitle = typeof info?.title === "string" ? info.title : undefined
 
-    if (!this.settings.ui.titleIndicator) {
+    {
       /**
        * The indicator is off. If a previous version of this plugin left its
        * prefix on the title, put the name back once, the first time the session
@@ -986,67 +997,27 @@ export class RouterController {
       return
     }
 
-    const modelRef = session.pinnedModel ?? session.manualModel ?? session.lastModel
-    if (!modelRef) return
-
-    // Adopt a name the router did not write. Never fall back to `session.title`:
-    // that value is the router's own previous output, so reading it back is how
-    // the prefix used to become the name permanently.
-    const baseTitle = resolveBaseTitle({
-      currentTitle,
-      lastWrittenTitle: session.indicatorTitle,
-      storedBase: session.baseTitle,
-    })
-    // Nothing worth annotating. Leave the user's title exactly as it is.
-    if (!baseTitle) return
-
-    const model = this.registry.get(modelRef.providerID, modelRef.id)
-    const indicator = this.indicatorFor(sessionID, { ...session, baseTitle })
-    const nextTitle = buildIndicatorTitle({
-      state: indicator.state,
-      provider: modelRef.providerID,
-      modelLabel: model?.name ?? modelRef.id,
-      baseTitle,
-      compact: this.settings.ui.compactMode || this.settings.ui.compact || this.settings.compactMode || this.settings.compact,
-    })
-    if (currentTitle === nextTitle && session.indicatorTitle === nextTitle) return
-    session.baseTitle = baseTitle
-    session.indicatorTitle = nextTitle
-    session.title = nextTitle
-    this.ledger.patchSession(sessionID, {
-      baseTitle,
-      indicatorTitle: nextTitle,
-      title: nextTitle,
-    })
-    try {
-      await this.ctx.session.update({ sessionID, title: nextTitle })
-    } catch (error) {
-      this.settingsWarnings.push(`Could not update the session title indicator: ${safeError(error)}`)
-    }
   }
 
-  private async refreshKnownTitles() {
-    const ids = Object.values(this.ledger.data.sessions)
-      .filter((session) => this.ownsSession(session))
-      .map((session) => session.sessionID)
-    await Promise.allSettled(ids.map((sessionID) => this.queueTitle(sessionID)))
-  }
-
-  private async restoreTitles() {
+  /** Strips prefixes this plugin wrote. Returns how many titles changed. */
+  private async restoreTitles(): Promise<number> {
+    let restored = 0
     for (const session of Object.values(this.ledger.data.sessions)) {
       if (!this.ownsSession(session)) continue
-      const base = session.baseTitle || stripTitlePrefix(session.title)
-      if (!base) continue
+      const visible = session.title ?? session.indicatorTitle
+      const base = session.baseTitle || stripTitlePrefix(visible)
+      // A title that is only a prefix has no name left to restore. Rewriting it
+      // to the prefix again would keep the damage; leave it for the owner.
+      if (!base || base === visible) continue
       try {
         await this.ctx.session.update({ sessionID: session.sessionID, title: base })
-        this.ledger.patchSession(session.sessionID, {
-          title: base,
-          indicatorTitle: undefined,
-        })
+        this.ledger.patchSession(session.sessionID, { title: base, indicatorTitle: undefined })
+        restored += 1
       } catch (error) {
         this.settingsWarnings.push(`Could not restore session title: ${safeError(error)}`)
       }
     }
+    return restored
   }
 
   private async notifyChange(key: string, message: string) {
@@ -1216,6 +1187,7 @@ export class RouterController {
       mode: this.settings.mode,
       runtime,
       dryRun: this.settings.dryRun,
+      sidebarGroups: this.settings.ui.sidebarGroups,
       ...(sessionID ? { sessionID } : {}),
       ...(current ? { current } : {}),
       ...(currentModel ? { currentTier: currentModel.tier } : {}),
@@ -1262,20 +1234,9 @@ export class RouterController {
     const ref = session.lastModel
     const model = ref ? this.registry.get(ref.providerID, ref.id) : undefined
     const label = model?.name ?? ref?.id ?? "current model"
-    const blockedTitle = buildIndicatorTitle({
-      state: "BLOCKED",
-      provider: ref?.providerID,
-      modelLabel: label,
-      baseTitle: session.baseTitle || session.title,
-    })
-    session.indicatorTitle = blockedTitle
-    session.title = blockedTitle
-    this.ledger.patchSession(sessionID, { indicatorTitle: blockedTitle, title: blockedTitle })
-    try {
-      await this.ctx.session.update({ sessionID, title: blockedTitle })
-    } catch {
-      // The decision still carries the reason.
-    }
+    // Blocking a prompt must not rename the owner's chat. The refusal lives in
+    // the decision record, the panel and the notice.
+    this.settingsWarnings.push(`Blocked a prompt: ${reason}`)
     void this.notifyChange(`${sessionID}:blocked:${reason}`, `BLOCKED · ${label} — ${reason}`)
   }
 
@@ -2555,7 +2516,6 @@ export class RouterController {
       setPaused: async (input: any) => {
         this.runtime.paused = Boolean(input.paused)
         this.persistRuntime()
-        void this.refreshKnownTitles()
         void this.notifyChange(
           `global:paused:${Boolean(input.paused)}`,
           input.paused ? "PAUSED · automatic routing is paused" : "AUTO · automatic routing resumed",
@@ -2590,7 +2550,6 @@ export class RouterController {
       setDryRun: async (input: any) => {
         this.runtime.dryRun = Boolean(input.dryRun)
         this.persistRuntime()
-        void this.refreshKnownTitles()
         void this.notifyChange(
           `global:dry-run:${Boolean(input.dryRun)}`,
           input.dryRun ? "DRY RUN · decisions will be explained, not applied" : "AUTO · routing will apply decisions",
@@ -2764,10 +2723,17 @@ export class RouterController {
         return summary
       },
       setTitleIndicator: async (input: any) => {
-        this.runtime.titleIndicator = Boolean(input.enabled)
+        // The router no longer renames sessions. `enabled: true` is accepted for
+        // old callers and ignored; `enabled: false` runs the one-time cleanup of
+        // titles written by earlier versions.
+        if (input?.enabled !== true) await this.restoreTitles()
+        const summary = this.statusFor()
+        void this.emit("status", { summary })
+        return summary
+      },
+      setSidebarGroups: async (input: any) => {
+        this.runtime.sidebarGroups = Boolean(input.enabled)
         this.persistRuntime()
-        if (input.enabled) await this.refreshKnownTitles()
-        else await this.restoreTitles()
         const summary = this.statusFor()
         void this.emit("status", { summary })
         return summary
@@ -2885,7 +2851,6 @@ export class RouterController {
       await command("router-pause", "Pause automatic routing globally", async ({ sessionID }: any) => {
         this.runtime.paused = true
         this.persistRuntime()
-        void this.refreshKnownTitles()
         void this.notifyChange("global:paused:true", "PAUSED · automatic routing is paused")
         await notice(sessionID, "PAUSED · automatic routing is paused.")
       }),
@@ -2895,7 +2860,6 @@ export class RouterController {
       await command("router-resume", "Resume automatic routing globally", async ({ sessionID }: any) => {
         this.runtime.paused = false
         this.persistRuntime()
-        void this.refreshKnownTitles()
         void this.notifyChange("global:paused:false", "AUTO · automatic routing resumed")
         await notice(sessionID, "AUTO · automatic routing resumed.")
       }),
@@ -2922,7 +2886,6 @@ export class RouterController {
         }
         this.runtime.dryRun = value === "on"
         this.persistRuntime()
-        void this.refreshKnownTitles()
         void this.notifyChange(
           `global:dry-run:${value === "on"}`,
           value === "on" ? "DRY RUN · decisions will be explained, not applied" : "AUTO · routing will apply decisions",
@@ -2932,17 +2895,18 @@ export class RouterController {
     )
 
     this.registrations.push(
-      await command("router-title", "Turn the persistent session-title indicator on or off: /router-title on|off", async ({ sessionID, prompt }: any) => {
+      await command("router-title", "Strip router-written prefixes from existing session titles: /router-title off", async ({ sessionID, prompt }: any) => {
         const value = String(prompt?.text ?? "").trim().split(/\s+/).pop()
-        if (value !== "on" && value !== "off") {
-          await notice(sessionID, "Usage: /router-title on|off")
+        if (value === "on") {
+          await notice(sessionID, "The router no longer renames sessions. Titles stay yours; status lives in the panel and the header.")
           return
         }
-        this.runtime.titleIndicator = value === "on"
-        this.persistRuntime()
-        if (value === "on") await this.refreshKnownTitles()
-        else await this.restoreTitles()
-        await notice(sessionID, value === "on" ? "Session-title indicator enabled." : "Session-title indicator disabled; base titles restored.")
+        if (value !== "off") {
+          await notice(sessionID, "Usage: /router-title off (strips prefixes this plugin wrote in older versions)")
+          return
+        }
+        const restored = await this.restoreTitles()
+        await notice(sessionID, `Cleaned ${restored} session title${restored === 1 ? "" : "s"}. Titles written before the separator was lost cannot be recovered.`)
       }),
     )
 

@@ -36,8 +36,10 @@ describe("routing exception policy", () => {
     const status = await fake.rpc().status({ sessionID: "ses_boom" })
     expect(status.lastDecision?.error).toContain("engine exploded")
     expect(fake.switched).toHaveLength(0)
+    // Blocking a prompt must not rename the owner's chat.
     const session = await fake.ctx.session.get({ sessionID: "ses_boom" })
-    expect(session.title).toContain("BLOCKED")
+    expect(session.title).toBe("test")
+    expect((await fake.rpc().status({ sessionID: "ses_boom" })).warnings.join(" ")).toContain("Blocked a prompt")
     await controller.dispose()
   })
 
@@ -62,7 +64,7 @@ describe("routing exception policy", () => {
       fake.hooks.get("prompt")!({ sessionID: "ses_recover", prompt: { text: "Implement a feature in src/app.ts" } }),
     ).rejects.toBeInstanceOf(RouterBlockedError)
     let session = await fake.ctx.session.get({ sessionID: "ses_recover" })
-    expect(session.title).toContain("BLOCKED")
+    expect(session.title).toBe("test")
 
     mockState.fail = false
     await expect(
@@ -70,7 +72,7 @@ describe("routing exception policy", () => {
     ).resolves.toBeUndefined()
     await new Promise((resolve) => setTimeout(resolve, 25))
     session = await fake.ctx.session.get({ sessionID: "ses_recover" })
-    expect(session.title).not.toContain("BLOCKED")
+    expect(session.title).toBe("test")
     await controller.dispose()
   })
 
