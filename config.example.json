@@ -90,9 +90,9 @@
     "slowRouteMultiple": 2.5
   },
   "ui": {
-    "titleIndicator": false,
     "notifications": true,
-    "compactMode": false
+    "compactMode": false,
+    "sidebarGroups": false
   },
   "logging": {
     "storePromptText": false,
