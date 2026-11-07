@@ -714,6 +714,8 @@ const OPENDESIGN_SEED_MODELS: ReadonlyArray<SeedModel> = OPENDESIGN_MODELS.map((
   intelligence: model.intelligence,
   design: model.design,
   designEvidence: model.designEvidence,
+  // Per-kind benchmark evidence passes through with its provenance intact.
+  ...(model.capabilities ? { capabilities: { ...model.capabilities } } : {}),
   tier: model.tier,
   approved: model.approved,
   // Plan models (Sonnet, Sol, Opus, Astra) are premium: they draw from the
