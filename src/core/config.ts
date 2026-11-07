@@ -199,6 +199,11 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value)
 
 const asBoolean = (value: unknown, fallback: boolean, warnings: string[], path: string): boolean => {
+  // Absent and invalid are different. A key that was never written takes the
+  // fallback silently; only a value the user actually provided can be wrong.
+  // Collapsing the two produced dozens of warnings for a config that set one
+  // provider plan, which buried the real problems in the noise.
+  if (value === undefined) return fallback
   if (typeof value === "boolean") return value
   warnings.push(`${path} must be a boolean; using ${fallback}`)
   return fallback
@@ -212,6 +217,7 @@ const asNumber = (
   min: number,
   max: number,
 ): number => {
+  if (value === undefined) return fallback
   if (typeof value !== "number" || !Number.isFinite(value)) {
     warnings.push(`${path} must be a finite number; using ${fallback}`)
     return fallback
@@ -222,6 +228,7 @@ const asNumber = (
 }
 
 const asString = (value: unknown, fallback: string, warnings: string[], path: string): string => {
+  if (value === undefined) return fallback
   if (typeof value === "string" && value.trim().length > 0) return value.trim()
   warnings.push(`${path} must be a non-empty string; using ${fallback}`)
   return fallback
@@ -234,6 +241,7 @@ const asEnum = <T extends string>(
   warnings: string[],
   path: string,
 ): T => {
+  if (value === undefined) return fallback
   if (typeof value === "string" && (values as ReadonlyArray<string>).includes(value)) return value as T
   warnings.push(`${path} must be one of ${values.join(", ")}; using ${fallback}`)
   return fallback
@@ -509,6 +517,7 @@ const validateDefinitions = (value: unknown, warnings: string[]): ModelDefinitio
 }
 
 const validateModels = (value: unknown, base: ModelSettings, warnings: string[]): ModelSettings => {
+  if (value === undefined) return base
   if (!isRecord(value)) {
     warnings.push("models must be an object; using defaults")
     return base

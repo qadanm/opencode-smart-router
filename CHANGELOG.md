@@ -50,6 +50,14 @@ Tier-3 work escalates by itself, paid from the plan-model pool.
   the escalation pool. Before this, a tier-3 task could land on it as a
   premium model that a tier-2 flag itself made eligible.
 
+### Fixed
+
+- A partial settings file no longer produces a warning for every key it leaves
+  out. Absent and invalid are now distinct: a key you did not write takes its
+  default silently, while a key you did write with the wrong type still reports
+  the problem. Before this, a config that only set `providers.opendesign.plan`
+  emitted around fifty warnings and hid the ones that mattered.
+
 ## 0.5.0 — 2026-11-06
 
 The router stops taking things that are not its to take.
