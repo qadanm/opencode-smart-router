@@ -1,7 +1,5 @@
 # Install, verify, and remove
 
-# Install, verify, and remove
-
 ## Install
 
 One command, from a checkout. Requires Node 20.12+, npm and git. No `jq`.
@@ -102,10 +100,43 @@ A safe smoke test:
 2. Send a narrow CSS change with an explicit file path.
 3. The session should switch to an economy model before the request, and the file should change.
 4. Send an ordinary feature request; it should use a standard model at or above the intelligence floor.
-5. Send a redesign with a screenshot; it should require a vision model and record a premium approval suggestion.
-6. Run `/router-approve` and repeat the redesign; a premium model may be selected once.
+5. Send a tier-3 request (architecture, sophisticated redesign); with the 0.6.0 default
+   `premium.mode: "auto"` it escalates to a plan model (Sonnet 5.5 or GPT-6.1 Sol)
+   automatically — no approval step, paid from the plan-model pool.
+6. Run `/router-why` on the escalated prompt; the reason should name auto escalation
+   and the candidate trace should show the flagship row.
 7. Select a model manually in the desktop picker; the next prompt must not be overridden, and `/router-status` should show `manual`.
 8. Run `/router-auto` to resume.
+
+## Automatic flagship escalation (0.6.0)
+
+The default premium mode is `auto`. How it behaves:
+
+- **Tier-1/2 work never touches the plan-model pool.** Routine tasks stay on the
+  ordinary Design Plan models exactly as before.
+- **Tier-3 work escalates by itself.** Architecture, sophisticated redesigns, and
+  other tier-3 classifications route to Claude Sonnet 5.5 or GPT-6.1 Sol without an
+  approval prompt, while the pool has budget.
+- **The pool is the budget.** Auto escalation is funded from the OpenDesign
+  plan-model pool ($120/month on Pro), read from the plan catalog and tracked in a
+  ledger that survives restarts. When the pool is spent, escalation degrades to an
+  approval gate (`/router-approve`) and the router serves the task with the strongest
+  ordinary model — a routing refusal never fails a serviceable task.
+- **Auto requires a resolvable pool.** If `providers.opendesign.plan` does not
+  resolve to a known plan, auto refuses rather than falling back to the legacy
+  premium budget, so spend is always attributable to a pool.
+
+To change the behavior:
+
+```json
+{
+  "premium": { "mode": "auto", "monthlyBudgetUsd": 120 }
+}
+```
+
+`mode` may be `off` (never premium), `ask` (one-shot approval per request),
+`allowed` (session approval unlocks the legacy premium budget), or `auto`.
+A project-level `.opencode/smart-router.json` can tighten this but not loosen it.
 
 ## Configuration
 
