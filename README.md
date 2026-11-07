@@ -369,6 +369,24 @@ there is no `NPM_TOKEN` in this repository and no one-time password to relay.
 If the tag and `package.json` disagree, the workflow refuses to publish: a
 version that reaches the registry can never be replaced.
 
+### One-time npm setup
+
+Trusted publishing is authorized on the npm side, not in this repository. On the
+package settings page for `@qadanm/opencode-smart-router`, add a trusted publisher:
+
+| Field | Value |
+|---|---|
+| Provider | GitHub Actions |
+| Organization or user | `qadanm` |
+| Repository | `opencode-smart-router` |
+| Workflow filename | `release.yml` |
+| Environment | (leave empty) |
+
+Until that entry exists, the release workflow fails at the publish step with a
+`404 Not Found`, which is npm's way of saying the OIDC identity is not on the
+package's trusted list. The check, build, and tag verification still run and
+still gate the release.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
