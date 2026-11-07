@@ -85,6 +85,13 @@ Explain why, not what. The diff already shows what. A commit that fixes a subtle
 bug should say how the bug showed up, because that part is not recoverable from
 the code.
 
+## Releasing
+
+See [README → Releases](README.md#releases). Publishing happens in CI through npm
+trusted publishing, so a maintainer never handles a long-lived token or relays a
+one-time password. Never publish from a working copy: the workflow checks the tag
+against `package.json` and re-runs the full suite first.
+
 ## Out of scope
 
 Likely to be declined:

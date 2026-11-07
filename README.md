@@ -342,6 +342,33 @@ A change that alters routing behavior needs a test that fails without it. See
 [CONTRIBUTING.md](CONTRIBUTING.md) for conventions, and [SECURITY.md](SECURITY.md)
 for reporting a vulnerability.
 
+## Releases
+
+Releases are cut from `main` and published by CI, not from a laptop. The package
+is published with [npm trusted publishing](https://docs.npmjs.com/trusted-publishers),
+which exchanges a GitHub Actions identity for a short-lived publish credential, so
+there is no `NPM_TOKEN` in this repository and no one-time password to relay.
+
+1. Bump `version` in `package.json` and add the matching `CHANGELOG.md` section.
+2. Run `npm run check`, commit, and push to `main`.
+3. Tag and push the tag:
+
+   ```bash
+   git tag -a v0.6.0 -m "0.6.0: <one line>"
+   git push origin main --tags
+   ```
+
+4. `.github/workflows/release.yml` checks the tag against `package.json`,
+   re-runs the full suite, and publishes.
+5. Create the GitHub release from the changelog section:
+
+   ```bash
+   gh release create v0.6.0 --title "0.6.0: <one line>" --notes-file notes.md
+   ```
+
+If the tag and `package.json` disagree, the workflow refuses to publish: a
+version that reaches the registry can never be replaced.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).

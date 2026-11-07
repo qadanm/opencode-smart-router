@@ -1,0 +1,83 @@
+name: Release
+
+# Publishes the package when a version tag is pushed.
+#
+# WHY TRUSTED PUBLISHING. npm requires a one-time password from an authenticator
+# for a token-authenticated publish. That makes a local `npm publish` a manual,
+# human-gated step and leaves release integrity dependent on someone being at
+# the keyboard. npm trusted publishing exchanges a GitHub Actions OIDC identity
+# for a short-lived publish credential instead, so the artifact is built from a
+# tag by CI, not from a laptop.
+#
+# One-time setup, in the npm package settings:
+#   Trusted Publisher -> GitHub Actions
+#   Organization or user: qadanm
+#   Repository:           opencode-smart-router
+#   Workflow filename:    release.yml
+# No NPM_TOKEN secret is stored in this repository.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to publish (for example v0.6.0)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  # Required for the OIDC token npm exchanges for a publish credential.
+  id-token: write
+
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: npm
+          registry-url: "https://registry.npmjs.org"
+
+      # Trusted publishing needs npm 11.5.1 or later for the OIDC exchange.
+      - name: Ensure an OIDC-capable npm
+        run: |
+          npm install -g npm@latest
+          npm --version
+
+      # A published version can never be replaced, so the gate runs in full
+      # before anything leaves the runner.
+      - name: Install
+        run: npm ci
+
+      - name: Check
+        run: npm run check
+
+      - name: Verify the tag matches package.json
+        env:
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          node -e '
+            const pkg = require("./package.json");
+            const tag = process.env.TAG.replace(/^v/, "");
+            if (pkg.version !== tag) {
+              console.error(`package.json is ${pkg.version} but the tag is ${tag}; refusing to publish.`);
+              process.exit(1);
+            }
+            console.log(`publishing ${pkg.name}@${pkg.version}`);
+          '
+
+      - name: Publish
+        run: npm publish
