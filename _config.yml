@@ -1,0 +1,29 @@
+# GitHub Pages configuration.
+
+# WHY THIS EXISTS. The site was built by the default Jekyll pipeline with every
+# Markdown file in the repository as a page. The docs include design records that
+# contain template syntax (for example a JSON payload written as `{{ ... }}`),
+# which Liquid parses as a tag and rejects, so the Pages build failed on every
+# push to main regardless of what the commit changed.
+#
+# The published site is the README rendered by the readme-index plugin, so only
+# the pages that are meant to be public are listed. Everything else is excluded,
+# which both fixes the build and stops internal design records from being
+# published.
+
+title: OpenCode Smart Router
+description: Quota-aware model routing for OpenCode that spends each dollar where it buys the most success.
+theme: jekyll-theme-primer
+
+exclude:
+  - docs/
+  - test/
+  - src/
+  - scripts/
+  - install
+  - node_modules/
+  - assets/screenshots/
+  - "*.mp4"
+  - "*.gif"
+  - gui-experimental.cjs
+  - config.example.json
