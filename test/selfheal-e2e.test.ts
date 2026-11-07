@@ -40,7 +40,11 @@ describe("self-heal end to end", () => {
     await runPrompt()
     const contextEvent: any = {
       sessionID: "ses_e2e",
-      model: (controller as any).ledger.lastDecision.chosen,
+      // Repair is Anthropic-protocol only, so the model is stated rather than
+      // inherited from routing. Which model a prompt happens to select is a
+      // different concern; this test is about what the context hook does to a
+      // strict provider's message list.
+      model: { providerID: "opencode-go", id: "claude-haiku-5-5" },
       messages: [
         { role: "user", content: "start of session" },
         { role: "system", content: "Today's date is 2026-11-05" },

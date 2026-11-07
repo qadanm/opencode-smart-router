@@ -71,3 +71,31 @@ jobs:
       # This is the only check that proves the tests guard anything.
       - name: Mutate
         run: npm run mutate
+
+  host-survival:
+    name: Host survival (real OpenCode)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Install OpenCode
+        run: |
+          curl -fsSL https://opencode.ai/install | bash
+          echo "$HOME/.opencode/bin" >> "$GITHUB_PATH"
+      - name: Build the bundle under test
+        run: npm run build:server
+      # Unit tests call functions. This runs the plugin inside a real OpenCode
+      # process in a throwaway HOME and asserts only that OpenCode still answers
+      # a prompt when the plugin is broken. It is the check whose absence let
+      # 0.6.0 disable the editor while 801 tests passed.
+      #
+      # The model is a loopback stub started by the script itself, so the run
+      # needs no credentials, spends nothing, and cannot be blocked by provider
+      # quota. Nothing about the guarantee depends on a third party being up.
+      - name: Run the isolated suite
+        run: ./scripts/isolated-e2e.sh --timeout 240

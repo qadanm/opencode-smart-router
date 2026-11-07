@@ -200,10 +200,37 @@ panel's last decision records what was rejected and what took over.
 - Never switches a session to a model OpenCode cannot currently resolve.
 - Never fails open on missing quota data when other providers already reported.
 - Never blocks your other work when one provider is at its limit.
+- **Never stops you sending a message.** If the router breaks, it is skipped.
+
+### When the plugin is wrong, the editor still works
+
+Routing is an optimization. OpenCode works without it, and it keeps working when
+the router is wrong. That is a contract, not a best effort:
+
+- an internal defect degrades to "do not route", never to "do not work". The
+  prompt is served with the model already selected and the reason is recorded in
+  warnings;
+- every hook is wrapped so it cannot throw into OpenCode, and routing runs
+  against a deadline so it cannot hold a prompt indefinitely;
+- if setup fails for a location, that location simply has no router;
+- a shared core left behind by a different plugin version is replaced rather
+  than reused.
+
+Blocking a prompt is available, but it is opt-in through
+`routing.failClosed: true`, and it covers plugin faults only. Quota safety is
+separate and always on: a provider configured for probing with no reading is
+refused, because that is a spending decision rather than a response to failure.
+
+This was made a contract the hard way. Version 0.6.0 turned an internal
+`TypeError` into a refusal to send any prompt, in every mode, and the plugin had
+to be removed by hand. The account is in
+[docs/INCIDENT-2026-11-06-prompt-lockout.md](docs/INCIDENT-2026-11-06-prompt-lockout.md),
+and the guarantee is tested against a real OpenCode process by
+`scripts/isolated-e2e.sh`, not only by unit tests.
 
 ## Status
 
-Version 0.6.0. Routing runs on the maintainer's machine in automatic mode;
+Version 0.6.1. Routing runs on the maintainer's machine in automatic mode;
 tier-3 tasks escalate to the plan-model pool automatically within its budget. Current behavior
 and open questions are in
 [docs/PRO-MIGRATION-2026-10-29.md](docs/PRO-MIGRATION-2026-10-29.md).
@@ -299,7 +326,7 @@ npm run verify    # clean room: empty HOME, fresh install, typecheck, tests, bui
 npm run mutate    # prove each safety test fails when its property breaks
 ```
 
-779 tests across 67 files cover classification, eligibility, quota parsing,
+808 tests across 74 files cover classification, eligibility, quota parsing,
 credential discovery and its security properties, ledger accounting, pool
 reconciliation, documented peak pricing, cache-aware routing, premium protection,
 purchased-credit blocking, manual overrides, failure classification, configuration
@@ -354,7 +381,7 @@ there is no `NPM_TOKEN` in this repository and no one-time password to relay.
 3. Tag and push the tag:
 
    ```bash
-   git tag -a v0.6.0 -m "0.6.0: <one line>"
+   git tag -a v0.6.1 -m "0.6.1: <one line>"
    git push origin main --tags
    ```
 
@@ -363,7 +390,7 @@ there is no `NPM_TOKEN` in this repository and no one-time password to relay.
 5. Create the GitHub release from the changelog section:
 
    ```bash
-   gh release create v0.6.0 --title "0.6.0: <one line>" --notes-file notes.md
+   gh release create v0.6.1 --title "0.6.1: <one line>" --notes-file notes.md
    ```
 
 If the tag and `package.json` disagree, the workflow refuses to publish: a

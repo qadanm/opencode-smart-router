@@ -118,7 +118,12 @@ export const DEFAULT_SETTINGS: RouterSettings = {
     largeContextHysteresisPct: 35,
     maxEscalationsPerTask: 2,
     preferSameProvider: true,
-    failClosed: true,
+    // A defect in this plugin must never make the editor unusable. Routing is
+    // an optimization; the host works without it. Failing open means an
+    // internal error leaves the current model in place and lets the prompt
+    // through. An owner who would rather be stopped than pay for an unrouted
+    // request can set this to true explicitly.
+    failClosed: false,
     protectEscalationPool: true,
     longContextFloorTokens: 1_000_000,
     calibrateFloor: false,

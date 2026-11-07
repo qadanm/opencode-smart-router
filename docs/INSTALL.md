@@ -100,7 +100,7 @@ A safe smoke test:
 2. Send a narrow CSS change with an explicit file path.
 3. The session should switch to an economy model before the request, and the file should change.
 4. Send an ordinary feature request; it should use a standard model at or above the intelligence floor.
-5. Send a tier-3 request (architecture, sophisticated redesign); with the 0.6.0 default
+5. Send a tier-3 request (architecture, sophisticated redesign); with the 0.6.x default
    `premium.mode: "auto"` it escalates to a plan model (Sonnet 5.5 or GPT-6.1 Sol)
    automatically — no approval step, paid from the plan-model pool.
 6. Run `/router-why` on the escalated prompt; the reason should name auto escalation
@@ -108,7 +108,7 @@ A safe smoke test:
 7. Select a model manually in the desktop picker; the next prompt must not be overridden, and `/router-status` should show `manual`.
 8. Run `/router-auto` to resume.
 
-## Automatic flagship escalation (0.6.0)
+## Automatic flagship escalation (0.6.0 and later)
 
 The default premium mode is `auto`. How it behaves:
 

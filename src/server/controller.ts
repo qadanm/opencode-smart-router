@@ -83,6 +83,7 @@ import {
   unique,
   usd,
 } from "../core/util.js"
+import { containHook, withDeadline } from "./containment.js"
 
 interface ControllerOptions {
   readonly ctx: any
@@ -381,6 +382,8 @@ export class RouterController {
   }
 
   private modelList: unknown = []
+  /** Shared in-flight discovery; see ensureModelsLoaded(). */
+  private modelLoadPromise?: Promise<void>
 
   async initialize(): Promise<() => void | Promise<void>> {
     // Before anything reads settings: a provider the user never configured
@@ -1060,19 +1063,34 @@ export class RouterController {
   }
 
   private premiumState(session?: SessionState): PremiumState {
-    const spent = this.ledger.premiumSpent()
+    // Reading budget state must never be able to fail a prompt or a status
+    // request. Every value here degrades to a conservative default, and a
+    // ledger that cannot answer is reported as unknown rather than thrown.
+    const read = <T>(fn: () => T, fallback: T): T => {
+      try {
+        const value = fn()
+        return value === undefined || value === null ? fallback : value
+      } catch {
+        return fallback
+      }
+    }
+    const spent = read(() => this.ledger.premiumSpent(), 0)
     const budget = this.settings.premium.monthlyBudgetUsd
     // The plan-model pool is the escalation budget of record. Its cap comes
     // from the resolved plan catalog, not from premium.monthlyBudgetUsd, so
     // the gate tracks the allowance the account actually has.
     const planPoolMonthlyUsd = this.planPoolMonthlyUsd()
+    const planPoolSpent = read(
+      () => (typeof this.ledger.planPoolSpent === "function" ? this.ledger.planPoolSpent() : undefined),
+      undefined as number | undefined,
+    )
     return {
       mode: this.settings.premium.mode,
       monthlyBudgetUsd: budget,
       spentUsd: spent,
       remainingUsd: Math.max(0, budget - spent),
-      ...(planPoolMonthlyUsd !== undefined
-        ? { planPoolRemainingUsd: Math.max(0, planPoolMonthlyUsd - this.ledger.planPoolSpent()) }
+      ...(planPoolMonthlyUsd !== undefined && planPoolSpent !== undefined
+        ? { planPoolRemainingUsd: Math.max(0, planPoolMonthlyUsd - planPoolSpent) }
         : {}),
       oneShotGranted: session?.premiumOneShot === true,
       ...(session?.premiumOneShotAt ? { oneShotGrantedAt: session.premiumOneShotAt } : {}),
@@ -1332,6 +1350,7 @@ export class RouterController {
     void this.ensureContextTokens(sessionID)
 
     if (runtime !== "automatic") {
+      const models = await this.routingModels()
       const task = classifyTask({
         text,
         files: this.classifierFiles(files),
@@ -1343,8 +1362,8 @@ export class RouterController {
         settings,
         mode: settings.mode,
         runtime,
-        models: this.routingModels(),
-        intelligenceFloor: this.routingFloor(this.routingModels()).floor,
+        models: models,
+        intelligenceFloor: this.routingFloor(models).floor,
         current: session.lastModel,
         session,
         quota: this.quotaSnapshots(),
@@ -1359,6 +1378,7 @@ export class RouterController {
       return result.decision
     }
 
+    const models = await this.routingModels()
     const task = classifyTask({
       text,
       files: this.classifierFiles(files),
@@ -1375,8 +1395,8 @@ export class RouterController {
       settings,
       mode: effectiveMode,
       runtime,
-      models: this.routingModels(),
-      intelligenceFloor: this.routingFloor(this.routingModels()).floor,
+      models: models,
+      intelligenceFloor: this.routingFloor(models).floor,
       current: session.lastModel,
       session,
       quota,
@@ -1541,45 +1561,81 @@ export class RouterController {
     return finalDecision
   }
 
+  /**
+   * How long routing may hold a prompt before the prompt is served without it.
+   *
+   * The number is a ceiling on waiting, not a performance target. Routing that
+   * has not finished in this long is not going to improve the request in front
+   * of the owner, and every extra second is a second the editor appears frozen.
+   */
+  private routeBudgetMs(): number {
+    const configured = Number((this.settings as any)?.routing?.routeBudgetMs)
+    if (Number.isFinite(configured) && configured > 0) return Math.min(configured, 60_000)
+    return 10_000
+  }
+
   private async registerHooks() {
     this.registrations.push(
-      await this.ctx.session.hook("prompt", async (event: any) => {
-        const sessionID = event.sessionID
-        if (!sessionID) return
-        try {
-          const probe: any = await this.ctx.session.get({ sessionID })
-          if (!this.projectMatches(probe?.projectID, probe?.location?.directory)) return
-        } catch {
-          // If the location probe fails, the location-scoped hook can still run.
-        }
-        sharedCore.claimSession(sessionID, this.bridgeID)
-        this.remember(this.promptSeen, sessionID)
-        this.pendingHeals.delete(sessionID)
-        if (this.inflight.has(sessionID)) return
-        this.inflight.add(sessionID)
-        try {
-          const decision = await this.routePrompt(sessionID, event.prompt?.text ?? "", event.prompt?.files)
-          if (decision) {
-            // Available to the retry hook, which has no prompt linkage of its
-            // own: a deterministic rejection re-routes this same task.
-            this.promptRoutes.set(sessionID, {
-              messageID: typeof event.messageID === "string" ? event.messageID : undefined,
-              task: decision.task,
-              decision,
-              at: Date.now(),
-            })
+      await this.ctx.session.hook("prompt", containHook(
+        async (event: any) => {
+          const sessionID = event.sessionID
+          if (!sessionID) return
+          try {
+            const probe: any = await this.ctx.session.get({ sessionID })
+            if (!this.projectMatches(probe?.projectID, probe?.location?.directory)) return
+          } catch {
+            // If the location probe fails, the location-scoped hook can still run.
           }
-        } catch (error) {
-          if (error instanceof RouterBlockedError || (error as any)?.name === "RouterBlockedError") throw error
-          await this.handleRoutingFailure(sessionID, event.prompt?.text ?? "", event.prompt?.files, error)
-        } finally {
-          this.inflight.delete(sessionID)
-        }
-      }),
+          sharedCore.claimSession(sessionID, this.bridgeID)
+          this.remember(this.promptSeen, sessionID)
+          this.pendingHeals.delete(sessionID)
+          if (this.inflight.has(sessionID)) return
+          this.inflight.add(sessionID)
+          try {
+            // Routing runs against a deadline. If it cannot finish, the prompt
+            // proceeds unrouted: an optimization that cannot finish is worth
+            // nothing unless it gets out of the way.
+            const decision = await withDeadline({
+              work: () => this.routePrompt(sessionID, event.prompt?.text ?? "", event.prompt?.files),
+              ms: this.routeBudgetMs(),
+              onTimeout: () => {
+                this.settingsWarnings.push(
+                  `Routing did not finish within ${this.routeBudgetMs()}ms; the prompt was served without a route.`,
+                )
+              },
+            })
+            if (decision) {
+              // Available to the retry hook, which has no prompt linkage of its
+              // own: a deterministic rejection re-routes this same task.
+              this.promptRoutes.set(sessionID, {
+                messageID: typeof event.messageID === "string" ? event.messageID : undefined,
+                task: decision.task,
+                decision,
+                at: Date.now(),
+              })
+            }
+          } catch (error) {
+            if (error instanceof RouterBlockedError || (error as any)?.name === "RouterBlockedError") throw error
+            await this.handleRoutingFailure(sessionID, event.prompt?.text ?? "", event.prompt?.files, error)
+          } finally {
+            this.inflight.delete(sessionID)
+          }
+        },
+        {
+          label: "prompt routing",
+          allowBlocked: true,
+          onContained: (message) => {
+            // A defect inside the router is reported, never escalated to a
+            // refused prompt. The host keeps working; the owner can see why
+            // routing was skipped.
+            this.settingsWarnings.push(`Routing skipped: ${message}`)
+          },
+        },
+      )),
     )
 
     this.registrations.push(
-      await this.ctx.session.hook("model.request", (event: any) => {
+      await this.ctx.session.hook("model.request", containHook((event: any) => {
         if (sharedCore.ownerOf(event.sessionID) !== this.bridgeID) return
         // Latch the request kind so the context hook (whose event carries no
         // kind) can tell the agent loop apart from title and compaction runs.
@@ -1602,7 +1658,10 @@ export class RouterController {
         if (this.settings.privacy.requireZdr && event.model?.providerID === "commandcode") {
           event.headers["x-cmd-zdr"] = "1"
         }
-      }),
+      }, {
+        label: "request bookkeeping",
+        onContained: (message) => this.settingsWarnings.push(`Request bookkeeping skipped: ${message}`),
+      })),
     )
 
     // The host emits `model.request` for every model call with the request's
@@ -1635,7 +1694,7 @@ export class RouterController {
     )
 
     this.registrations.push(
-      await this.ctx.session.hook("retry", async (event: any) => {
+      await this.ctx.session.hook("retry", containHook(async (event: any) => {
         if (sharedCore.ownerOf(event.sessionID) !== this.bridgeID) return
         const session = this.ledger.getSession(event.sessionID)
         const assessment = classifyFailure(
@@ -1736,7 +1795,12 @@ export class RouterController {
         } else if (assessment.class === "provider_outage" || assessment.class === "network") {
           if (event.attempt >= 3) event.decision = { retry: false }
         }
-      }),
+      }, {
+        label: "retry handling",
+        // A contained retry failure leaves the host's own policy in place,
+        // which is a working default rather than a blocked turn.
+        onContained: (message) => this.settingsWarnings.push(`Retry handling skipped: ${message}`),
+      })),
     )
   }
 
@@ -1847,13 +1911,14 @@ export class RouterController {
     }
 
     const session = this.sessionState(sessionID)
+    const models = await this.routingModels()
     const result = routeTask({
       task: route.task,
       settings: this.settings,
       mode: session.parentID && this.settings.mode === "premium" ? "balanced" : this.settings.mode,
       runtime: "automatic",
-      models: this.routingModels(),
-      intelligenceFloor: this.routingFloor(this.routingModels()).floor,
+      models: models,
+      intelligenceFloor: this.routingFloor(models).floor,
       current: rejected,
       session,
       quota: this.quotaSnapshots(),
@@ -2027,10 +2092,31 @@ export class RouterController {
   }
 
   private async modelResolvable(providerID: string, modelID: string): Promise<boolean> {
-    // The host is the authority, but it is not always reachable. A MISSING API is not
-    // a "no": it means this host cannot answer the question, so fall back to the
-    // previous behaviour of attempting the switch and surfacing whatever happens.
-    // Only an API that answers and returns nothing is treated as a real refusal.
+    // The host is the authority on which models it can serve, and there are two
+    // ways to ask it. Use both, cheapest and most authoritative first.
+    //
+    // 1. The model list this plugin already fetched. It is the closest thing to
+    //    "what this machine can actually serve", but it is not exhaustive: a
+    //    provider read from a gateway (OpenDesign) is merged in separately, and
+    //    a provider that is not configured yet is absent rather than empty. So
+    //    the refusal is scoped to the case that is genuinely knowable: the host
+    //    lists this provider, and does not list this model. That is the state
+    //    that produced "Model unavailable: opencode-go/claude-haiku-5-5" on a
+    //    fresh install (scripts/isolated-e2e.sh, 2026-11-06).
+    const known = unwrap<any>(this.modelList ?? [])
+    if (Array.isArray(known) && known.length > 0) {
+      const providerIsKnown = known.some((entry: any) => entry?.providerID === providerID)
+      if (providerIsKnown) {
+        const modelIsKnown = known.some(
+          (entry: any) => entry?.providerID === providerID && entry?.id === modelID,
+        )
+        if (!modelIsKnown) return false
+      }
+    }
+    // 2. Ask the host directly. A MISSING API is not a "no": it means this host
+    //    cannot answer the question, so fall back to attempting the switch and
+    //    surfacing whatever happens. Only an API that answers and returns
+    //    nothing is treated as a real refusal.
     const get = this.ctx?.model?.get
     if (typeof get !== "function") return true
     try {
@@ -2048,10 +2134,59 @@ export class RouterController {
    * engine applies its own allow-list on top, so this is a convenience rather
    * than the security boundary; the boundary is in `routeTask` and stays there
    * even if a future caller passes the wrong list.
+   *
+   * MODELS THE HOST CANNOT SERVE ARE NOT CANDIDATES.
+   *
+   * The seed catalog describes providers in general; it does not know which of
+   * them are configured on this machine. Offering the whole catalog meant the
+   * router could choose a model OpenCode had never heard of and switch the
+   * session onto it, after which the next step died with "Model unavailable".
+   * Verified on a fresh install in scripts/isolated-e2e.sh (2026-11-06): the
+   * host exposed only its own default model, and routing reached for
+   * `opencode-go/claude-haiku-5-5`.
+   *
+   * The live list is authoritative once it has been read: it is OpenCode's own
+   * catalog plus the OpenDesign gateway's entitled models. Until it has been
+   * read it is empty, and an empty list must not filter anything out, or the
+   * router would have no candidates during startup.
    */
-  private routingModels() {
+  private async routingModels(): Promise<ModelRecord[]> {
     if (this.settings.offline?.enabled) return this.registry.modelsForOffline()
-    return this.registry.approved()
+    const approved = this.registry.approved()
+    // WAIT FOR THE HOST'S MODEL LIST ON THE FIRST ROUTING DECISION.
+    //
+    // Discovery starts in the background during initialize(), so the first
+    // prompt after startup used to route against an empty list -- the exact
+    // window in which the router could pick a seed model this machine cannot
+    // serve. Awaiting it is bounded by the routing deadline, and a discovery
+    // that fails leaves the list empty, which falls back to the old behaviour.
+    await this.ensureModelsLoaded()
+    const live = unwrap<any>(this.modelList ?? [])
+    if (!Array.isArray(live) || live.length === 0) return approved
+    const servable = new Set(live.map((entry: any) => modelKey(entry?.providerID ?? "", entry?.id ?? "")))
+    // No fallback to the unfiltered list. Returning the full catalog when the
+    // intersection is empty is how an unservable model gets chosen anyway: on a
+    // machine whose providers do not match the seed catalog, filtering produced
+    // an empty list, the fallback reinstated every seed model, and the router
+    // switched onto `opencode-go/claude-haiku-5-5` -- a model the host had never
+    // heard of. Verified in scripts/isolated-e2e.sh on 2026-11-06.
+    //
+    // An empty list is the correct answer there. It means "this plugin has
+    // nothing it may usefully route to on this machine", and the router then
+    // leaves the session alone, which is what the host would have done had the
+    // plugin not been installed.
+    return approved.filter((model) => servable.has(model.key))
+  }
+
+  /** One in-flight model discovery shared by every caller. */
+  private async ensureModelsLoaded(): Promise<void> {
+    if (unwrap<any>(this.modelList ?? []).length > 0) return
+    if (!this.modelLoadPromise) {
+      this.modelLoadPromise = this.loadModels().finally(() => {
+        this.modelLoadPromise = undefined
+      })
+    }
+    await this.modelLoadPromise
   }
 
   /**

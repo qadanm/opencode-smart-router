@@ -641,7 +641,20 @@ export interface RoutingSettings {
   readonly largeContextHysteresisPct: number
   readonly maxEscalationsPerTask: number
   readonly preferSameProvider: boolean
-  /** Reject a prompt when the current model is unqualified and no eligible route exists. */
+  /**
+   * Block a prompt when this plugin cannot produce a routing decision.
+   *
+   * Default false, and that default is the point: routing is an optimization,
+   * and a defect inside the router must degrade to "do not route", never to
+   * "do not work". An internal error leaves the current model in place and lets
+   * the prompt through.
+   *
+   * This does NOT govern quota safety. A provider that is configured to be
+   * probed but has no reading is always refused, because that is a spending
+   * decision about a provider the router cannot see, not a response to its own
+   * failure. Set this true only if you would rather be stopped than pay for an
+   * unrouted request.
+   */
   readonly failClosed: boolean
   /**
    * Refuse to route a task to a model funded from a pool reserved for

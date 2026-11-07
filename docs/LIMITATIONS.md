@@ -61,9 +61,26 @@ It is queried with OpenCode's existing OAuth access token from the `opencode` co
 
 The V2 prompt admission hook can mutate a prompt but exposes no typed rejection operation. The router blocks admission by throwing `RouterBlockedError` from the prompt hook. On the installed 2.1.4 server this was verified to reject the prompt with HTTP 500 and no provider request; the session title changes to `BLOCKED` and the reason is recorded in the decision.
 
-This is safe but not polished: the HTTP error is generic, so the title and notification are the user-facing explanation. `routing.failClosed` defaults to true. Manual selections and paused routing are outside the strict block.
+This is safe but not polished: the HTTP error is generic, so the title and notification are the user-facing explanation.
 
-A routing exception must also block. The earlier catch-and-continue path was a fail-open defect and is being removed.
+### What may and may not block a prompt
+
+Blocking is **opt-in**. `routing.failClosed` defaults to `false`, and the default is the contract, not a tuning knob.
+
+A defect in this plugin degrades to "do not route", never to "do not work". When the router cannot produce a decision because something inside it failed, the prompt is served with the model already selected, which is what would have happened if the plugin were not installed. The reason is recorded in warnings and in the decision record, so the failure is visible without being fatal.
+
+`routing.failClosed: true` is available for an owner who has decided they would rather be stopped than pay for an unrouted request. It applies to plugin faults only. It does **not** govern quota safety: a provider configured for probing but with no reading is always refused, because that is a spending decision about a provider the router cannot see, not a response to its own failure.
+
+Every hook is wrapped in `containHook()` and routing runs against a deadline. A hook cannot throw to the host and cannot hold a prompt indefinitely; if routing has not finished within the budget (10 seconds by default), the prompt proceeds unrouted. The reasoning is in [INCIDENT-2026-11-06-prompt-lockout.md](INCIDENT-2026-11-06-prompt-lockout.md).
+
+## 4a. OpenCode does not contain a plugin hook
+
+Verified against a real OpenCode 2.2.5 process on 2026-11-06:
+
+- a plugin hook that **throws** fails the prompt with HTTP 500;
+- a plugin hook that **never settles** blocks until the caller gives up.
+
+OpenCode has no timeout and no catch of its own at this boundary, so a plugin cannot rely on the host to survive it. Every guarantee therefore has to come from the plugin, which is what `src/server/containment.ts` is for. `scripts/isolated-e2e.sh` asserts both limitations so the reason for that module stays visible.
 
 ## 5. Manual CLI selection at session creation
 

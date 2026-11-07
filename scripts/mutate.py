@@ -472,9 +472,59 @@ MUTATIONS = [
     Mutation(
         "a probe-enabled provider with no reading yet is assumed to have room",
         "src/core/policy/eligibility.ts",
-        "    if (expectedProbe && quotaIsKnown && settings.routing?.failClosed !== false) {",
+        "    if (expectedProbe && quotaIsKnown) {",
         "    if (false) {",
         "test/quota-fail-closed.test.ts",
+    ),
+    # ------------------------------------------- host survival contract
+    Mutation(
+        "an internal defect blocks the prompt again (the 0.6.0 default)",
+        "src/core/config.ts",
+        "    failClosed: false,",
+        "    failClosed: true,",
+        "test/fail-open-contract.test.ts",
+    ),
+    Mutation(
+        "an inherited shared core is adopted regardless of its version",
+        "src/server/shared-core.ts",
+        "  existing && existing.apiVersion === SHARED_CORE_API",
+        "  existing",
+        "test/shared-core-adoption.test.ts",
+    ),
+    Mutation(
+        "a hook may throw into the host",
+        "src/server/containment.ts",
+        "      if (options.allowBlocked && isBlocked(error)) throw error\n      report(`${options.label}: ${describe(error)}`)",
+        "      throw error",
+        "test/containment.test.ts",
+    ),
+    Mutation(
+        "a hook may hang on the host indefinitely",
+        "src/server/containment.ts",
+        "  try {\n    return (await Promise.race([work, deadline])) as T | undefined",
+        "  try {\n    return (await work) as T | undefined",
+        "test/containment.test.ts",
+    ),
+    Mutation(
+        "candidates include models the host cannot serve",
+        "src/server/controller.ts",
+        "    return approved.filter((model) => servable.has(model.key))",
+        "    return approved",
+        "test/routing-servable-models.test.ts",
+    ),
+    Mutation(
+        "an empty candidate list falls back to the unfiltered catalog",
+        "src/server/controller.ts",
+        "    return approved.filter((model) => servable.has(model.key))",
+        "    const filtered = approved.filter((model) => servable.has(model.key))\n    return filtered.length > 0 ? filtered : approved",
+        "test/routing-servable-models.test.ts",
+    ),
+    Mutation(
+        "a failed setup installs a blocking prompt hook",
+        "src/index.ts",
+        "      sharedCore.recordError(`setup ${ctx.location?.directory ?? \"\"}: ${describe(error)}`)\n      await controller.dispose().catch(() => undefined)\n      return () => undefined",
+        "      sharedCore.recordError(`setup: ${describe(error)}`)\n      await controller.dispose().catch(() => undefined)\n      await ctx.session.hook(\"prompt\", async () => { throw new Error(\"setup failed\") })\n      return () => undefined",
+        "test/setup-failure-never-blocks.test.ts",
     ),
 ]
 

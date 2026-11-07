@@ -452,11 +452,15 @@ describe("plugin controller integration", () => {
     const cleanup = await entry.setup(fake.ctx)
     expect(typeof cleanup).toBe("function")
     expect(sharedCore.diagnostics().errors.some((error) => error.includes("setup"))).toBe(true)
+    // A location whose setup failed has NO router, not a locked door. The host
+    // must behave as if the plugin were not installed; see
+    // setup-failure-never-blocks.test.ts for the contract.
     const fallback = fake.hooks.get("prompt")
-    expect(typeof fallback).toBe("function")
-    await expect(fallback!({ sessionID: "ses_setup_failed", prompt: { text: "Implement a feature" } })).rejects.toBeInstanceOf(
-      RouterBlockedError,
-    )
+    if (fallback) {
+      await expect(
+        fallback({ sessionID: "ses_setup_failed", prompt: { text: "Implement a feature" } }),
+      ).resolves.toBeUndefined()
+    }
     await cleanup?.()
   })
 })

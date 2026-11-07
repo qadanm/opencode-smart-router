@@ -64,6 +64,13 @@ export interface InitInput {
 }
 
 const KEY = Symbol.for("opencode-smart-router.shared-core.v1")
+/**
+ * The API surface a bridge depends on. Bump this when the shape of SharedCore
+ * changes incompatibly: a core with a different stamp is refused rather than
+ * adopted, so a new bundle never inherits an older version's object.
+ * 2 = plan-model pool ledger.
+ */
+const SHARED_CORE_API = 2
 const BRIDGE_GRACE_MS = 10_000
 const MODEL_TTL_MS = 5 * 60_000
 const UNOWNED_TTL_MS = 30_000
@@ -81,6 +88,12 @@ class SharedCore {
   readonly coreID = Math.random().toString(36).slice(2, 10)
   readonly pid = process.pid
   readonly createdAt = Date.now()
+  /**
+   * Stamped so a later plugin version can tell whether the object it found in
+   * globalThis was built by a compatible release. A plain object without this
+   * field predates the stamp and must not be adopted.
+   */
+  readonly apiVersion = SHARED_CORE_API
   ledger = new LedgerStore()
   runtime: RuntimeOverrides = {}
   quota?: QuotaService
@@ -130,6 +143,11 @@ class SharedCore {
   async init(input: InitInput): Promise<void> {
     this.setups += 1
     if (this.disposing) await this.disposing
+    // The ledger this core holds must answer the API this bundle was built
+    // against. `resetForTests` and a version skew can both leave a ledger that
+    // predates a method; replacing it here means the rest of the code can call
+    // what it imports without defending every call site.
+    if (!(this.ledger instanceof LedgerStore)) this.ledger = new LedgerStore()
     if (this.ready && this.ownerCtx && this.started) return this.ready
     // Several locations can initialize in the same tick when a server restores
     // its session list. Share one load; a second load would replace the ledger
@@ -666,6 +684,18 @@ class SharedCore {
   }
 }
 
+/**
+ * Adopt the process-wide core only when this bundle built it. A core left by a
+ * different version is a different class with different methods; adopting it
+ * produced `this.ledger.planPoolSpent is not a function` on every prompt in
+ * 0.6.0. Replacing it is safe because each bridge re-reads persisted state in
+ * `init()`, and it is the only choice that keeps the process working.
+ */
+const existing = (globalThis as any)[KEY] as SharedCore | undefined
 export const sharedCore: SharedCore =
-  ((globalThis as any)[KEY] as SharedCore | undefined) ??
-  (((globalThis as any)[KEY] = new SharedCore()) as SharedCore)
+  existing && existing.apiVersion === SHARED_CORE_API
+    ? existing
+    : (((globalThis as any)[KEY] = new SharedCore()) as SharedCore)
+
+/** True when this process already held a core built by another version. */
+export const inheritedForeignCore = existing !== undefined && existing !== sharedCore

@@ -26,9 +26,21 @@ trap cleanup EXIT
 echo "source:     $ROOT"
 echo "clean room: $CLEAN"
 
-# Export exactly what is committed. Nothing untracked or ignored can leak in,
-# so a passing run cannot depend on a local build artifact.
+# Export what is committed, then overlay the working tree.
+#
+# Exporting HEAD alone was a trap: with uncommitted work in progress it verified
+# the PREVIOUS commit and reported a pass that said nothing about the changes
+# being made. That is exactly the shape of green result this script exists to
+# prevent, so the overlay is explicit and the run states what it covered.
 git -C "$ROOT" archive HEAD | tar -x -C "$CLEAN"
+DIRTY="$(git -C "$ROOT" status --porcelain | wc -l | tr -d ' ')"
+if [ "$DIRTY" != "0" ]; then
+  echo "worktree:   $DIRTY uncommitted path(s), overlaid onto HEAD"
+  # Copy tracked modifications and new source files. Build outputs stay out, so
+  # the clean room still has to build them from source.
+  rsync -a --exclude '.git' --exclude 'node_modules' --exclude 'dist' \
+        --exclude 'coverage' "$ROOT"/ "$CLEAN"/
+fi
 
 if [ -e "$CLEAN/node_modules" ] || [ -e "$CLEAN/dist" ]; then
   echo "FAIL: clean room contains build artifacts; the export is not pristine" >&2

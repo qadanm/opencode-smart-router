@@ -174,7 +174,12 @@ const providerLimitReached = (
     // would break legitimate fallbacks to providers with no quota model at all.
     const providerSettings = settings.providers[providerID]
     const expectedProbe = providerSettings?.enabled === true && providerSettings?.probeUsage === true
-    if (expectedProbe && quotaIsKnown && settings.routing?.failClosed !== false) {
+    // Unconditional, and deliberately not tied to routing.failClosed. That
+    // setting governs what happens when THIS PLUGIN breaks; this check governs
+    // whether it is safe to spend on a provider it cannot see. An owner asking
+    // the router to keep working through its own faults is not asking it to
+    // route into a provider that may be full.
+    if (expectedProbe && quotaIsKnown) {
       return "Provider quota has not been probed yet; refusing rather than assuming it has room"
     }
     return undefined

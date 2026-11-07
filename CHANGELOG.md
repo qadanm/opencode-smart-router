@@ -10,6 +10,77 @@ Notable changes to OpenCode Smart Router. Dates are the day the change landed on
 - **Launch kit** (`docs/LAUNCH-KIT.md`): paste-ready copy for Discord, Hacker
   News, X, and the opencode.cafe submission, plus the demo film assets.
 
+## 0.6.1 — 2026-11-06
+
+A defect in the router can no longer stop the editor.
+
+Version 0.6.0 could refuse every prompt, in every mode, until the plugin was
+removed by hand. Two defects compounded to cause it. This release fixes both,
+and adds the missing test layer that would have caught them. The full account is
+in [docs/INCIDENT-2026-11-06-prompt-lockout.md](docs/INCIDENT-2026-11-06-prompt-lockout.md).
+
+### Fixed
+
+- **An inherited shared core is no longer adopted.** The process-wide core in
+  `globalThis` is stamped with `SHARED_CORE_API`; a core from a different
+  version is replaced rather than reused. A new bundle could previously inherit
+  a core built by an older release, whose ledger had no `planPoolSpent()`, and
+  every prompt then threw. `init()` also repairs a ledger that is not a
+  `LedgerStore` instance.
+- **`routing.failClosed` defaults to `false`.** Blocking is now opt-in and means
+  one thing: what to do when this plugin cannot produce a decision. The old
+  default escalated an internal `TypeError` into a refusal to serve the prompt,
+  including in manual mode. An internal defect now degrades to "do not route",
+  which is what would have happened with the plugin uninstalled.
+- **Quota safety is a separate, unconditional gate.** A provider configured for
+  probing but with no reading is still refused, regardless of `failClosed`,
+  because that is a spending decision rather than a response to plugin failure.
+- **A failed setup installs no prompt hook.** The entry point used to leave a
+  "minimal fail-closed hook" behind when `initialize()` threw, turning a failed
+  setup into an editor that refused every message. A location whose setup failed
+  now has no router.
+- **Hooks cannot throw or hang at the host boundary.** OpenCode does not catch a
+  plugin hook that throws and does not time out one that never settles; both
+  were verified against a real OpenCode 2.2.5 process. Every hook is wrapped in
+  `containHook()`, and routing runs against a 10 second deadline
+  (`withDeadline()`), after which the prompt proceeds unrouted.
+- **Routing only considers models the host can serve.** The router offered the
+  whole seed catalog as candidates. On a fresh install it switched a session to
+  `opencode-go/claude-haiku-5-5`, which that machine did not have, and the next
+  step failed with "Model unavailable". Candidates are now filtered to the
+  host's own model list, and an empty result means no route rather than an
+  unfiltered fallback.
+- **Model discovery is awaited on the first routing decision.** Discovery starts
+  in the background, so the first prompt after startup could route against an
+  empty list, which is the window in which an unservable model was reachable.
+
+### Added
+
+- `scripts/isolated-e2e.sh`: runs a real OpenCode in a temporary HOME with its
+  own config, data, and cache, installs a deliberately broken plugin, and
+  asserts only that OpenCode still answers a prompt. It refuses to run if any
+  path escapes the sandbox. Seven scenarios pass; two are recorded as host
+  limitations because they demonstrate that OpenCode has no defense at that
+  boundary. It runs against a loopback model stub that it starts itself, so it
+  needs no credentials and cannot be blocked by provider quota. A CI job runs
+  it on every push.
+- Regression suites: `test/shared-core-skew.test.ts` and
+  `test/shared-core-adoption.test.ts` (a stale core must not be adopted or break
+  routing), `test/fail-open-contract.test.ts` (an internal defect must not block
+  a prompt), `test/containment.test.ts` (hooks cannot throw or hang),
+  `test/setup-failure-never-blocks.test.ts` (a failed setup leaves no router),
+  `test/routing-servable-models.test.ts` (only servable models are candidates).
+- Six new entries in the mutation harness, one per corrected property.
+
+### Changed
+
+- `config.example.json` ships `failClosed: false`. Copying the example used to
+  inherit the old blocking default.
+- `scripts/cleanroom-verify.sh` now overlays the working tree onto `HEAD` and
+  reports how many uncommitted paths it covered. Before this, a run with work in
+  progress verified the previous commit and reported a pass that said nothing
+  about the changes being made.
+
 ## 0.6.0 — 2026-11-06
 
 Tier-3 work escalates by itself, paid from the plan-model pool.

@@ -20,7 +20,14 @@ import { RouterBlockedError, RouterController } from "../src/server/controller.j
 import { sharedCore } from "../src/server/shared-core.js"
 import { makeCtx } from "./helpers/ctx.js"
 
-describe("routing exception policy", () => {
+/**
+ * Blocking is opt-in.
+ *
+ * These tests describe what happens when an owner sets routing.failClosed to
+ * true. The default is false, because a defect in this plugin must never make
+ * the editor unusable; see fail-open-contract.test.ts for that contract.
+ */
+describe("routing exception policy when blocking is explicitly opted in", () => {
   beforeEach(() => {
     mockState.fail = true
     sharedCore.resetForTests()
@@ -28,6 +35,7 @@ describe("routing exception policy", () => {
 
   it("blocks admission when the routing engine throws", async () => {
     const fake = makeCtx(mkdtempSync(join(tmpdir(), "router-blocked-")))
+    fake.ctx.options = { ...fake.ctx.options, routing: { failClosed: true } }
     const controller = new RouterController({ ctx: fake.ctx, pluginOptions: fake.ctx.options })
     await controller.initialize()
     await expect(
@@ -45,6 +53,7 @@ describe("routing exception policy", () => {
 
   it("records the actual runtime on a failed decision", async () => {
     const fake = makeCtx(mkdtempSync(join(tmpdir(), "router-paused-")))
+    fake.ctx.options = { ...fake.ctx.options, routing: { failClosed: true } }
     const controller = new RouterController({ ctx: fake.ctx, pluginOptions: fake.ctx.options })
     await controller.initialize()
     await fake.rpc().setPaused({ paused: true })
@@ -58,6 +67,7 @@ describe("routing exception policy", () => {
 
   it("clears BLOCKED after a successful routed prompt", async () => {
     const fake = makeCtx(mkdtempSync(join(tmpdir(), "router-clear-blocked-")))
+    fake.ctx.options = { ...fake.ctx.options, routing: { failClosed: true } }
     const controller = new RouterController({ ctx: fake.ctx, pluginOptions: fake.ctx.options })
     await controller.initialize()
     await expect(
@@ -76,7 +86,7 @@ describe("routing exception policy", () => {
     await controller.dispose()
   })
 
-  it("records the failure and continues when failClosed is disabled", async () => {
+  it("records the failure and continues, which is the default", async () => {
     const fake = makeCtx(mkdtempSync(join(tmpdir(), "router-open-")))
     fake.ctx.options = { ...fake.ctx.options, routing: { failClosed: false } }
     const controller = new RouterController({ ctx: fake.ctx, pluginOptions: fake.ctx.options })

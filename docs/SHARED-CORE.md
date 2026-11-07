@@ -45,18 +45,60 @@ Session and step events are process-global in this SDK. A session is claimed by 
 
 The prompt hook checks `projectID` before claiming a session. Title writes are filtered by project. Commands and RPC remain location-scoped, so each project exposes its own 16 router commands.
 
-## Fail-closed policy
+## Failure policy
 
-`routing.failClosed` defaults to `true`. When no eligible route exists and the current model is unqualified, the router:
+`routing.failClosed` defaults to **`false`**.
+
+A defect in this plugin degrades to "do not route", never to "do not work". When
+the router cannot produce a decision because something inside it failed, the
+prompt is served with the model already selected, which is what would have
+happened had the plugin not been installed. The reason is recorded in warnings
+and in the decision record.
+
+Blocking is available as an explicit opt-in. With `routing.failClosed: true`,
+an unexpected routing failure:
 
 1. writes a `BLOCKED` session title;
 2. sends a nonintrusive notification where supported;
 3. records a blocked decision with the reason;
 4. throws `RouterBlockedError` from the prompt hook.
 
-The installed server was probed with a throwing prompt hook: the prompt returned HTTP 500 and was not admitted; the session had no model and no request was sent. OpenCode does not expose a typed rejection API. The HTTP error is generic, so the title and notification are the user-facing explanation. This is a documented limitation, not a silent execution path. Manual selections and paused routing are outside the strict block.
+OpenCode exposes no typed rejection API, so the block travels as an exception.
+The installed server was probed with a throwing prompt hook: the prompt returned
+HTTP 500 and was not admitted. The HTTP error is generic, so the title and
+notification are the user-facing explanation.
 
-Every unexpected routing exception is now converted into a blocked decision, a `BLOCKED` title, and a `RouterBlockedError` before admission. A malformed model definition or an engine bug can no longer fall through to an unqualified model. The opt-out is explicit: `routing.failClosed: false`.
+Version 0.6.0 defaulted this to `true` and treated every internal exception as a
+blocking condition. That turned a missing ledger method into a total refusal to
+send any prompt, including in manual mode, and the owner had to remove the
+plugin by hand. The reasoning is in
+[INCIDENT-2026-11-06-prompt-lockout.md](INCIDENT-2026-11-06-prompt-lockout.md).
+
+`failClosed` does not govern quota safety. The rule "a provider configured for
+probing but with no reading is refused" is unconditional, because it is a
+spending decision about a provider the router cannot see.
+
+## Containment at the host boundary
+
+OpenCode does not catch a plugin hook that throws and does not time out a hook
+that never settles. Both were verified against a real OpenCode 2.2.5 process on
+2026-11-06 and are asserted by `scripts/isolated-e2e.sh`. The guarantee has to
+come from this side of the boundary, so `src/server/containment.ts` provides:
+
+- `containHook()`, which makes a hook's failure a recorded warning rather than a
+  failed request. A deliberate `RouterBlockedError` passes through only when the
+  caller opts in.
+- `withDeadline()`, which bounds routing. If routing has not finished within the
+  budget (10 seconds by default), the prompt proceeds unrouted and the timeout is
+  reported.
+
+## Shared core versioning
+
+The process-wide core is stamped with `SHARED_CORE_API`. A bundle adopts a core
+from `globalThis` only when the stamp matches. A core left by a different
+version is a different class with a different method set, and adopting it is how
+0.6.0 produced `this.ledger.planPoolSpent is not a function` on every prompt.
+`init()` additionally replaces a ledger that is not a `LedgerStore` instance.
 
 ## Quota and persistence
 

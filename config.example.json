@@ -59,7 +59,7 @@
     "largeContextHysteresisPct": 35,
     "maxEscalationsPerTask": 2,
     "preferSameProvider": true,
-    "failClosed": true,
+    "failClosed": false,
     "protectEscalationPool": true,
     "longContextFloorTokens": 1000000
   },
