@@ -283,7 +283,7 @@ export interface ProviderQuotaSnapshot {
 }
 
 export interface PremiumState {
-  readonly mode: "off" | "ask" | "allowed"
+  readonly mode: "off" | "ask" | "allowed" | "auto"
   readonly monthlyBudgetUsd: number
   readonly spentUsd: number
   readonly remainingUsd: number
@@ -597,7 +597,7 @@ export interface PrivacySettings {
 }
 
 export interface PremiumSettings {
-  readonly mode: "off" | "ask" | "allowed"
+  readonly mode: "off" | "ask" | "allowed" | "auto"
   readonly monthlyBudgetUsd: number
   readonly oneShotApproval: boolean
 }

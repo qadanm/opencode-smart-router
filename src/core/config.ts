@@ -105,8 +105,8 @@ export const DEFAULT_SETTINGS: RouterSettings = {
     requireZdr: false,
   },
   premium: {
-    mode: "ask",
-    monthlyBudgetUsd: 0,
+    mode: "auto",
+    monthlyBudgetUsd: 120,
     oneShotApproval: true,
   },
   routing: {
@@ -567,7 +567,7 @@ export const validateSettings = (input: unknown, base: RouterSettings = DEFAULT_
 
   const premiumInput = isRecord(input.premium) ? input.premium : {}
   const premium: PremiumSettings = {
-    mode: asEnum(premiumInput.mode, ["off", "ask", "allowed"] as const, base.premium.mode, warnings, "premium.mode"),
+    mode: asEnum(premiumInput.mode, ["off", "ask", "allowed", "auto"] as const, base.premium.mode, warnings, "premium.mode"),
     monthlyBudgetUsd: asNumber(
       premiumInput.monthlyBudgetUsd,
       base.premium.monthlyBudgetUsd,
@@ -940,7 +940,9 @@ export const applyProjectGuardrails = (
           ? "off"
           : globalSettings.premium.mode === "ask" || candidate.premium.mode === "ask"
             ? "ask"
-            : "allowed",
+            : globalSettings.premium.mode === "auto" && candidate.premium.mode === "auto"
+              ? "auto"
+              : "allowed",
       monthlyBudgetUsd: Math.min(globalSettings.premium.monthlyBudgetUsd, candidate.premium.monthlyBudgetUsd),
     },
     providers: Object.fromEntries(
@@ -962,7 +964,10 @@ export const applyProjectGuardrails = (
   if (candidate.privacy.allowTrainingModels && !globalSettings.privacy.allowTrainingModels) {
     warnings.push("Project config tried to enable training models; global privacy setting kept it disabled")
   }
-  if (candidate.premium.mode === "allowed" && globalSettings.premium.mode !== "allowed") {
+  if (
+    (candidate.premium.mode === "allowed" || candidate.premium.mode === "auto") &&
+    globalSettings.premium.mode !== candidate.premium.mode
+  ) {
     warnings.push("Project config tried to enable automatic premium routing; global setting kept it restricted")
   }
   return tightened

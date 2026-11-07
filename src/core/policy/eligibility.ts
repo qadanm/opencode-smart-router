@@ -41,6 +41,26 @@ export const decidePremium = (input: {
   if (mode === "efficiency") {
     return { allowed: false, requiresApproval: false, reason: "Maximum Efficiency locks premium models unless you select one manually." }
   }
+/**
+ * Standing escalation: mode "auto" is the owner's pre-granted approval for
+ * tier-3 work, funded from the plan-model pool while it lasts. Exhaustion
+ * degrades to an approval gate, never a hard block, because a routing refusal
+ * cannot put credits back.
+ */
+  if (premium.mode === "auto") {
+    if (premium.remainingUsd > 0) {
+      return {
+        allowed: true,
+        requiresApproval: false,
+        reason: "Auto escalation: the plan-model pool has remaining budget for premium-tier work.",
+      }
+    }
+    return {
+      allowed: false,
+      requiresApproval: true,
+      reason: "Auto escalation is out of plan-model budget; approval is required for this request.",
+    }
+  }
   if (session?.premiumOneShot && settings.premium.oneShotApproval) {
     return { allowed: true, requiresApproval: false, reason: "A one-shot premium approval is active for this session." }
   }
