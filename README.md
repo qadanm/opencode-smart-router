@@ -9,6 +9,7 @@
 <p>
   <a href="https://www.npmjs.com/package/@qadanm/opencode-smart-router/v/0.4.0"><img src="https://img.shields.io/npm/v/%40qadanm%2Fopencode-smart-router?label=npm&color=cb3837&logo=npm&logoColor=white" alt="npm version"></a>
   <a href="https://www.npmjs.com/package/@qadanm/opencode-smart-router"><img src="https://img.shields.io/npm/dm/%40qadanm%2Fopencode-smart-router?label=installs&color=cb3837&logo=npm&logoColor=white" alt="npm monthly installs"></a>
+  <img src="https://img.shields.io/badge/status-beta-fb8c00.svg" alt="Status: beta">
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
   <img src="https://img.shields.io/badge/OpenCode-2.x-000000.svg" alt="OpenCode 2.x">
   <img src="https://img.shields.io/badge/tests-759%20passing-2ea44f.svg" alt="759 tests">
@@ -20,8 +21,28 @@
   <a href="#how-it-decides">How it decides</a> &nbsp;·&nbsp;
   <a href="#commands">Commands</a> &nbsp;·&nbsp;
   <a href="docs/ARCHITECTURE.md">Architecture</a> &nbsp;·&nbsp;
-  <a href="docs/LIMITATIONS.md">Limitations</a>
+  <a href="docs/LIMITATIONS.md">Limitations</a> &nbsp;·&nbsp;
+  <a href="docs/KNOWN-ISSUES.md">Known issues</a>
 </p>
+
+<br>
+
+> [!WARNING]
+> **Beta. One open defect suppresses routing on OpenDesign, and can suppress it
+> everywhere at once.**
+>
+> The router's OpenDesign weekly figure can be computed from an account reading
+> you already replaced, overstating usage by more than half the weekly cap. On a
+> measured case it reported 100 percent against a real 45 percent, which removed
+> OpenDesign from the candidate set and, with the other providers near their own
+> reserves, left nothing to route to at all.
+>
+> It does not block prompts. Prompts still send; the router just declines to move
+> the session. Full detail, how to tell you are hitting it, and the shape of the
+> fix: [docs/KNOWN-ISSUES.md](docs/KNOWN-ISSUES.md).
+>
+> If you need the router to be correct about OpenDesign spend today, do not rely
+> on it for that. Verify the figure against your account page.
 
 <br>
 
@@ -230,7 +251,11 @@ and the guarantee is tested against a real OpenCode process by
 
 ## Status
 
-Version 0.6.1. Routing runs on the maintainer's machine in automatic mode;
+**Beta.** Version 0.6.1. One open defect affects OpenDesign quota reporting; see
+[docs/KNOWN-ISSUES.md](docs/KNOWN-ISSUES.md). It misreports spend, it does not
+block prompts, and the workarounds are recorded there.
+
+Routing runs on the maintainer's machine in automatic mode;
 tier-3 tasks escalate to the plan-model pool automatically within its budget. Current behavior
 and open questions are in
 [docs/PRO-MIGRATION-2026-10-29.md](docs/PRO-MIGRATION-2026-10-29.md).

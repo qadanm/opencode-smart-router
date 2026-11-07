@@ -142,6 +142,12 @@ any other client on the same subscription is invisible to the router. The state
 label is the honest part: `estimated` never becomes `verified` without a control
 key, and `test/opendesign-quota-honesty.test.ts` pins that so it cannot drift.
 
+There is a separate and more serious problem with this estimate: it can be
+computed from an account reading that was already replaced, which overstates
+spend by more than half the weekly cap and suppresses routing. That is a defect,
+not a limitation of estimation, and it is tracked as KI-1 in
+[KNOWN-ISSUES.md](KNOWN-ISSUES.md).
+
 ## 8b. Measured speed
 
 Generation speed is recorded as output tokens per second, which separates a slow provider from a model that reasons for longer. It is compared against the fastest eligible route rather than an absolute figure, is neutral below a configurable sample floor, and raises effective cost without ever making a route ineligible. With few samples it does not change decisions. It is machinery that needs production traffic before it can discriminate.

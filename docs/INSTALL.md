@@ -1,5 +1,11 @@
 # Install, verify, and remove
 
+> [!WARNING]
+> **Beta.** OpenDesign quota reporting has an open defect that can overstate
+> usage by more than half the weekly cap, which suppresses routing. It does not
+> block prompts. Read [KNOWN-ISSUES.md](KNOWN-ISSUES.md) before relying on the
+> router's allowance figures.
+
 ## Install
 
 One command, from a checkout. Requires Node 20.12+, npm and git. No `jq`.

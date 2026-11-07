@@ -9,6 +9,24 @@ Notable changes to OpenCode Smart Router. Dates are the day the change landed on
 
 - **Launch kit** (`docs/LAUNCH-KIT.md`): paste-ready copy for Discord, Hacker
   News, X, and the opencode.cafe submission, plus the demo film assets.
+- **[docs/KNOWN-ISSUES.md](docs/KNOWN-ISSUES.md)**: defects that are understood
+  but not yet fixed, with reproduction, consequence and workarounds. The project
+  is marked beta in the README until the open quota-reporting defect is closed.
+
+### Known issues
+
+- **KI-1 (open, high).** OpenDesign quota can be reported far too high, because a
+  quota snapshot can be computed from an account reading that was already
+  replaced. Settings are read once per process and nothing watches the file, so a
+  long-lived `opencode serve` keeps the reading it started with and rewrites the
+  shared quota cache every five minutes. Measured on 2026-11-07: 100 percent
+  reported against a real 45 percent, an overstatement of `$52.37` on a `$90`
+  weekly cap. It suppresses routing rather than blocking prompts. Not fixed in
+  0.6.1.
+- **KI-2 (open, low).** The decision card cannot explain a rejected model. Only
+  candidates that passed every gate are stored, so the blocked count is always
+  zero, and the card is labelled `BLOCKED` even when the session was left running
+  untouched.
 
 ### Fixed
 
