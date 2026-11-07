@@ -83,6 +83,7 @@ export const emptyMetrics = (now = Date.now()): Metrics => ({
   dryRunDecisions: 0,
   premiumRequests: 0,
   premiumUsd: 0,
+  planPoolUsd: 0,
   latencyMsTotal: 0,
   latencySamples: 0,
   failures: emptyFailureCounts(),
@@ -108,6 +109,7 @@ export const emptyLedger = (now = Date.now()): Ledger => ({
   version: LEDGER_VERSION,
   usage: [],
   premiumSpend: [],
+  planPoolSpend: [],
   sessions: {},
   decisions: [],
   metrics: emptyMetrics(now),
@@ -374,6 +376,12 @@ export const hydrateLedger = (value: unknown): { ledger: Ledger; warnings: strin
           .map((entry) => ({ month: String(entry.month ?? ""), usd: Math.max(0, finite(entry.usd)) }))
           .filter((entry) => entry.month)
       : [],
+    planPoolSpend: Array.isArray(value.planPoolSpend)
+      ? value.planPoolSpend
+          .filter(isRecord)
+          .map((entry) => ({ month: String(entry.month ?? ""), usd: Math.max(0, finite(entry.usd)) }))
+          .filter((entry) => entry.month)
+      : [],
     sessions,
     decisions: decisions.slice(0, MAX_DECISIONS),
     metrics: {
@@ -392,6 +400,7 @@ export const hydrateLedger = (value: unknown): { ledger: Ledger; warnings: strin
       dryRunDecisions: Math.max(0, finite(metrics.dryRunDecisions)),
       premiumRequests: Math.max(0, finite(metrics.premiumRequests)),
       premiumUsd: Math.max(0, finite(metrics.premiumUsd)),
+      planPoolUsd: Math.max(0, finite(metrics.planPoolUsd)),
       latencyMsTotal: Math.max(0, finite(metrics.latencyMsTotal)),
       latencySamples: Math.max(0, finite(metrics.latencySamples)),
       lastLatencyMs: typeof metrics.lastLatencyMs === "number" ? metrics.lastLatencyMs : undefined,
@@ -417,6 +426,8 @@ export interface StepUsage {
   readonly at?: number
   readonly latencyMs?: number
   readonly premium?: boolean
+  /** True when this step drew from the plan-model pool (escalation allowance). */
+  readonly planPool?: boolean
 }
 
 export interface BootstrapSession {
@@ -565,6 +576,25 @@ export class LedgerStore {
     return this.ledger.premiumSpend.find((entry) => entry.month === month)?.usd ?? 0
   }
 
+  /**
+   * Spend against the plan-model pool (the escalation allowance), tracked in
+   * its own monthly buckets so the $120 pool gate reads one number that
+   * survives restarts. Premium spend that is not plan-pool spend - Command
+   * Code GOAT flagships on their own allowances - never lands here.
+   */
+  planPoolSpent(month = monthKey()) {
+    return this.ledger.planPoolSpend.find((entry) => entry.month === month)?.usd ?? 0
+  }
+
+  private addPlanPoolSpend(usd: number, at: number) {
+    if (usd <= 0) return
+    const month = monthKey(at)
+    const existing = this.ledger.planPoolSpend.find((entry) => entry.month === month)
+    if (existing) existing.usd += usd
+    else this.ledger.planPoolSpend.push({ month, usd })
+    this.ledger.metrics.planPoolUsd += usd
+  }
+
   private addPremiumSpend(usd: number) {
     if (usd <= 0) return
     const month = monthKey()
@@ -626,6 +656,7 @@ export class LedgerStore {
       }
     }
     if (input.premium) this.addPremiumSpend(event.usd)
+    if (input.planPool) this.addPlanPoolSpend(event.usd, at)
 
     const session = this.ensureSession(input.sessionID)
     session.lastModel = input.model

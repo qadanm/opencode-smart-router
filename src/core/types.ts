@@ -302,6 +302,12 @@ export interface PremiumState {
   readonly monthlyBudgetUsd: number
   readonly spentUsd: number
   readonly remainingUsd: number
+  /**
+   * Remaining plan-model pool allowance for the month. In auto mode this, not
+   * `remainingUsd`, is what escalation draws against; undefined when the
+   * caller has no pool identity for the model in play.
+   */
+  readonly planPoolRemainingUsd?: number
   readonly oneShotGranted: boolean
   readonly oneShotGrantedAt?: number
 }
@@ -417,6 +423,8 @@ export interface Metrics {
   dryRunDecisions: number
   premiumRequests: number
   premiumUsd: number
+  /** Lifetime spend against the plan-model pool (escalation allowance). */
+  planPoolUsd: number
   latencyMsTotal: number
   latencySamples: number
   lastLatencyMs?: number
@@ -469,6 +477,13 @@ export interface Ledger {
   /** Hourly aggregates for anything older than the raw-event horizon. */
   usageRollup?: UsageRollup
   premiumSpend: Array<{ month: string; usd: number }>
+  /**
+   * Monthly spend against the plan-model pool (the escalation allowance),
+   * separate from `premiumSpend` so the pool gate reads exactly what the
+   * pool funded. The hydrator always materializes this array, so ledgers
+   * written before the field existed read as zero spend.
+   */
+  planPoolSpend: Array<{ month: string; usd: number }>
   sessions: Record<string, SessionState>
   decisions: RoutingDecision[]
   metrics: Metrics

@@ -20,7 +20,12 @@ import { repairMessages } from "../core/reprompt.js"
 import { providerProtocol } from "../core/models/protocol.js"
 import { PromptRouteTracker } from "./route-tracker.js"
 import { buildProviderUsageReport } from "../core/quota/report.js"
-import { resolvePlan, resolvePlanWithReason } from "../core/plans/catalog.js"
+import {
+  OPENDESIGN_DESIGN_PLAN_MODELS,
+  OPENDESIGN_PLAN_MODEL_POOL,
+  resolvePlan,
+  resolvePlanWithReason,
+} from "../core/plans/catalog.js"
 import { loadSettings, validateSettings, type SettingsLoadResult } from "../core/config.js"
 import { writeSettingsPatch } from "../core/config-writer.js"
 import { describeConsoleReading, parseConsolePage, type UsageReading } from "../core/plan-page.js"
@@ -1054,16 +1059,37 @@ export class RouterController {
     return out
   }
 
-  private premiumState(session?: SessionState): PremiumState {    const spent = this.ledger.premiumSpent()
+  private premiumState(session?: SessionState): PremiumState {
+    const spent = this.ledger.premiumSpent()
     const budget = this.settings.premium.monthlyBudgetUsd
+    // The plan-model pool is the escalation budget of record. Its cap comes
+    // from the resolved plan catalog, not from premium.monthlyBudgetUsd, so
+    // the gate tracks the allowance the account actually has.
+    const planPoolMonthlyUsd = this.planPoolMonthlyUsd()
     return {
       mode: this.settings.premium.mode,
       monthlyBudgetUsd: budget,
       spentUsd: spent,
       remainingUsd: Math.max(0, budget - spent),
+      ...(planPoolMonthlyUsd !== undefined
+        ? { planPoolRemainingUsd: Math.max(0, planPoolMonthlyUsd - this.ledger.planPoolSpent()) }
+        : {}),
       oneShotGranted: session?.premiumOneShot === true,
       ...(session?.premiumOneShotAt ? { oneShotGrantedAt: session.premiumOneShotAt } : {}),
     }
+  }
+
+  /**
+   * The monthly cap of the OpenDesign plan-model pool for the configured plan,
+   * when the model pool is the one escalation draws from. Undefined for any
+   * other configuration, which leaves the gate on the legacy premium budget.
+   */
+  private planPoolMonthlyUsd(): number | undefined {
+    const provider = this.settings.providers.opendesign
+    if (!provider?.enabled) return undefined
+    const plan = resolvePlan("opendesign", provider.plan)
+    if (!plan) return undefined
+    return plan.pools.find((pool) => pool.id === OPENDESIGN_PLAN_MODEL_POOL)?.monthlyUsd
   }
 
   private quotaSnapshots() {
@@ -2427,6 +2453,13 @@ export class RouterController {
       const tokens = tokensFrom(data.tokens)
       const latency = this.stepStarted.get(sessionID) ? Date.now() - (this.stepStarted.get(sessionID) ?? Date.now()) : undefined
       if (model) {
+        // Plan-model-pool identity is resolved from the model id, so every
+        // recorded step attributes its spend to the right allowance: plan
+        // models draw the $120 escalation pool; Design Plan models and every
+        // other provider's models draw their own.
+        const modelRecord = this.registry.get(model.providerID, model.id)
+        const isOpendesignPlanPool =
+          model.providerID === "opendesign" && modelRecord !== undefined && !OPENDESIGN_DESIGN_PLAN_MODELS.has(model.id)
         this.ledger.recordUsage({
           sessionID,
           model,
@@ -2434,7 +2467,8 @@ export class RouterController {
           tokens,
           at: typeof event.created === "number" ? event.created : Date.now(),
           latencyMs: latency,
-          premium: this.registry.get(model.providerID, model.id)?.premium ?? false,
+          premium: modelRecord?.premium ?? false,
+          planPool: isOpendesignPlanPool,
         })
         // A completed step is proof the provider's pre-request path worked,
         // so any run of provider-scoped failures starts over.

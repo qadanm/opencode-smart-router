@@ -48,7 +48,12 @@ export const decidePremium = (input: {
  * cannot put credits back.
  */
   if (premium.mode === "auto") {
-    if (premium.remainingUsd > 0) {
+    // Auto escalation is funded from the plan-model pool when the model draws
+    // from it. The pool gate is the budget of record: `remainingUsd` is the
+    // legacy premium budget, which a plan-only setup may not configure.
+    const poolRemaining = premium.planPoolRemainingUsd
+    const budgetRemaining = poolRemaining ?? premium.remainingUsd
+    if (budgetRemaining > 0) {
       return {
         allowed: true,
         requiresApproval: false,
