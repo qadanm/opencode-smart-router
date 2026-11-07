@@ -313,7 +313,11 @@ export const OPENDESIGN_MODELS: ReadonlyArray<OpenDesignModelSpec> = [
   // windows. Only available on Plus, Pro and Max.
   // ---------------------------------------------------------------------------
   spec("claude-sonnet-5.5", "Claude Sonnet 5.5", {
-    context: 328_000,
+    // Probed 2026-11-06: one request with 819,383 random-filler prompt tokens
+    // returned 200, finish stop, all three mid-document sentinels retrieved,
+    // $1.62. The catalog is raised to the smallest probed-verified figure,
+    // rounded down; the advertised 1M is NOT assumed from an 800K pass.
+    context: 800_000,
     maxOutput: 128_000,
     input: ["text", "image", "pdf"],
     cost: cost(2, 10, 0.2, 2.5),
@@ -324,7 +328,7 @@ export const OPENDESIGN_MODELS: ReadonlyArray<OpenDesignModelSpec> = [
     approved: true,
     capabilities: { coding: 64, debugging: 72, agentic: 42, architecture: 88 },
     notes:
-      "Plan model. Premier design and architecture quality. Funded from plan model credits, so routing here consumes escalation capacity rather than routine allowance. Capabilities: Terminal-Bench 4.0 64 percent, AutomationBench 72 percent, FrontierCode 2.0 42 percent (Artificial Analysis v5.0.1, 2026-11-06, max reasoning; independent evaluations, not guarantees); architecture 88 curated. Auto-approved for tier-3 escalation by owner instruction 2026-11-06; the 328K window is the measured conservative value, pending a passed 800K probe.",
+      "Plan model. Premier design and architecture quality. Funded from plan model credits, so routing here consumes escalation capacity rather than routine allowance. Capabilities: Terminal-Bench 4.0 64 percent, AutomationBench 72 percent, FrontierCode 2.0 42 percent (Artificial Analysis v5.0.1, 2026-11-06, max reasoning; independent evaluations, not guarantees); architecture 88 curated. Auto-approved for tier-3 escalation by owner instruction 2026-11-06. Context probed 2026-11-06: 800K verified end-to-end (819,383 prompt tokens accepted, sentinels at start/middle/end retrieved, no truncation, $1.62); advertised 1M remains unverified.",
   }),
   spec("gpt-6-sol", "GPT-6 Sol", {
     context: 304_000,
@@ -339,7 +343,11 @@ export const OPENDESIGN_MODELS: ReadonlyArray<OpenDesignModelSpec> = [
     notes: "Plan model. Unscored in the router's curated set. Explicit approval required.",
   }),
   spec("gpt-6.1-sol", "GPT-6.1 Sol", {
-    context: 400_000,
+    // Probed 2026-11-06: one request with 820,701 prompt tokens returned 200,
+    // finish stop, all three sentinels retrieved, $2.74 - and the long-context
+    // surcharge (input $4/M above 272K) was billed, confirming tiered pricing
+    // applies exactly as cataloged. Raised to 800K (verified), not 1M.
+    context: 800_000,
     maxOutput: 128_000,
     input: ["text", "image", "pdf"],
     cost: tieredCost(cost(2, 10, 0.1, 2.5)[0]!, 272_000, { input: 4, output: 15, read: 0.2, write: 5 }),
@@ -350,7 +358,7 @@ export const OPENDESIGN_MODELS: ReadonlyArray<OpenDesignModelSpec> = [
     approved: true,
     capabilities: { coding: 56, debugging: 65, agentic: 41, architecture: 86 },
     notes:
-      "Plan model. Intelligence 55 on Artificial Analysis v5.0.1 (2026-11-06), tied with Sonnet 5.5 on that index; the per-kind capabilities break the tie toward Sonnet for agentic coding. Sol used far fewer generated tokens on the same suite, so it stays the cheaper tier-3 route on short fresh contexts. Capabilities: Terminal-Bench 4.0 56 percent, AutomationBench 65 percent, FrontierCode 2.0 41 percent, same index and configuration. Architecture 86 curated. Long-context tier doubles input to 4 and raises output to 15 above 272K. Auto-approved for tier-3 escalation by owner instruction 2026-11-06; the 400K window is the measured conservative value, pending a passed 800K probe.",
+      "Plan model. Intelligence 55 on Artificial Analysis v5.0.1 (2026-11-06), tied with Sonnet 5.5 on that index; the per-kind capabilities break the tie toward Sonnet for agentic coding. Sol used far fewer generated tokens on the same suite, so it stays the cheaper tier-3 route on short fresh contexts. Capabilities: Terminal-Bench 4.0 56 percent, AutomationBench 65 percent, FrontierCode 2.0 41 percent, same index and configuration. Architecture 86 curated. Long-context tier doubles input to 4 and raises output to 15 above 272K. Auto-approved for tier-3 escalation by owner instruction 2026-11-06. Context probed 2026-11-06: 800K verified end-to-end (820,701 prompt tokens accepted with sentinels retrieved, no truncation, $2.74 billed at the tiered long-context rate); advertised 1M remains unverified.",
   }),
   spec("gpt-6-astra", "GPT-6 Astra", {
     context: 400_000,
