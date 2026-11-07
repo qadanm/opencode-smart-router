@@ -99,6 +99,8 @@ const premiumState = (config: RouterSettings | undefined) => {
     monthlyBudgetUsd: settingsValue.premium.monthlyBudgetUsd,
     spentUsd: 0,
     remainingUsd: settingsValue.premium.monthlyBudgetUsd,
+    // Auto mode gates on the plan-model pool, not on remainingUsd.
+    planPoolRemainingUsd: 120,
     oneShotGranted: false,
   }
 }

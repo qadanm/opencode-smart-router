@@ -48,12 +48,12 @@ export const decidePremium = (input: {
  * cannot put credits back.
  */
   if (premium.mode === "auto") {
-    // Auto escalation is funded from the plan-model pool when the model draws
-    // from it. The pool gate is the budget of record: `remainingUsd` is the
-    // legacy premium budget, which a plan-only setup may not configure.
-    const poolRemaining = premium.planPoolRemainingUsd
-    const budgetRemaining = poolRemaining ?? premium.remainingUsd
-    if (budgetRemaining > 0) {
+    // Auto escalation is funded from the plan-model pool, and only from it:
+    // auto requires a resolvable pool. Without one (OpenDesign disabled or an
+    // unknown plan), falling back to the legacy premium budget would let auto
+    // spend premium models from other providers that no ledger attributes, so
+    // the gate degrades to an approval request instead.
+    if ((premium.planPoolRemainingUsd ?? 0) > 0) {
       return {
         allowed: true,
         requiresApproval: false,
@@ -63,7 +63,10 @@ export const decidePremium = (input: {
     return {
       allowed: false,
       requiresApproval: true,
-      reason: "Auto escalation is out of plan-model budget; approval is required for this request.",
+      reason:
+        premium.planPoolRemainingUsd === undefined
+          ? "Auto escalation needs a resolvable plan-model pool (set providers.opendesign.plan); approval is required for this request."
+          : "Auto escalation is out of plan-model budget; approval is required for this request.",
     }
   }
   if (session?.premiumOneShot && settings.premium.oneShotApproval) {

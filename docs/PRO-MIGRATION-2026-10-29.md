@@ -160,7 +160,7 @@ $70/month, $14 per 5-hour, $35 per week, provider-reported as authoritative. Liv
 
 ### Spending rules — unchanged and enforced
 
-`allowExtraUsage: false`, `subscriptionOnly: true`, `premium.mode: "off"`, wallet never used for automatic routing, no control key acquired automatically, no paid API calls made for verification.
+`allowExtraUsage: false`, `subscriptionOnly: true`, wallet never used for automatic routing, no control key acquired automatically, no paid API calls made for verification. Historical note: this migration pinned `premium.mode: "off"`; the standing default changed to `auto` on 2026-11-06 (see the 0.6.0 changelog), which gates tier-3 escalation on the plan-model pool instead of disabling premium outright.
 
 ### Usage tracking
 

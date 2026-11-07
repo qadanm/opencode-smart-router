@@ -77,6 +77,9 @@ const route = (settings: RouterSettings, text: string, contextTokens = 10_000) =
       monthlyBudgetUsd: settings.premium.monthlyBudgetUsd,
       spentUsd: 0,
       remainingUsd: settings.premium.monthlyBudgetUsd,
+      // The controller resolves the Pro plan's plan-models pool (120/month);
+      // auto mode gates on this, not on remainingUsd.
+      planPoolRemainingUsd: 120,
       oneShotGranted: false,
     },
     contextTokens,
@@ -139,6 +142,7 @@ describe("the escalation pool serves what ordinary allowance cannot", () => {
         monthlyBudgetUsd: 120,
         spentUsd: 120,
         remainingUsd: 0,
+        planPoolRemainingUsd: 0,
         oneShotGranted: false,
       },
       contextTokens: 10_000,

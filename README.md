@@ -299,7 +299,7 @@ npm run verify    # clean room: empty HOME, fresh install, typecheck, tests, bui
 npm run mutate    # prove each safety test fails when its property breaks
 ```
 
-777 tests across 66 files cover classification, eligibility, quota parsing,
+779 tests across 67 files cover classification, eligibility, quota parsing,
 credential discovery and its security properties, ledger accounting, pool
 reconciliation, documented peak pricing, cache-aware routing, premium protection,
 purchased-credit blocking, manual overrides, failure classification, configuration

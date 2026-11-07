@@ -238,7 +238,8 @@ const CAPABILITY_NEUTRAL: Record<"coding" | "debugging" | "agentic" | "architect
 
 const CAPABILITY_MAX_NUDGE = 0.04
 
-const observedSuccess = (model: ModelRecord, session: EngineInput["session"], _key: string): number => {  // Only capability failures should reduce a model's expected success rate.
+const observedSuccess = (model: ModelRecord, session: EngineInput["session"], _key: string): number => {
+  // Only capability failures should reduce a model's expected success rate.
   // Provider, network, auth, tool, and context-overflow errors are handled by
   // their own recovery paths.
   if (!session) return 0.95
@@ -925,12 +926,14 @@ export const routeTask = (input: EngineInput): EngineResult => {
     )
   reasons.push(...quotaNotes)
 
-  // Every candidate stays inspectable, capped by cost order; the flagship
-  // rows must be visible in the decision, not truncated away, or an escalation
-  // looks arbitrary in the trace.
+  // The trace keeps the twelve cheapest eligible routes plus, always, the
+  // chosen model: on an escalation the flagship is the most expensive row, so
+  // a bare cost-ordered slice would truncate exactly the entry an escalation
+  // exists to show.
+  const chosenEntry = chosen
   const candidates = evaluated
     .sort((a, b) => a.candidate.effectiveCost - b.candidate.effectiveCost)
-    .slice(0, 12)
+    .filter((entry, index) => index < 12 || entry === chosenEntry)
     .map((entry) => ({
       ...entry.candidate,
       retained: keptForAffinity ? entry.model === currentEval?.model : entry.model === chosen.model,

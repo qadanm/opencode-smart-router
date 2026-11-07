@@ -30,11 +30,12 @@ const settings = (overrides: Partial<RouterSettings["premium"]> = {}): RouterSet
     premium: { ...DEFAULT_SETTINGS.premium, ...overrides },
   }) as RouterSettings
 
-const state = (remainingUsd: number) => ({
-  mode: "allowed" as const,
+const state = (remainingUsd: number, planPoolRemainingUsd: number | undefined = remainingUsd) => ({
+  mode: "auto" as const,
   monthlyBudgetUsd: 120,
   spentUsd: 120 - remainingUsd,
   remainingUsd,
+  planPoolRemainingUsd,
   oneShotGranted: false,
 })
 
@@ -44,7 +45,7 @@ describe("premium auto mode", () => {
       settings: settings({ mode: "auto", monthlyBudgetUsd: 120 }),
       mode: "balanced",
       task: task(3),
-      premium: { ...state(80), mode: "auto" },
+      premium: { ...state(80, 80), mode: "auto" },
     })
     expect(decision.allowed).toBe(true)
     expect(decision.requiresApproval).toBe(false)
@@ -57,7 +58,7 @@ describe("premium auto mode", () => {
         settings: settings({ mode: "auto", monthlyBudgetUsd: 120 }),
         mode: "balanced",
         task: task(tier),
-        premium: { ...state(120), mode: "auto" },
+        premium: { ...state(120, 120), mode: "auto" },
       })
       expect(decision.allowed, `tier ${tier}`).toBe(false)
     }
@@ -68,7 +69,7 @@ describe("premium auto mode", () => {
       settings: settings({ mode: "auto", monthlyBudgetUsd: 120 }),
       mode: "balanced",
       task: task(3),
-      premium: { ...state(0), mode: "auto" },
+      premium: { ...state(0, 0), mode: "auto" },
     })
     expect(decision.allowed).toBe(false)
     expect(decision.requiresApproval).toBe(true)
@@ -89,9 +90,30 @@ describe("premium auto mode", () => {
       settings: settings({ mode: "auto", monthlyBudgetUsd: 120 }),
       mode: "efficiency",
       task: task(3),
-      premium: { ...state(120), mode: "auto" },
+      premium: { ...state(120, 120), mode: "auto" },
     })
     expect(decision.allowed).toBe(false)
+  })
+
+  it("auto without a resolvable plan-model pool degrades to approval, not to the legacy budget", () => {
+    const decision = decidePremium({
+      settings: settings({ mode: "auto", monthlyBudgetUsd: 120 }),
+      mode: "balanced",
+      task: task(3),
+      // Built inline: passing `undefined` through state() would hit the
+      // default parameter and silently supply a pool that does not exist.
+      premium: {
+        mode: "auto",
+        monthlyBudgetUsd: 120,
+        spentUsd: 0,
+        remainingUsd: 120,
+        planPoolRemainingUsd: undefined,
+        oneShotGranted: false,
+      },
+    })
+    expect(decision.allowed).toBe(false)
+    expect(decision.requiresApproval).toBe(true)
+    expect(decision.reason).toMatch(/plan-model pool/i)
   })
 
   it("auto with a zero budget degrades to ask behavior", () => {
@@ -99,7 +121,7 @@ describe("premium auto mode", () => {
       settings: settings({ mode: "auto", monthlyBudgetUsd: 0 }),
       mode: "balanced",
       task: task(3),
-      premium: { mode: "auto", monthlyBudgetUsd: 0, spentUsd: 0, remainingUsd: 0, oneShotGranted: false },
+      premium: { mode: "auto", monthlyBudgetUsd: 0, spentUsd: 0, remainingUsd: 0, planPoolRemainingUsd: 0, oneShotGranted: false },
     })
     expect(decision.allowed).toBe(false)
     expect(decision.requiresApproval).toBe(true)
