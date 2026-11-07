@@ -165,7 +165,10 @@ describe("routing engine", () => {
   })
 
   it("labels a sophisticated-design fallback as such in the routing decision", () => {
-    const config = settings()
+    // Pinned to ask/0 (2026-11-06): the default premium mode is now auto, and
+    // under auto this tier-3 task escalates or falls through the premium
+    // fallback, not the design-relaxation path this test exists to label.
+    const config = settings({ premium: { ...DEFAULT_SETTINGS.premium, mode: "ask", monthlyBudgetUsd: 0 } })
     const registry = buildRegistry({ live: [], settings: config })
     const haiku = registry.get("commandcode", "claude-haiku-5-5")!
     const task = classifyTask({

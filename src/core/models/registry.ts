@@ -54,6 +54,7 @@ const fromSeed = (seed: SeedModel): ModelRecord => ({
   intelligence: seed.intelligence,
   design: seed.design,
   designEvidence: seed.designEvidence ?? "curated",
+  ...(seed.capabilities ? { capabilities: { ...seed.capabilities } } : {}),
   ...(seed.creditMultiplier && seed.creditMultiplier > 0 ? { creditMultiplier: seed.creditMultiplier } : {}),
   ...(seed.protocol ? { protocol: seed.protocol } : {}),
   ...(seed.escalationOnly ? { escalationOnly: true } : {}),

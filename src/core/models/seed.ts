@@ -21,6 +21,8 @@ export interface SeedModel {
   /** True when the model is funded from a pool reserved for escalation. */
   escalationOnly?: boolean
   premium?: boolean
+  /** Per-kind capability evidence, passed through with provenance intact. */
+  capabilities?: ModelRecord["capabilities"]
   training?: boolean
   free?: boolean
   tier: 1 | 2 | 3
@@ -511,14 +513,16 @@ const BASE_SEED_MODELS: ReadonlyArray<SeedModel> = [
     maxOutput: 128_000,
     input: ["text", "image", "pdf"],
     cost: tieredCost(cost(2, 10, 0.1, 2.5)[0]!, 272_000, { input: 4, output: 15, read: 0.2, write: 5 }),
-    intelligence: 0,
+    intelligence: 55,
     design: 88,
     designEvidence: "unverified",
+    capabilities: { coding: 56, debugging: 65, agentic: 41, architecture: 86 },
     premium: true,
     tier: 3,
-    approved: false,
+    approved: true,
     monthlyAllowanceUsd: 20,
-    notes: "Unscored in the current model cards. Explicit approval required.",
+    notes:
+      "Intelligence 55 on Artificial Analysis v5.0.1 (2026-11-06). Capabilities: Terminal-Bench 4.0 56 percent, AutomationBench 65 percent, FrontierCode 2.0 41 percent, same index and configuration. Long-context tier doubles input to 4 and raises output to 15 above 272K. Auto-approved for tier-3 escalation by owner instruction 2026-11-06; the Command Code gateway advertises 1.05M but that window is unverified, so treat it as pending a passed probe.",
   },
   {
     key: "commandcode/gpt-6-astra",

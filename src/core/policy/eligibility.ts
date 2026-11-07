@@ -411,6 +411,25 @@ export const evaluateEligibility = (input: EligibilityInput): EligibilityResult 
     }
   }
 
+  // The mirror gate: while escalation is available, tier-3 work draws on the
+  // plan-model pool and ordinary models stand down. A tier-3 task served by a
+  // standard model runs at ~0.7 expected success by construction - that is
+  // precisely the situation the pool exists to prevent, and no cost ranking
+  // should be able to quietly trade 24 points of success probability for a
+  // few cents. "Insufficient benefit" is answered by the classifier (a task
+  // ordinary models serve well is not classified tier 3) and by the budget
+  // gate (escalation that cannot be paid for does not happen), not by letting
+  // a cheap model absorb hard work. When this gate leaves no route at all,
+  // the engine's premiumFallback deliberately picks the strongest ordinary
+  // model, so exhaustion degrades instead of failing the task.
+  if (task.tier === 3 && premium.allowed && !model.premium) {
+    return {
+      eligible: false,
+      reason: "Premium-tier work escalates to the plan-model pool while escalation budget remains",
+      warnings,
+    }
+  }
+
   // An escalation pool is capacity, not routine allowance. When an
   // ordinary-allowance route can already serve the task, spending the
   // escalation pool on it converts a cheap request into a scarce one.

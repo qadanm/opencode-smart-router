@@ -662,7 +662,16 @@ export const routeTask = (input: EngineInput): EngineResult => {
     // Only protect the escalation pool when an ordinary-allowance route can
     // actually serve the task. A task that needs escalation must still be
     // able to escalate.
-    const ordinaryAvailable = unprotected.some((entry) => !entry.model.escalationOnly && !entry.model.premium)
+    // A tier-3 task served by a standard model runs at ~0.7 expected
+    // success by construction (estimateSuccess). That is below the bar a
+    // tier-3 model meets, so for tier-3 work no ordinary route "serves" the
+    // task and the pool stays available for it. Tier 1/2 work meets the bar
+    // at 0.93+, so the pool stays protected for ordinary tasks and can never
+    // be drained by routine work.
+    if (input.task.tier >= 3) return unprotected
+    const ordinaryAvailable = unprotected.some(
+      (entry) => !entry.model.escalationOnly && !entry.model.premium && entry.probability >= 0.85,
+    )
     if (!ordinaryAvailable) return unprotected
     return run(true)
   }
@@ -916,7 +925,11 @@ export const routeTask = (input: EngineInput): EngineResult => {
     )
   reasons.push(...quotaNotes)
 
+  // Every candidate stays inspectable, capped by cost order; the flagship
+  // rows must be visible in the decision, not truncated away, or an escalation
+  // looks arbitrary in the trace.
   const candidates = evaluated
+    .sort((a, b) => a.candidate.effectiveCost - b.candidate.effectiveCost)
     .slice(0, 12)
     .map((entry) => ({
       ...entry.candidate,
