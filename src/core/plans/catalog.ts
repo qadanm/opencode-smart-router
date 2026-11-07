@@ -102,6 +102,12 @@ export const OPENDESIGN_DESIGN_PLAN_MODELS: ReadonlySet<string> = new Set([
   "claude-haiku-5.5",
   "glm-5.3-flashx",
   "gpt-6-luna",
+  // The gateway serves MiniMax M3.1 Flash both inside and outside the Design
+  // Plan group, and OpenDesign has not published which applies (see the model
+  // note). Treated as Design Plan: it is an ordinary tier-2 workhorse, and
+  // misclassifying it the other way would let a routine model drain the
+  // escalation pool.
+  "minimax-m3.1-flash",
 ])
 
 export const OPENDESIGN_DESIGN_PLAN_POOL = "design-plan"

@@ -43,6 +43,12 @@ Tier-3 work escalates by itself, paid from the plan-model pool.
   800K for both flagships after passed end-to-end probes on 2026-11-06; the
   advertised 1M is deliberately NOT claimed, and Sol's long-context surcharge
   above 272K was confirmed by the billed amounts.
+- MiniMax M3.1 Flash is classified as a Design Plan model. The gateway serves
+  it both inside and outside the Design Plan group and OpenDesign has not
+  published which applies, so the conservative choice is made: treating an
+  ordinary tier-2 workhorse as a plan model keeps routine work from draining
+  the escalation pool. Before this, a tier-3 task could land on it as a
+  premium model that a tier-2 flag itself made eligible.
 
 ## 0.5.0 — 2026-11-06
 
