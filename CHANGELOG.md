@@ -10,6 +10,14 @@ Notable changes to OpenCode Smart Router. Dates are the day the change landed on
 - **Launch kit** (`docs/LAUNCH-KIT.md`): paste-ready copy for Discord, Hacker
   News, X, and the opencode.cafe submission, plus the demo film assets.
 
+### Fixed
+
+- The installer prunes old version directories. Each install lands in its own
+  stamped directory so a running server keeps the module it loaded, but nothing
+  removed the old ones, so every update left a 540K copy behind forever. It now
+  keeps the current version and the one before it, which preserves the manual
+  rollback path, and removes anything older.
+
 ## 0.6.1 — 2026-11-06
 
 A defect in the router can no longer stop the editor.

@@ -54,11 +54,17 @@ exact pre-removal config as a restore point. Restart OpenCode afterwards.
 ## Update
 
 Run `./install` again. It installs a new versioned directory and repoints the
-config, so old versions can be deleted safely once the new one is confirmed:
+config. The installer keeps the current version and the one before it, and prunes
+anything older, so a bad update can still be rolled back by pointing the config at
+the previous directory:
 
 ```bash
 ls ~/.config/opencode/plugins/opencode-smart-router/
 ```
+
+Before this change nothing pruned these directories, so every update left a
+540K copy behind permanently. A fresh install was verified to leave two
+directories after two runs; it now leaves two after any number of runs.
 
 ## Rollback
 

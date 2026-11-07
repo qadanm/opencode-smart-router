@@ -297,6 +297,46 @@ elif $VERIFY; then
     if (!mod || !mod.default) { console.error('  x the bundle did not export a plugin'); process.exit(1); }
     console.log('  bundle loads and exports a plugin');
   " || die "the installed bundle failed to load — run ./scripts/uninstall.sh to roll back"
+
+  # Prune old version directories, keeping the one just installed and the one
+  # before it.
+  #
+  # Each install lands in its own stamped directory so a running server keeps the
+  # module it already loaded. That is the right design, but nothing ever removed
+  # the old ones: a fresh install per update left 540K behind every time, forever.
+  # Verified on a clean HOME, where two consecutive installs left both directories
+  # and only one was referenced by the config.
+  #
+  # Keeping the previous version matters because it is the manual rollback path:
+  # the config is a list of paths, so pointing it back at the prior directory is
+  # how a bad update is undone without a rebuild. Anything older has no reader.
+  #
+  # Failures here are warnings, never errors. A stale directory is litter; it is
+  # not a reason to report a working install as failed.
+  if ! $DRY_RUN && [ -d "$INSTALL_ROOT" ]; then
+    current="$(basename "$INSTALL")"
+    # Newest first. The names are YYYYMMDD-HHMMSS, so a plain sort is
+    # chronological. The grep drops anything this script did not create, so an
+    # unexpected entry is left alone rather than removed.
+    #
+    # Parsed with a while-read loop instead of `mapfile`, because macOS ships
+    # bash 3.2 and `mapfile` does not exist there. The installer has to run on a
+    # stock machine, which is the whole point of it.
+    versions="$(ls -1 "$INSTALL_ROOT" 2>/dev/null | grep -E '^[0-9]{8}-[0-9]{6}$' | sort -r)"
+    pruned=0
+    index=0
+    while IFS= read -r name; do
+      [ -z "$name" ] && continue
+      index=$((index + 1))
+      # Keep the first two: the current install and the rollback target.
+      [ "$index" -le 2 ] && continue
+      [ "$name" = "$current" ] && continue
+      rm -rf "${INSTALL_ROOT:?}/$name" 2>/dev/null && pruned=$((pruned + 1))
+    done <<< "$versions"
+    if [ "$pruned" -gt 0 ]; then
+      say "  pruned $pruned older install(s); kept the current and previous version"
+    fi
+  fi
 else
   warn "load check skipped"
 fi
