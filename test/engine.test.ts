@@ -125,6 +125,7 @@ describe("routing engine", () => {
     const { task, result } = run({
       text: "Redesign the landing page to match the attached Figma mockup. Improve typography, spacing, and responsive layout.",
       files: [{ uri: "file:///tmp/figma-mockup.png", name: "figma-mockup.png" }],
+      settings: settings({ premium: { ...DEFAULT_SETTINGS.premium, mode: "ask", monthlyBudgetUsd: 0 } }),
     })
     expect(task.tier).toBe(3)
     expect(result.chosenModel?.premium).toBe(false)

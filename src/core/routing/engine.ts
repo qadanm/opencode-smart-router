@@ -209,8 +209,36 @@ export const estimateTaskCost = (input: {
   }
 }
 
-const observedSuccess = (model: ModelRecord, session: EngineInput["session"], _key: string): number => {
-  // Only capability failures should reduce a model's expected success rate.
+/**
+ * Which capability axis each task kind reads, and the benchmark-neutral point
+ * on that axis. Kinds with no axis get no nudge. Neutral points sit at the
+ * middle of the observed benchmark band, so a score above the band's middle
+ * helps and one below it hurts - by at most CAPABILITY_MAX_NUDGE.
+ */
+const CAPABILITY_AXIS: Partial<Record<TaskClass["kind"], keyof NonNullable<ModelRecord["capabilities"]>>> = {
+  feature: "coding",
+  debug: "debugging",
+  refactor: "coding",
+  design: "architecture",
+  architecture: "architecture",
+  security: "architecture",
+  test: "coding",
+  docs: undefined,
+  deterministic: undefined,
+  mechanical: undefined,
+  unknown: undefined,
+}
+
+const CAPABILITY_NEUTRAL: Record<"coding" | "debugging" | "agentic" | "architecture", number> = {
+  coding: 60,
+  debugging: 68,
+  agentic: 55,
+  architecture: 80,
+}
+
+const CAPABILITY_MAX_NUDGE = 0.04
+
+const observedSuccess = (model: ModelRecord, session: EngineInput["session"], _key: string): number => {  // Only capability failures should reduce a model's expected success rate.
   // Provider, network, auth, tool, and context-overflow errors are handled by
   // their own recovery paths.
   if (!session) return 0.95
@@ -248,6 +276,21 @@ export const estimateSuccess = (input: {
   if (task.designIntensive) {
     const threshold = task.sophisticatedDesign ? 75 : 60
     if (model.design < threshold) probability *= 0.72
+  }
+  // Per-kind capability evidence. A model with no measured capability for the
+  // task's kind stays neutral: an unscored model is not a zero-capability
+  // model, and inventing a score would poison every ranking it entered. With
+  // evidence, the benchmark gap moves the probability by at most a few points
+  // either way - enough to break a close ranking in favor of the model that
+  // measurably does this kind of work better, never enough to overrule a
+  // context, quota, or floor gate.
+  if (model.capabilities && CAPABILITY_AXIS[task.kind]) {
+    const axis = CAPABILITY_AXIS[task.kind]!
+    const score = model.capabilities[axis]
+    if (typeof score === "number") {
+      const edge = score - CAPABILITY_NEUTRAL[axis]
+      probability += Math.max(-CAPABILITY_MAX_NUDGE, Math.min(CAPABILITY_MAX_NUDGE, edge / 500))
+    }
   }
   const floor = input.intelligenceFloor ?? 39.5
   if (task.tier >= 2 && model.intelligence < floor) probability *= 0.7

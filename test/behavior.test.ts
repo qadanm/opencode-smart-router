@@ -91,8 +91,8 @@ describe("context health", () => {
 describe("configuration", () => {
   it("has safe defaults", () => {
     expect(DEFAULT_SETTINGS.mode).toBe("balanced")
-    expect(DEFAULT_SETTINGS.premium.mode).toBe("ask")
-    expect(DEFAULT_SETTINGS.premium.monthlyBudgetUsd).toBe(0)
+    expect(DEFAULT_SETTINGS.premium.mode).toBe("auto")
+    expect(DEFAULT_SETTINGS.premium.monthlyBudgetUsd).toBe(120)
     expect(DEFAULT_SETTINGS.privacy.allowTrainingModels).toBe(false)
     expect(DEFAULT_SETTINGS.providers.commandcode!.allowExtraUsage).toBe(false)
   })

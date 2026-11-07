@@ -99,6 +99,21 @@ export interface ModelRecord {
   readonly intelligence: number
   /** Curated front-end and UX quality score. */
   readonly design: number
+  /**
+   * Per-kind capability evidence, when measured benchmarks exist. Absent
+   * axes are unknown, never zero: an unscored model stays neutral in
+   * ranking rather than being treated as incapable.
+   */
+  readonly capabilities?: {
+    /** Agentic coding benchmark, percent. */
+    readonly coding?: number
+    /** Complex-debugging / automation benchmark, percent. */
+    readonly debugging?: number
+    /** Long-horizon autonomous-execution benchmark, percent. */
+    readonly agentic?: number
+    /** Curated architectural-reasoning score, same 0-100 scale. */
+    readonly architecture?: number
+  }
   readonly designEvidence: "benchmark" | "curated" | "observed" | "unverified"
   /**
    * Credit multiplier applied to this model's usage value. One for every

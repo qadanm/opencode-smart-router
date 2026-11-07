@@ -716,6 +716,10 @@ const OPENDESIGN_SEED_MODELS: ReadonlyArray<SeedModel> = OPENDESIGN_MODELS.map((
   designEvidence: model.designEvidence,
   tier: model.tier,
   approved: model.approved,
+  // Plan models (Sonnet, Sol, Opus, Astra) are premium: they draw from the
+  // plan-model pool, which premium policy and its budget govern. Design Plan
+  // models are ordinary allowance, never premium.
+  premium: !OPENDESIGN_DESIGN_PLAN_MODELS.has(model.modelID),
   // Every OpenDesign allowance is a shared provider-level pool, so no model
   // carries its own monthly allowance.
   monthlyAllowanceUsd: 0,
