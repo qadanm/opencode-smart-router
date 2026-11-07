@@ -10,6 +10,40 @@ Notable changes to OpenCode Smart Router. Dates are the day the change landed on
 - **Launch kit** (`docs/LAUNCH-KIT.md`): paste-ready copy for Discord, Hacker
   News, X, and the opencode.cafe submission, plus the demo film assets.
 
+## 0.6.0 — 2026-11-06
+
+Tier-3 work escalates by itself, paid from the plan-model pool.
+
+### Added
+
+- **Automatic flagship escalation** (`premium.mode: "auto"`, now the default):
+  a tier-3 task routes to the plan-model pool (Claude Sonnet 5.5, GPT-6.1 Sol)
+  without a per-task approval prompt while the pool has budget. When the pool
+  is spent, escalation degrades to an approval gate and the router serves the
+  task with the strongest ordinary model - a routing refusal never fails a
+  serviceable task. Tier-1 and tier-2 work always stays on the ordinary pool.
+- **Plan-model pool ledger**: monthly buckets tracking spend against the
+  OpenDesign plan-model allowance (Pro: $120/month), persisted across
+  restarts, separate from Design Plan credits and from other providers'
+  premium spend. The cap is read from the resolved plan catalog.
+- **Per-kind capability evidence**: `ModelRecord.capabilities` (coding,
+  debugging, agentic, architecture) from named benchmarks with provenance,
+  moving expected success by at most 4 points - enough to break a close
+  ranking, never enough to overrule a gate. Unscored models stay neutral:
+  absent evidence is unknown, not zero.
+- **Context probes** (`scripts/probe-plan-model-context.py`): end-to-end
+  800K-token verification with memorization sentinels and truncation checks.
+
+### Changed
+
+- GPT-6.1 Sol is scored (intelligence 55, Artificial Analysis v5.0.1) and
+  auto-approved for tier-3 escalation along with Sonnet 5.5, both by owner
+  instruction 2026-11-06. DeepSeek's observed 39.5 is untouched.
+- Catalog context windows raised from measured (328K/400K) to probed-verified
+  800K for both flagships after passed end-to-end probes on 2026-11-06; the
+  advertised 1M is deliberately NOT claimed, and Sol's long-context surcharge
+  above 272K was confirmed by the billed amounts.
+
 ## 0.5.0 — 2026-11-06
 
 The router stops taking things that are not its to take.

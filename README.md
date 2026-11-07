@@ -194,15 +194,17 @@ panel's last decision records what was rejected and what took over.
 
 - Never buys credits, changes billing, or enables top-ups.
 - Never routes to a provider you did not approve.
-- Never spends premium quota without an explicit one-shot approval or a budget you set.
+- Never spends the plan-model pool without the budget you set; in the default
+  auto mode tier-3 work escalates to it automatically, and when it runs out the
+  router falls back to the strongest ordinary model instead of failing.
 - Never switches a session to a model OpenCode cannot currently resolve.
 - Never fails open on missing quota data when other providers already reported.
 - Never blocks your other work when one provider is at its limit.
 
 ## Status
 
-Version 0.4.0. Routing runs on the maintainer's machine in automatic mode;
-premium escalation and purchased-credit spending are disabled. Current behavior
+Version 0.6.0. Routing runs on the maintainer's machine in automatic mode;
+tier-3 tasks escalate to the plan-model pool automatically within its budget. Current behavior
 and open questions are in
 [docs/PRO-MIGRATION-2026-10-29.md](docs/PRO-MIGRATION-2026-10-29.md).
 
@@ -252,7 +254,10 @@ It cannot loosen global restrictions.
 Worth knowing:
 
 - Mode: `balanced`
-- Premium: `ask`, $0 budget, one-shot approval available
+- Premium: `auto`, $120/month plan-model pool, one-shot approval available.
+  Auto mode escalates tier-3 tasks to the plan-model pool (Sonnet 5.5,
+  GPT-6.1 Sol) without asking, and degrades to an approval gate when the pool
+  is spent. Tier-1 and tier-2 work always stays on the ordinary pool.
 - Training-enabled and free promotional models: blocked
 - Purchased extra credits: blocked
 - Prompt text storage: disabled
