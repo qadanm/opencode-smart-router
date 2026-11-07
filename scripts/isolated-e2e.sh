@@ -76,7 +76,20 @@ fi
 # assert and a green result would be false.
 if ! command -v opencode >/dev/null 2>&1; then
   echo "FATAL: opencode is not on PATH; this suite tests a real OpenCode process" >&2
-  echo "       install it first: curl -fsSL https://opencode.ai/install | bash" >&2
+  echo "       install OpenCode V2: brew install anomalyco/tap/opencode-v2" >&2
+  exit 1
+fi
+
+# This plugin targets the OpenCode V2 API. OpenCode 1 has a different hook
+# surface and no `--standalone` flag, so a run against it would prove nothing
+# about the code under test. Refuse rather than report a result.
+# The CLI prints "opencode v2.2.6" (and some builds just "2.2.6"), so extract
+# the first dotted number rather than assuming a bare version string.
+OPENCODE_VERSION="$(opencode --version 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)"
+OPENCODE_MAJOR="${OPENCODE_VERSION%%.*}"
+if [ "$OPENCODE_MAJOR" != "2" ]; then
+  echo "FATAL: this suite needs OpenCode 2.x, found '${OPENCODE_VERSION:-unknown}'" >&2
+  echo "       brew install anomalyco/tap/opencode-v2" >&2
   exit 1
 fi
 

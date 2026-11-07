@@ -83,10 +83,23 @@ jobs:
           node-version: "22"
           cache: npm
       - run: npm ci
-      - name: Install OpenCode
+      - name: Install OpenCode V2
         run: |
-          curl -fsSL https://opencode.ai/install | bash
-          echo "$HOME/.opencode/bin" >> "$GITHUB_PATH"
+          # The plugin targets the OpenCode V2 API. The default installer script
+          # installs OpenCode 1, whose CLI has no `--standalone` flag and whose
+          # hook API is different, so installing it would test the wrong program
+          # and pass or fail for reasons unrelated to this plugin. V2 ships from
+          # its own tap.
+          brew install anomalyco/tap/opencode-v2
+          opencode --version
+      - name: Require OpenCode V2
+        run: |
+          v="$(opencode --version 2>/dev/null | head -1 | tr -d 'v')"
+          major="${v%%.*}"
+          if [ "$major" != "2" ]; then
+            echo "FATAL: this suite needs OpenCode 2.x, found '${v:-unknown}'" >&2
+            exit 1
+          fi
       - name: Build the bundle under test
         run: npm run build:server
       # Unit tests call functions. This runs the plugin inside a real OpenCode
