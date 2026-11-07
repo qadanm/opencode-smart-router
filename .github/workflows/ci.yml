@@ -85,16 +85,39 @@ jobs:
       - run: npm ci
       - name: Install OpenCode V2
         run: |
-          # The plugin targets the OpenCode V2 API. The default installer script
-          # installs OpenCode 1, whose CLI has no `--standalone` flag and whose
-          # hook API is different, so installing it would test the wrong program
-          # and pass or fail for reasons unrelated to this plugin. V2 ships from
-          # its own tap.
-          brew install anomalyco/tap/opencode-v2
-          opencode --version
+          # The plugin targets the OpenCode V2 API. The `opencode.ai/install`
+          # script installs OpenCode 1, whose CLI has no `--standalone` flag and
+          # whose hook surface differs, so it would test the wrong program and
+          # pass or fail for reasons unrelated to this plugin.
+          #
+          # V2 is not on Homebrew here: `brew` does not exist on Ubuntu runners,
+          # which is why the first version of this job failed in 13 seconds. The
+          # release publishes Linux binaries directly, so install from those and
+          # verify the checksum rather than trusting the download.
+          set -euo pipefail
+          VERSION="2.2.6"
+          ASSET="opencode-linux-x64-baseline.tar.gz"
+          BASE="https://github.com/anomalyco/opencode/releases/download/v${VERSION}"
+          curl -fsSL "$BASE/$ASSET" -o /tmp/opencode.tar.gz
+          curl -fsSL "$BASE/SHA256SUMS" -o /tmp/SHA256SUMS
+          expected="$(grep " $ASSET$" /tmp/SHA256SUMS | awk '{print $1}')"
+          actual="$(sha256sum /tmp/opencode.tar.gz | awk '{print $1}')"
+          if [ -z "$expected" ] || [ "$expected" != "$actual" ]; then
+            echo "FATAL: checksum mismatch for $ASSET" >&2
+            echo "  expected: ${expected:-missing}" >&2
+            echo "  actual:   $actual" >&2
+            exit 1
+          fi
+          mkdir -p "$HOME/.opencode-v2/bin"
+          tar -xzf /tmp/opencode.tar.gz -C "$HOME/.opencode-v2/bin" opencode
+          chmod +x "$HOME/.opencode-v2/bin/opencode"
+          echo "$HOME/.opencode-v2/bin" >> "$GITHUB_PATH"
+          "$HOME/.opencode-v2/bin/opencode" --version
       - name: Require OpenCode V2
         run: |
-          v="$(opencode --version 2>/dev/null | head -1 | tr -d 'v')"
+          # The CLI prints "opencode v2.2.6", so extract the dotted version
+          # rather than assuming a bare number.
+          v="$(opencode --version 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)"
           major="${v%%.*}"
           if [ "$major" != "2" ]; then
             echo "FATAL: this suite needs OpenCode 2.x, found '${v:-unknown}'" >&2

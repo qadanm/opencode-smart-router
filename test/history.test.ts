@@ -13,6 +13,31 @@ import { readOpenCodeHistory, toHistoryEntry } from "../src/core/history/opencod
 
 const NOW = Date.UTC(2026, 10, 4, 21, 0, 0)
 
+/**
+ * `node:sqlite` arrived in Node 22.5, but `package.json` declares Node 20.12 as
+ * the floor and CI tests that floor. On 20.12 the reader is supposed to degrade:
+ * it returns no entries and a reason, and the router keeps working without
+ * history import. The tests below have to model that rather than assume the
+ * module exists, or the declared floor is untested in the only environment that
+ * exercises it.
+ *
+ * `require` is used deliberately, exactly as the reader uses it, so this detects
+ * the same capability the production path sees.
+ */
+const sqliteAvailable = (() => {
+  try {
+    const { DatabaseSync } = require("node:sqlite")
+    return typeof DatabaseSync === "function"
+  } catch {
+    return false
+  }
+})()
+
+/** The three states below need a real database to construct, so they cannot run
+ * without `node:sqlite`. The degradation path is asserted unconditionally
+ * instead, so a skipped leg still proves the contract that matters there. */
+const describeWithSqlite = sqliteAvailable ? describe : describe.skip
+
 const message = (over: Record<string, unknown> = {}, id = "m1") => ({
   id,
   data: JSON.stringify({
@@ -85,6 +110,27 @@ describe("reading the database", () => {
     expect(result.reason).toBeDefined()
   })
 
+  // Unconditional, because this is the contract on the declared Node floor: a
+  // build without `node:sqlite` must not throw, and must say why it has no
+  // history. On a newer Node this asserts the inverse branch is unreachable
+  // rather than skipping the file entirely.
+  it("degrades to a reason when this Node build has no node:sqlite", () => {
+    if (sqliteAvailable) {
+      // Newer Node: the module exists, so the guarantee is that a real database
+      // is actually read. Covered by the tests below.
+      expect(typeof require("node:sqlite").DatabaseSync).toBe("function")
+      return
+    }
+    const dir = mkdtempSync(join(tmpdir(), "router-history-"))
+    const path = join(dir, "opencode.db")
+    writeFileSync(path, "placeholder")
+    const result = readOpenCodeHistory({ dbPath: path })
+    expect(result.entries).toEqual([])
+    expect(result.reason).toMatch(/node:sqlite/)
+  })
+
+  describeWithSqlite("with node:sqlite available", () => {
+
   it("reads real rows from a real database", () => {
     // Built with node:sqlite directly so the test exercises the same reader the
     // router uses, on a database it actually produced.
@@ -117,5 +163,6 @@ describe("reading the database", () => {
 
     const result = readOpenCodeHistory({ dbPath: path, sinceMs: NOW - 7 * 86_400_000 })
     expect(result.entries.map((entry) => entry.id)).toEqual(["recent"])
+  })
   })
 })

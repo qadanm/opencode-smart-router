@@ -81,6 +81,23 @@ in [docs/INCIDENT-2026-11-06-prompt-lockout.md](docs/INCIDENT-2026-11-06-prompt-
   progress verified the previous commit and reported a pass that said nothing
   about the changes being made.
 
+### Fixed in CI
+
+- The `host-survival` job now installs OpenCode V2 from its release binaries
+  instead of Homebrew, which does not exist on Ubuntu runners, and verifies the
+  download against the published `SHA256SUMS`. It also asserts the major version
+  is 2, so a future change to the installer cannot quietly point the suite at
+  OpenCode 1, whose hook surface and CLI differ.
+- `test/history.test.ts` no longer fails on the declared Node 20.12 floor, where
+  `node:sqlite` does not exist. The reader already degraded gracefully there; the
+  test now asserts that degradation and skips only the two cases that genuinely
+  require a real database. The suite passes on 20.12 with two honest skips rather
+  than two failures.
+- The eight calibration properties the mutation harness listed as unguarded now
+  have `test/calibration-policy.test.ts`. They were not missing guards, they were
+  pointed at a file that covers a different module, so the properties were never
+  exercised. All 69 mutations are now caught.
+
 ## 0.6.0 — 2026-11-06
 
 Tier-3 work escalates by itself, paid from the plan-model pool.
